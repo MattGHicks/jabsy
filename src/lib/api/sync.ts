@@ -39,7 +39,7 @@ export function mapEspnEvent(event: EspnEvent, importedEventIds: Set<string>): M
 export function mapEspnFight(comp: EspnCompetition, boutOrder: number): MappedFight {
   const corners = getCorners(comp)
   const status = mapFightStatus(comp.status)
-  const scheduledRounds = comp.format.regulation.periods
+  const scheduledRounds = comp.format?.regulation?.periods ?? 3
   const isMainEvent = scheduledRounds === 5
 
   const fight: MappedFight = {
@@ -48,7 +48,7 @@ export function mapEspnFight(comp: EspnCompetition, boutOrder: number): MappedFi
     redRecord: corners.red.record,
     blueName: corners.blue.name,
     blueRecord: corners.blue.record,
-    weightClass: comp.type.abbreviation || null,
+    weightClass: comp.type?.abbreviation || null,
     scheduledRounds,
     isMainEvent,
     boutOrder,
