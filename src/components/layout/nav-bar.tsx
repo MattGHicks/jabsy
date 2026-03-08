@@ -83,7 +83,7 @@ export function NavBar({ user }: NavBarProps) {
                 <div className="w-7 h-7 rounded-full bg-[#e11d48]/20 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden">
                   {user.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatar_url} alt={user.username ?? ''} className="w-full h-full object-cover" />
+                    <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-[10px] font-bold text-[#e11d48]">{initials}</span>
                   )}
@@ -125,7 +125,7 @@ export function NavBar({ user }: NavBarProps) {
             >
               {user.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatar_url} alt={user.username ?? ''} className="w-full h-full object-cover" />
+                <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-[11px] font-bold text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                   {initials}
@@ -181,7 +181,7 @@ export function NavBar({ user }: NavBarProps) {
               <div className="w-14 h-14 rounded-full bg-[#e11d48]/15 border-2 border-[#e11d48]/30 flex items-center justify-center overflow-hidden shrink-0">
                 {user.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.avatar_url} alt={user.username ?? ''} className="w-full h-full object-cover" />
+                  <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 ) : (
                   <span
                     className="text-xl font-bold text-[#e11d48]"

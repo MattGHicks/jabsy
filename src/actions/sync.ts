@@ -4,10 +4,11 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { fetchCalendar, fetchEventById, extractEventId, getCorners, getResultMethod } from '@/lib/api/espn'
+import { fetchCalendar, fetchEventById, extractEventId } from '@/lib/api/espn'
 import { mapEspnEvent, toEventInsert, toFightInsert } from '@/lib/api/sync'
 import { searchUpcomingUFCEvents } from '@/lib/api/claude-search'
-import type { MappedEvent } from '@/lib/api/types'
+import type { MappedEvent, MappedFight } from '@/lib/api/types'
+import type { Json } from '@/types/database'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -49,7 +50,8 @@ export async function searchForEvents(): Promise<{
 
   try {
     // Strategy: Use ESPN calendar for structured data, Claude for discovery
-    const calendar = await fetchCalendar()
+    const calResult = await fetchCalendar()
+    const calendar = calResult.data
 
     // Filter to future events only
     const now = new Date()
@@ -66,7 +68,7 @@ export async function searchForEvents(): Promise<{
       try {
         const espnEvent = await fetchEventById(espnEventId)
         if (espnEvent) {
-          events.push(mapEspnEvent(espnEvent, importedIds))
+          events.push(mapEspnEvent(espnEvent, importedIds).data)
         } else {
           // Fallback: create a basic event from calendar data
           events.push({
@@ -109,8 +111,19 @@ export async function searchForEvents(): Promise<{
         shortName: e.name,
         startTime: new Date(e.date).toISOString(),
         venue: e.venue,
-        fightCount: e.fightCount ?? 0,
-        fights: [],
+        fightCount: e.fightCount ?? e.fights?.length ?? 0,
+        fights: (e.fights ?? []).map((f, j): MappedFight => ({
+          espnCompetitionId: `claude-${i}-${j}`,
+          redName: f.red,
+          redRecord: null,
+          blueName: f.blue,
+          blueRecord: null,
+          weightClass: f.weightClass ?? null,
+          scheduledRounds: 3,
+          isMainEvent: j === 0,
+          boutOrder: (e.fights?.length ?? 0) - j,
+          status: 'scheduled',
+        })),
         alreadyImported: false,
       }))
       return { events: mapped, source: 'claude' }
@@ -134,7 +147,7 @@ export async function previewEventCard(espnEventId: string): Promise<{
     const espnEvent = await fetchEventById(espnEventId)
     if (!espnEvent) return { event: null, error: 'Event not found on ESPN' }
 
-    const mapped = mapEspnEvent(espnEvent, new Set())
+    const mapped = mapEspnEvent(espnEvent, new Set()).data
     return { event: mapped }
   } catch (err) {
     return { event: null, error: `Failed to fetch event: ${err}` }
@@ -168,7 +181,8 @@ export async function importEvent(espnEventId: string): Promise<{
     const espnEvent = await fetchEventById(espnEventId)
     if (!espnEvent) return { success: false, error: 'Event not found on ESPN' }
 
-    const mapped = mapEspnEvent(espnEvent, new Set())
+    const mappedResult = mapEspnEvent(espnEvent, new Set())
+    const mapped = mappedResult.data
 
     // Insert event
     const eventInsert = toEventInsert(mapped, user.id)
@@ -220,12 +234,14 @@ export async function importEvent(espnEventId: string): Promise<{
 export async function syncFightCard(eventId: string): Promise<{
   success: boolean
   changes: { added: number; updated: number; cancelled: number }
+  warningCount: number
   error?: string
 }> {
   await requireAdmin()
   const adminClient = createAdminClient()
 
   const changes = { added: 0, updated: 0, cancelled: 0 }
+  let warningCount = 0
 
   // Get the event's ESPN ID
   const { data: event } = await adminClient
@@ -235,14 +251,28 @@ export async function syncFightCard(eventId: string): Promise<{
     .single()
 
   if (!event?.espn_event_id) {
-    return { success: false, changes, error: 'Event has no ESPN ID' }
+    return { success: false, changes, warningCount, error: 'Event has no ESPN ID' }
   }
 
   try {
     const espnEvent = await fetchEventById(event.espn_event_id)
-    if (!espnEvent) return { success: false, changes, error: 'Event not found on ESPN' }
+    if (!espnEvent) return { success: false, changes, warningCount, error: 'Event not found on ESPN' }
 
-    const mapped = mapEspnEvent(espnEvent, new Set())
+    const mappedResult = mapEspnEvent(espnEvent, new Set())
+    const mapped = mappedResult.data
+    warningCount = mappedResult.warnings.length
+
+    // Log validation warnings if any
+    if (warningCount > 0) {
+      await adminClient.from('api_sync_log').insert({
+        sync_type: 'validation',
+        event_id: eventId,
+        api_source: 'espn',
+        status: 'warning',
+        request_count: 0,
+        details: { warnings: mappedResult.warnings } as unknown as Json,
+      })
+    }
 
     // Get existing fights for this event
     const { data: existingFights } = await adminClient
@@ -323,9 +353,9 @@ export async function syncFightCard(eventId: string): Promise<{
     })
 
     revalidatePath(`/admin/events/${eventId}`)
-    return { success: true, changes }
+    return { success: true, changes, warningCount }
   } catch (err) {
-    return { success: false, changes, error: `Sync failed: ${err}` }
+    return { success: false, changes, warningCount, error: `Sync failed: ${err}` }
   }
 }
 

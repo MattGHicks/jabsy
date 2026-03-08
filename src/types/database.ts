@@ -319,33 +319,63 @@ export interface Database {
       api_sync_log: {
         Row: {
           id: string
-          sync_type: 'event_import' | 'card_update' | 'live_results'
+          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
           event_id: string | null
           api_source: 'espn' | 'claude'
-          status: 'success' | 'error' | 'partial'
+          status: 'success' | 'error' | 'partial' | 'warning'
           request_count: number
           details: Json | null
           created_at: string
         }
         Insert: {
           id?: string
-          sync_type: 'event_import' | 'card_update' | 'live_results'
+          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
           event_id?: string | null
           api_source: 'espn' | 'claude'
-          status: 'success' | 'error' | 'partial'
+          status: 'success' | 'error' | 'partial' | 'warning'
           request_count?: number
           details?: Json | null
           created_at?: string
         }
         Update: {
           id?: string
-          sync_type?: 'event_import' | 'card_update' | 'live_results'
+          sync_type?: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
           event_id?: string | null
           api_source?: 'espn' | 'claude'
-          status?: 'success' | 'error' | 'partial'
+          status?: 'success' | 'error' | 'partial' | 'warning'
           request_count?: number
           details?: Json | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      espn_health: {
+        Row: {
+          id: string
+          endpoint: string
+          consecutive_failures: number
+          last_success_at: string | null
+          last_failure_at: string | null
+          last_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          endpoint: string
+          consecutive_failures?: number
+          last_success_at?: string | null
+          last_failure_at?: string | null
+          last_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          endpoint?: string
+          consecutive_failures?: number
+          last_success_at?: string | null
+          last_failure_at?: string | null
+          last_error?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

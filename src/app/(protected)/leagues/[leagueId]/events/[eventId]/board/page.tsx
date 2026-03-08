@@ -215,7 +215,7 @@ export default async function BoardPage({ params }: PageProps) {
                   )}>
                     {profile?.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       : getInitials(profile?.username ?? 'U')}
                   </div>
                   <div>
@@ -352,7 +352,7 @@ export default async function BoardPage({ params }: PageProps) {
                           )}>
                             {profile?.avatar_url
                               // eslint-disable-next-line @next/next/no-img-element
-                              ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                               : getInitials(profile?.username ?? 'U')}
                           </div>
 

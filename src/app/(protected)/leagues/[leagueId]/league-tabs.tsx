@@ -178,7 +178,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                   <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
                     {profile?.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
                     }
                   </div>
@@ -217,7 +217,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
               <div className="w-8 h-8 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/25 flex items-center justify-center overflow-hidden shrink-0">
                 {ownerProfile.avatar_url
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ? <img src={ownerProfile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   : <span className="text-xs font-bold text-[#e11d48]">{getInitials(ownerProfile.username ?? 'O')}</span>
                 }
               </div>
@@ -264,7 +264,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                   <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#27272a] flex items-center justify-center overflow-hidden shrink-0">
                     {p.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ? <img src={p.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       : <span className="text-xs font-bold text-[#71717a]">{getInitials(p.username ?? 'M')}</span>
                     }
                   </div>
@@ -436,7 +436,7 @@ function renderEventCard(
                   <div className="w-5 h-5 rounded-full bg-[#27272a] border border-[#3f3f46] overflow-hidden shrink-0">
                     {w.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={w.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ? <img src={w.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       : <span className="text-[8px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(w.username ?? 'U')}</span>
                     }
                   </div>

@@ -115,6 +115,28 @@ export interface EspnDetail {
   }
 }
 
+// Validation types
+
+export interface ValidationWarning {
+  type:
+    | 'missing_competitors'
+    | 'insufficient_competitors'
+    | 'missing_method'
+    | 'unknown_status'
+    | 'missing_calendar'
+    | 'missing_event_ref'
+    | 'fetch_error'
+    | 'malformed_response'
+    | 'missing_details'
+  message: string
+  context?: Record<string, unknown>
+}
+
+export interface ValidatedResult<T> {
+  data: T
+  warnings: ValidationWarning[]
+}
+
 // Mapped types for our app
 
 export interface MappedEvent {

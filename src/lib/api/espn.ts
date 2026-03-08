@@ -3,31 +3,66 @@ import type {
   EspnEvent,
   EspnCompetition,
   EspnCalendarEntry,
+  ValidationWarning,
+  ValidatedResult,
 } from './types'
+import { recordSuccess, recordFailure } from './espn-health'
 
 const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc'
 
 /**
  * Fetch the UFC scoreboard. Returns current/recent events with full fight data.
  * Optionally filter by date range (YYYYMMDD-YYYYMMDD).
+ * Records health status on success/failure.
  */
 export async function fetchScoreboard(dateRange?: string): Promise<EspnScoreboardResponse> {
   const url = dateRange
     ? `${ESPN_BASE}/scoreboard?dates=${dateRange}`
     : `${ESPN_BASE}/scoreboard`
 
-  const res = await fetch(url, { next: { revalidate: 0 } })
-  if (!res.ok) throw new Error(`ESPN API error: ${res.status} ${res.statusText}`)
-  return res.json()
+  try {
+    const res = await fetch(url, { next: { revalidate: 0 } })
+    if (!res.ok) {
+      const error = `ESPN API error: ${res.status} ${res.statusText}`
+      await recordFailure('scoreboard', error).catch(() => {})
+      throw new Error(error)
+    }
+    await recordSuccess('scoreboard').catch(() => {})
+    return res.json()
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('ESPN API error:')) throw err
+    await recordFailure('scoreboard', String(err)).catch(() => {})
+    throw err
+  }
 }
 
 /**
  * Get the full calendar of upcoming UFC events for the year.
- * Returns event names, dates, and ESPN event IDs.
+ * Returns validated result with warnings if calendar structure is missing.
  */
-export async function fetchCalendar(): Promise<EspnCalendarEntry[]> {
+export async function fetchCalendar(): Promise<ValidatedResult<EspnCalendarEntry[]>> {
+  const warnings: ValidationWarning[] = []
   const data = await fetchScoreboard()
-  return data.leagues?.[0]?.calendar ?? []
+
+  if (!data.leagues || data.leagues.length === 0) {
+    warnings.push({
+      type: 'missing_calendar',
+      message: 'ESPN response has no leagues array',
+      context: { keys: Object.keys(data) },
+    })
+    return { data: [], warnings }
+  }
+
+  const calendar = data.leagues[0]?.calendar
+  if (!calendar || calendar.length === 0) {
+    warnings.push({
+      type: 'missing_calendar',
+      message: 'ESPN leagues[0] has no calendar entries',
+    })
+    return { data: [], warnings }
+  }
+
+  return { data: calendar, warnings }
 }
 
 /**
@@ -49,77 +84,146 @@ export async function fetchEventByDate(date: string): Promise<EspnEvent | null> 
 /**
  * Fetch event with full fight card using the ESPN event ID.
  * We search the calendar for the event's date, then fetch by date range.
+ * Records health status on success/failure.
  */
 export async function fetchEventById(espnEventId: string): Promise<EspnEvent | null> {
-  // First get calendar to find the event's date
-  const calendar = await fetchCalendar()
-  const calEntry = calendar.find(c => {
-    const ref = c.event?.$ref ?? ''
-    return ref.includes(`events/${espnEventId}`)
-  })
+  try {
+    // First get calendar to find the event's date
+    const calResult = await fetchCalendar()
+    const calendar = calResult.data
+    const calEntry = calendar.find(c => {
+      const ref = c.event?.$ref ?? ''
+      return ref.includes(`events/${espnEventId}`)
+    })
 
-  if (!calEntry) return null
+    if (!calEntry) {
+      await recordFailure('event', `Event ${espnEventId} not found in calendar`).catch(() => {})
+      return null
+    }
 
-  // Fetch by date range around the event
-  return fetchEventByDate(calEntry.startDate)
+    // Fetch by date range around the event
+    const event = await fetchEventByDate(calEntry.startDate)
+    if (event) {
+      await recordSuccess('event').catch(() => {})
+    } else {
+      await recordFailure('event', `Event ${espnEventId} not found in date range`).catch(() => {})
+    }
+    return event
+  } catch (err) {
+    await recordFailure('event', String(err)).catch(() => {})
+    throw err
+  }
 }
 
 /**
  * Parse ESPN competitor order into red/blue corners.
- * ESPN convention: order=1 is typically the first listed (red corner),
- * order=2 is second listed (blue corner).
- * We map: order=1 → red, order=2 → blue
+ * Returns ValidatedResult with null data if competitors are missing/insufficient.
  */
-export function getCorners(competition: EspnCompetition) {
+export function getCorners(competition: EspnCompetition): ValidatedResult<{
+  red: { name: string; record: string | null; espnId: string; winner: boolean }
+  blue: { name: string; record: string | null; espnId: string; winner: boolean }
+} | null> {
+  const warnings: ValidationWarning[] = []
+
+  if (!competition.competitors || competition.competitors.length === 0) {
+    warnings.push({
+      type: 'missing_competitors',
+      message: `Competition ${competition.id} has no competitors`,
+      context: { competition_id: competition.id },
+    })
+    return { data: null, warnings }
+  }
+
+  if (competition.competitors.length < 2) {
+    warnings.push({
+      type: 'insufficient_competitors',
+      message: `Competition ${competition.id} has only ${competition.competitors.length} competitor(s)`,
+      context: { competition_id: competition.id, count: competition.competitors.length },
+    })
+    return { data: null, warnings }
+  }
+
+  if (competition.competitors.length > 2) {
+    warnings.push({
+      type: 'missing_competitors',
+      message: `Competition ${competition.id} has ${competition.competitors.length} competitors (expected 2)`,
+      context: { competition_id: competition.id, count: competition.competitors.length },
+    })
+  }
+
   const sorted = [...competition.competitors].sort((a, b) => a.order - b.order)
-  const red = sorted[0] // order=1
-  const blue = sorted[1] // order=2
+  const red = sorted[0]
+  const blue = sorted[1]
 
   return {
-    red: {
-      name: red.athlete.fullName,
-      record: red.records?.[0]?.summary ?? null,
-      espnId: red.id,
-      winner: red.winner ?? false,
+    data: {
+      red: {
+        name: red.athlete.fullName,
+        record: red.records?.[0]?.summary ?? null,
+        espnId: red.id,
+        winner: red.winner ?? false,
+      },
+      blue: {
+        name: blue.athlete.fullName,
+        record: blue.records?.[0]?.summary ?? null,
+        espnId: blue.id,
+        winner: blue.winner ?? false,
+      },
     },
-    blue: {
-      name: blue.athlete.fullName,
-      record: blue.records?.[0]?.summary ?? null,
-      espnId: blue.id,
-      winner: blue.winner ?? false,
-    },
+    warnings,
   }
 }
 
 /**
  * Extract fight result method from ESPN details array.
- * Returns null if fight hasn't finished.
+ * Uses case-insensitive partial matching for resilience.
+ * Returns ValidatedResult with warnings when method can't be determined.
  */
-export function getResultMethod(competition: EspnCompetition): 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null {
+export function getResultMethod(competition: EspnCompetition): ValidatedResult<'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null> {
+  const warnings: ValidationWarning[] = []
   const details = competition.details ?? []
 
   for (const detail of details) {
-    const text = detail.type.text
-    if (text === 'Unofficial Winner Decision') return 'decision'
-    if (text === 'Unofficial Winner Kotko') return 'ko_tko'
-    if (text === 'Unofficial Winner Submission') return 'submission'
+    const text = (detail.type?.text ?? '').toLowerCase()
+
+    // Broad matching: case-insensitive + partial
+    if (text.includes('decision')) return { data: 'decision', warnings }
+    if (text.includes('kotko') || text.includes('ko/tko') || text.includes('ko tko') || text.includes('knockout') || text.includes('tko')) {
+      return { data: 'ko_tko', warnings }
+    }
+    if (text.includes('submission')) return { data: 'submission', warnings }
+    if (text.includes('disqualif') || text.includes('dq')) return { data: 'dq', warnings }
+    if (text.includes('no contest') || text.includes('no_contest') || text.includes('nc')) {
+      return { data: 'nc', warnings }
+    }
   }
 
-  // If status is final but no method found, infer from round/clock
+  // Fallback inference for completed fights
   if (competition.status.type.completed) {
     const period = competition.status.period
-    const rounds = competition.format.regulation.periods
+    const rounds = competition.format?.regulation?.periods
     const clock = competition.status.displayClock
 
     // Full rounds completed with full clock = decision
-    if (period === rounds && clock === '5:00') return 'decision'
+    if (rounds && period === rounds && clock === '5:00') {
+      return { data: 'decision', warnings }
+    }
 
-    // Otherwise it's likely a finish but we couldn't determine method
-    // Default to ko_tko for non-decision finishes (most common)
-    return 'ko_tko'
+    // We couldn't find a method match — log warning and infer ko_tko
+    warnings.push({
+      type: 'missing_method',
+      message: `Competition ${competition.id} completed but no method found in details`,
+      context: {
+        competition_id: competition.id,
+        details_texts: details.map(d => d.type?.text),
+        period,
+        clock,
+      },
+    })
+    return { data: 'ko_tko', warnings }
   }
 
-  return null
+  return { data: null, warnings }
 }
 
 /**

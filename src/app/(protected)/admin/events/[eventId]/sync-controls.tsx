@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { RefreshCw, Loader2, Check, Pause, Play } from 'lucide-react'
+import { RefreshCw, Loader2, Check, Pause, Play, AlertTriangle } from 'lucide-react'
 import { syncFightCard, toggleAutoSync } from '@/actions/sync'
 
 interface SyncControlsProps {
@@ -13,12 +13,14 @@ interface SyncControlsProps {
 export function SyncControls({ eventId, autoSyncEnabled, lastSyncedAt }: SyncControlsProps) {
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
+  const [warningCount, setWarningCount] = useState(0)
   const [autoSync, setAutoSync] = useState(autoSyncEnabled)
   const [, startTransition] = useTransition()
 
   async function handleSync() {
     setSyncing(true)
     setSyncResult(null)
+    setWarningCount(0)
     try {
       const result = await syncFightCard(eventId)
       if (result.success) {
@@ -27,7 +29,9 @@ export function SyncControls({ eventId, autoSyncEnabled, lastSyncedAt }: SyncCon
         if (added > 0) parts.push(`${added} added`)
         if (updated > 0) parts.push(`${updated} updated`)
         if (cancelled > 0) parts.push(`${cancelled} cancelled`)
+        if (result.warningCount > 0) parts.push(`${result.warningCount} warning(s)`)
         setSyncResult(parts.length > 0 ? parts.join(', ') : 'No changes')
+        setWarningCount(result.warningCount)
       } else {
         setSyncResult(result.error ?? 'Sync failed')
       }
@@ -101,8 +105,8 @@ export function SyncControls({ eventId, autoSyncEnabled, lastSyncedAt }: SyncCon
 
       {/* Sync result */}
       {syncResult && (
-        <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-          <Check className="w-3 h-3" />
+        <span className={`text-[10px] flex items-center gap-1 ${warningCount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+          {warningCount > 0 ? <AlertTriangle className="w-3 h-3" /> : <Check className="w-3 h-3" />}
           {syncResult}
         </span>
       )}
