@@ -39,6 +39,9 @@ export interface Database {
           venue: string | null
           status: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by: string | null
+          espn_event_id: string | null
+          auto_sync_enabled: boolean
+          last_synced_at: string | null
           created_at: string
           updated_at: string
         }
@@ -50,6 +53,9 @@ export interface Database {
           venue?: string | null
           status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by?: string | null
+          espn_event_id?: string | null
+          auto_sync_enabled?: boolean
+          last_synced_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -61,6 +67,9 @@ export interface Database {
           venue?: string | null
           status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by?: string | null
+          espn_event_id?: string | null
+          auto_sync_enabled?: boolean
+          last_synced_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -86,6 +95,9 @@ export interface Database {
           result_winner: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
           result_round: number | null
+          espn_competition_id: string | null
+          sync_status: 'synced' | 'modified' | 'manual'
+          last_synced_at: string | null
           created_at: string
           updated_at: string
         }
@@ -108,6 +120,9 @@ export interface Database {
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
           result_round?: number | null
+          espn_competition_id?: string | null
+          sync_status?: 'synced' | 'modified' | 'manual'
+          last_synced_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -130,6 +145,9 @@ export interface Database {
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
           result_round?: number | null
+          espn_competition_id?: string | null
+          sync_status?: 'synced' | 'modified' | 'manual'
+          last_synced_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -295,6 +313,39 @@ export interface Database {
           points_earned?: number | null
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      api_sync_log: {
+        Row: {
+          id: string
+          sync_type: 'event_import' | 'card_update' | 'live_results'
+          event_id: string | null
+          api_source: 'espn' | 'claude'
+          status: 'success' | 'error' | 'partial'
+          request_count: number
+          details: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sync_type: 'event_import' | 'card_update' | 'live_results'
+          event_id?: string | null
+          api_source: 'espn' | 'claude'
+          status: 'success' | 'error' | 'partial'
+          request_count?: number
+          details?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sync_type?: 'event_import' | 'card_update' | 'live_results'
+          event_id?: string | null
+          api_source?: 'espn' | 'claude'
+          status?: 'success' | 'error' | 'partial'
+          request_count?: number
+          details?: Json | null
+          created_at?: string
         }
         Relationships: []
       }

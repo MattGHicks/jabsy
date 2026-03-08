@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/utils'
 import { EventManager } from './event-manager'
+import { SyncControls } from './sync-controls'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,13 +47,28 @@ export default async function ManageFightsPage({ params, searchParams }: PagePro
 
       <div className="mb-8">
         <p className="text-xs text-[#71717a] mb-1">{formatDateTime(event.start_time)}</p>
-        <h1
-          className="leading-none text-[#f4f4f5] mb-1 uppercase"
-          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 4vw, 3rem)' }}
-        >
-          {event.name}
-        </h1>
+        <div className="flex items-center gap-3 mb-1">
+          <h1
+            className="leading-none text-[#f4f4f5] uppercase"
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 4vw, 3rem)' }}
+          >
+            {event.name}
+          </h1>
+          {event.espn_event_id && (
+            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <RefreshCw className="w-2.5 h-2.5" />
+              Synced
+            </span>
+          )}
+        </div>
         {event.venue && <p className="text-sm text-[#71717a]">{event.venue}</p>}
+        {event.espn_event_id && (
+          <SyncControls
+            eventId={eventId}
+            autoSyncEnabled={event.auto_sync_enabled}
+            lastSyncedAt={event.last_synced_at}
+          />
+        )}
       </div>
 
       {error && (

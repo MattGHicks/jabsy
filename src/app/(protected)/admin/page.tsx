@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, Calendar, Swords, Users, ShieldCheck, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Calendar, Swords, Users, ShieldCheck, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/utils'
 import { deleteEvent, setEventStatus } from '@/actions/admin'
@@ -61,13 +61,23 @@ export default async function AdminPage() {
             ADMIN DASHBOARD
           </h1>
         </div>
-        <Link
-          href="/admin/events/new"
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Create Event
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/admin/search"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            Search for Events
+          </Link>
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
+            title="Manual create"
+          >
+            <Plus className="w-4 h-4" />
+            Manual
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -153,13 +163,19 @@ export default async function AdminPage() {
                 </div>
 
                 {/* Event name */}
-                <div>
+                <div className="flex items-center gap-2">
                   <p
                     className="text-xl text-[#f4f4f5] uppercase leading-tight truncate"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
                   >
                     {event.name}
                   </p>
+                  {event.espn_event_id && (
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      Synced
+                    </span>
+                  )}
                 </div>
 
                 {/* Bottom row: meta info */}
