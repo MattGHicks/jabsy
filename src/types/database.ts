@@ -1,0 +1,322 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          username: string | null
+          avatar_url: string | null
+          role: 'admin' | 'league_owner' | 'player'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          username?: string | null
+          avatar_url?: string | null
+          role?: 'admin' | 'league_owner' | 'player'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          username?: string | null
+          avatar_url?: string | null
+          role?: 'admin' | 'league_owner' | 'player'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          id: string
+          name: string
+          start_time: string
+          lock_time: string | null
+          venue: string | null
+          status: 'upcoming' | 'live' | 'completed' | 'cancelled'
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          start_time: string
+          lock_time?: string | null
+          venue?: string | null
+          status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          start_time?: string
+          lock_time?: string | null
+          venue?: string | null
+          status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fights: {
+        Row: {
+          id: string
+          event_id: string
+          bout_order: number
+          scheduled_rounds: number
+          weight_class: string | null
+          is_main_event: boolean
+          red_name: string
+          red_record: string | null
+          red_avatar_url: string | null
+          red_sherdog_url: string | null
+          blue_name: string
+          blue_record: string | null
+          blue_avatar_url: string | null
+          blue_sherdog_url: string | null
+          status: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
+          result_winner: 'red' | 'blue' | 'draw' | 'nc' | null
+          result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_round: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          bout_order?: number
+          scheduled_rounds?: number
+          weight_class?: string | null
+          is_main_event?: boolean
+          red_name: string
+          red_record?: string | null
+          red_avatar_url?: string | null
+          red_sherdog_url?: string | null
+          blue_name: string
+          blue_record?: string | null
+          blue_avatar_url?: string | null
+          blue_sherdog_url?: string | null
+          status?: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
+          result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
+          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_round?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          bout_order?: number
+          scheduled_rounds?: number
+          weight_class?: string | null
+          is_main_event?: boolean
+          red_name?: string
+          red_record?: string | null
+          red_avatar_url?: string | null
+          red_sherdog_url?: string | null
+          blue_name?: string
+          blue_record?: string | null
+          blue_avatar_url?: string | null
+          blue_sherdog_url?: string | null
+          status?: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
+          result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
+          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_round?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'fights_event_id_fkey'; columns: ['event_id']; isOneToOne: false; referencedRelation: 'events'; referencedColumns: ['id'] },
+        ]
+      }
+      leagues: {
+        Row: {
+          id: string
+          name: string
+          owner_id: string
+          description: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          owner_id: string
+          description?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          owner_id?: string
+          description?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      league_members: {
+        Row: {
+          id: string
+          league_id: string
+          user_id: string
+          role: 'admin' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          user_id: string
+          role?: 'admin' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          user_id?: string
+          role?: 'admin' | 'member'
+          joined_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'league_members_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+          { foreignKeyName: 'league_members_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] },
+        ]
+      }
+      league_events: {
+        Row: {
+          id: string
+          league_id: string
+          event_id: string
+          added_by: string | null
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          event_id: string
+          added_by?: string | null
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          event_id?: string
+          added_by?: string | null
+          added_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'league_events_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+          { foreignKeyName: 'league_events_event_id_fkey'; columns: ['event_id']; isOneToOne: false; referencedRelation: 'events'; referencedColumns: ['id'] },
+        ]
+      }
+      invites: {
+        Row: {
+          id: string
+          code: string
+          league_id: string
+          created_by: string
+          max_uses: number
+          use_count: number
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          league_id: string
+          created_by: string
+          max_uses?: number
+          use_count?: number
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          league_id?: string
+          created_by?: string
+          max_uses?: number
+          use_count?: number
+          expires_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'invites_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+        ]
+      }
+      picks: {
+        Row: {
+          id: string
+          user_id: string
+          fight_id: string
+          league_id: string
+          event_id: string
+          pick_winner: 'red' | 'blue'
+          pick_method: 'decision' | 'ko_tko' | 'submission'
+          pick_round: number | null
+          points_earned: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          fight_id: string
+          league_id: string
+          event_id: string
+          pick_winner: 'red' | 'blue'
+          pick_method: 'decision' | 'ko_tko' | 'submission'
+          pick_round?: number | null
+          points_earned?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          fight_id?: string
+          league_id?: string
+          event_id?: string
+          pick_winner?: 'red' | 'blue'
+          pick_method?: 'decision' | 'ko_tko' | 'submission'
+          pick_round?: number | null
+          points_earned?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: Record<string, { Row: Record<string, unknown>; Relationships: [] }>
+    Functions: {
+      calculate_pick_points: {
+        Args: {
+          p_pick_winner: string
+          p_pick_method: string
+          p_pick_round: number | null
+          p_result_winner: string
+          p_result_method: string
+          p_result_round: number | null
+        }
+        Returns: number
+      }
+      recalculate_event_picks: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
+    }
+    Enums: Record<string, never>
+  }
+}
