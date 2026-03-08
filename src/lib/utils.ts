@@ -44,3 +44,47 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2)
 }
+
+/**
+ * Check if picks are open for an event.
+ * Picks open at midnight ET on the day of the event and lock at lock_time.
+ */
+export function isPicksOpen(startTime: string, lockTime: string | null): boolean {
+  const now = new Date()
+  // Get event date in ET
+  const eventDate = new Date(startTime)
+  const etFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const nowParts = etFormatter.formatToParts(now)
+  const eventParts = etFormatter.formatToParts(eventDate)
+
+  const getVal = (parts: Intl.DateTimeFormatPart[], type: string) =>
+    parts.find(p => p.type === type)?.value ?? ''
+
+  const nowDateStr = `${getVal(nowParts, 'year')}-${getVal(nowParts, 'month')}-${getVal(nowParts, 'day')}`
+  const eventDateStr = `${getVal(eventParts, 'year')}-${getVal(eventParts, 'month')}-${getVal(eventParts, 'day')}`
+
+  // Picks open on event day (in ET)
+  if (nowDateStr < eventDateStr) return false
+
+  // Check lock time
+  if (lockTime && now >= new Date(lockTime)) return false
+
+  return true
+}
+
+/**
+ * Get a formatted date string for when picks open (event day in ET).
+ */
+export function getPicksOpenDate(startTime: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(startTime))
+}

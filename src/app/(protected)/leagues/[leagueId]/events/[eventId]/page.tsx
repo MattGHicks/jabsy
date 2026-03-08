@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { ChevronLeft, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, isPicksOpen } from '@/lib/utils'
 import { PicksPageClient } from './picks-page-client'
 import { LocalTime } from '@/components/local-time'
 
@@ -55,6 +55,11 @@ export default async function PicksPage({ params }: PageProps) {
     .single()
 
   if (!event) notFound()
+
+  // Block access if picks aren't open yet (before event day in ET)
+  if (event.status === 'upcoming' && !isPicksOpen(event.start_time, event.lock_time)) {
+    redirect(`/leagues/${leagueId}`)
+  }
 
   // Auto-transition upcoming → live when lock_time (= picks lock / event start) has passed
   const lockTrigger = event.lock_time ?? event.start_time

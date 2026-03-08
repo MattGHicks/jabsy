@@ -70,7 +70,7 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role }: 
           <div className="w-full h-full rounded-full bg-[#1e1e1e] border border-[#27272a] flex items-center justify-center overflow-hidden">
             {avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+              <img src={avatarPreview} alt="avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl font-bold text-[#71717a]" style={{ fontFamily: 'var(--font-barlow)' }}>
                 {getInitials(username || 'U')}

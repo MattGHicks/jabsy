@@ -1,10 +1,8 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { Settings, Crown, Users, ExternalLink, ChevronLeft } from 'lucide-react'
+import { Settings, Crown, Users, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { getInitials } from '@/lib/utils'
 import { LeagueTabs } from './league-tabs'
-import { RemoveMemberButton } from './remove-member-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,7 +71,8 @@ export default async function LeaguePage({ params }: PageProps) {
           ? 'live'
           : event.status
       return { ...event, status: effectiveStatus }
-    }) as Array<{
+    })
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()) as Array<{
       id: string; name: string; start_time: string; lock_time: string | null; status: string; venue: string | null
       fights: { id: string; status: string }[]
     }>
@@ -150,6 +149,11 @@ export default async function LeaguePage({ params }: PageProps) {
     .map((uid) => ({ userId: uid, totalPoints: standingsTotals[uid] ?? 0 }))
     .sort((a, b) => b.totalPoints - a.totalPoints)
 
+  // Flatten members for the Members tab
+  const flatMembers = (members ?? [])
+    .map((m) => m.profiles as { id: string; username: string | null; avatar_url: string | null } | null)
+    .filter((p): p is { id: string; username: string | null; avatar_url: string | null } => p !== null)
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       {/* Back */}
@@ -220,107 +224,11 @@ export default async function LeaguePage({ params }: PageProps) {
         standings={standings}
         profilesMap={profilesMap}
         currentUserId={user.id}
+        members={flatMembers}
+        ownerProfile={ownerProfile ? { id: ownerProfile.id, username: ownerProfile.username, avatar_url: ownerProfile.avatar_url } : null}
+        leagueOwnerId={league.owner_id}
+        standingsTotals={standingsTotals}
       />
-
-      {/* Members section */}
-      <div className="mt-10">
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-xs font-semibold text-[#52525b] uppercase tracking-widest flex items-center gap-2">
-            <Users className="w-3.5 h-3.5" />
-            Members
-            <span className="text-[#3f3f46]">·</span>
-            {(members ?? []).filter((m) => (m.profiles as { id: string } | null)?.id !== ownerProfile?.id).length + (ownerProfile ? 1 : 0)}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {/* Owner always first */}
-          {ownerProfile && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#141414] border border-[#e11d48]/15">
-              <div className="w-8 h-8 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/25 flex items-center justify-center overflow-hidden shrink-0">
-                {ownerProfile.avatar_url
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={ownerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
-                  : <span className="text-xs font-bold text-[#e11d48]">{getInitials(ownerProfile.username ?? 'O')}</span>
-                }
-              </div>
-              <div className="flex-1 min-w-0 flex items-center gap-2">
-                <p className="text-sm font-semibold text-[#f4f4f5] truncate">{ownerProfile.username}</p>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
-                  <Crown className="w-2.5 h-2.5" /> Owner
-                </span>
-                {ownerProfile.id === user.id && (
-                  <span className="text-[10px] text-[#52525b]">you</span>
-                )}
-              </div>
-              {(standingsTotals[league.owner_id] ?? 0) > 0 && (
-                <span
-                  className="text-sm font-bold text-[#e11d48] shrink-0"
-                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                >
-                  {standingsTotals[league.owner_id]} <span className="text-[10px] font-normal text-[#52525b]">pts</span>
-                </span>
-              )}
-              <Link
-                href={ownerProfile.id === user.id ? '/profile' : `/profile/${ownerProfile.username ?? ''}`}
-                className="inline-flex items-center gap-1.5 text-[#71717a] hover:text-[#a1a1aa] transition-colors shrink-0 text-xs"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                View profile
-              </Link>
-            </div>
-          )}
-
-          {/* Other members */}
-          {(members ?? [])
-            .filter((m) => (m.profiles as { id: string } | null)?.id !== ownerProfile?.id)
-            .map((m) => {
-              const p = m.profiles as { id: string; username: string | null; avatar_url: string | null } | null
-              if (!p) return null
-              const isMe = p.id === user.id
-              return (
-                <div
-                  key={p.id}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${isMe ? 'bg-[#e11d48]/5 border-[#e11d48]/15' : 'bg-[#141414] border-[#1e1e1e]'}`}
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#27272a] flex items-center justify-center overflow-hidden shrink-0">
-                    {p.avatar_url
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : <span className="text-xs font-bold text-[#71717a]">{getInitials(p.username ?? 'M')}</span>
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[#a1a1aa] truncate">{p.username}</p>
-                    {isMe && <span className="text-[10px] text-[#52525b]">you</span>}
-                  </div>
-                  {(standingsTotals[p.id] ?? 0) > 0 && (
-                    <span
-                      className="text-sm font-bold text-[#a1a1aa] shrink-0"
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                    >
-                      {standingsTotals[p.id]} <span className="text-[10px] font-normal text-[#52525b]">pts</span>
-                    </span>
-                  )}
-                  <Link
-                    href={isMe ? '/profile' : `/profile/${p.username ?? ''}?from=${leagueId}`}
-                    className="inline-flex items-center gap-1.5 text-[#71717a] hover:text-[#a1a1aa] transition-colors shrink-0 text-xs"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    View profile
-                  </Link>
-                  {isOwner && !isMe && (
-                    <RemoveMemberButton
-                      leagueId={leagueId}
-                      memberId={p.id}
-                      username={p.username}
-                    />
-                  )}
-                </div>
-              )
-            })}
-        </div>
-      </div>
     </div>
   )
 }

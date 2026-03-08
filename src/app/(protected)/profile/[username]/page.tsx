@@ -111,7 +111,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
         <div className="w-20 h-20 rounded-full bg-[#1e1e1e] border-2 border-[#27272a] overflow-hidden shrink-0 flex items-center justify-center">
           {profile.avatar_url
             // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={profile.avatar_url} alt={profile.username ?? ''} className="w-full h-full object-cover" />
+            ? <img src={profile.avatar_url} alt={profile.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             : <span className="text-2xl font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
                 {getInitials(profile.username ?? 'U')}
               </span>

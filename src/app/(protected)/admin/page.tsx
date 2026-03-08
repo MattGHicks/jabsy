@@ -1,16 +1,33 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, Calendar, Swords, Users, ShieldCheck, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Calendar, Swords, Users, ShieldCheck, Pencil, Trash2, RefreshCw, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/utils'
 import { deleteEvent, setEventStatus } from '@/actions/admin'
 import { LockCountdown } from '@/components/admin/lock-countdown'
+import type { Json } from '@/types/database'
 
 const STATUS_STYLES: Record<string, string> = {
   upcoming: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   live: 'bg-[#e11d48]/10 text-[#e11d48] border-[#e11d48]/20',
   completed: 'bg-zinc-800 text-zinc-400 border-zinc-700',
   cancelled: 'bg-zinc-900 text-zinc-600 border-zinc-800',
+}
+
+function summarizeAlertDetails(details: Json | null): string {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return 'No details'
+  const d = details as Record<string, unknown>
+
+  if (d.type === 'stuck_events') return `${(d.events as unknown[])?.length ?? 0} event(s) stuck in live status >24h`
+  if (d.type === 'consecutive_failures') return `ESPN ${d.endpoint} endpoint: ${d.count} consecutive failures`
+  if (d.type === 'result_extraction_failed') return `Could not extract result for competition ${d.competition_id}`
+  if (d.type === 'corners_extraction_failed') return `Could not extract fighter corners for competition ${d.competition_id}`
+  if (d.type === 'recalculate_failed') return `Pick recalculation failed: ${d.error}`
+  if (d.type === 'event_not_found') return `ESPN event ${d.espn_event_id} not found in calendar`
+  if (d.warnings) return `${(d.warnings as unknown[]).length} validation warning(s)`
+  if (d.error) return String(d.error).slice(0, 120)
+  if (d.issues) return (d.issues as string[]).join('; ').slice(0, 120)
+  return JSON.stringify(details).slice(0, 120)
 }
 
 export default async function AdminPage() {
@@ -45,6 +62,31 @@ export default async function AdminPage() {
     .select('*, fights(id)')
     .order('start_time', { ascending: false })
 
+  // Recent alerts (last 7 days)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: recentAlerts } = await supabase
+    .from('api_sync_log')
+    .select('*')
+    .in('status', ['error', 'warning'])
+    .gte('created_at', sevenDaysAgo)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // ESPN health status
+  const { data: healthStatus } = await supabase
+    .from('espn_health')
+    .select('*')
+
+  // Count warnings per event for badge display
+  const warningsByEvent = new Map<string, number>()
+  for (const alert of recentAlerts ?? []) {
+    if (alert.event_id) {
+      warningsByEvent.set(alert.event_id, (warningsByEvent.get(alert.event_id) ?? 0) + 1)
+    }
+  }
+
+  const unhealthyEndpoints = (healthStatus ?? []).filter(h => h.consecutive_failures >= 5)
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       {/* Header */}
@@ -61,14 +103,39 @@ export default async function AdminPage() {
             ADMIN DASHBOARD
           </h1>
         </div>
-        <Link
-          href="/admin/events/new"
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Create Event
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/admin/search"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            Search for Events
+          </Link>
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
+            title="Manual create"
+          >
+            <Plus className="w-4 h-4" />
+            Manual
+          </Link>
+        </div>
       </div>
+
+      {/* ESPN Health Banner */}
+      {unhealthyEndpoints.length > 0 && (
+        <div className="mb-6 p-4 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/30 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-[#e11d48] shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-[#e11d48]">ESPN API Issues Detected</p>
+            <p className="text-xs text-[#a1a1aa] mt-0.5">
+              {unhealthyEndpoints.map(h =>
+                `${h.endpoint}: ${h.consecutive_failures} consecutive failures`
+              ).join(' | ')}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
@@ -93,6 +160,45 @@ export default async function AdminPage() {
         ))}
       </div>
 
+      {/* Recent Alerts */}
+      {recentAlerts && recentAlerts.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            Recent Alerts
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              {recentAlerts.length}
+            </span>
+          </h2>
+          <div className="flex flex-col gap-2">
+            {recentAlerts.map(alert => (
+              <div
+                key={alert.id}
+                className={`p-3 rounded-lg border ${
+                  alert.status === 'error'
+                    ? 'bg-[#e11d48]/5 border-[#e11d48]/20'
+                    : 'bg-amber-500/5 border-amber-500/20'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold uppercase tracking-wide ${
+                    alert.status === 'error' ? 'text-[#e11d48]' : 'text-amber-400'
+                  }`}>
+                    {alert.sync_type.replace(/_/g, ' ')} — {alert.status}
+                  </span>
+                  <span className="text-[10px] text-[#52525b]">
+                    {formatDateTime(alert.created_at)}
+                  </span>
+                </div>
+                <p className="text-xs text-[#71717a] mt-1">
+                  {summarizeAlertDetails(alert.details)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Events list */}
       <div>
         <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4">
@@ -109,6 +215,7 @@ export default async function AdminPage() {
         <div className="flex flex-col gap-3">
           {(events ?? []).map((event) => {
             const fightCount = (event.fights as { id: string }[])?.length ?? 0
+            const issueCount = warningsByEvent.get(event.id)
             return (
               <div
                 key={event.id}
@@ -153,13 +260,25 @@ export default async function AdminPage() {
                 </div>
 
                 {/* Event name */}
-                <div>
+                <div className="flex items-center gap-2">
                   <p
                     className="text-xl text-[#f4f4f5] uppercase leading-tight truncate"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
                   >
                     {event.name}
                   </p>
+                  {event.espn_event_id && (
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      Synced
+                    </span>
+                  )}
+                  {issueCount && (
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <AlertTriangle className="w-2.5 h-2.5" />
+                      {issueCount} issue{issueCount > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
 
                 {/* Bottom row: meta info */}
