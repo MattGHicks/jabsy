@@ -200,7 +200,7 @@ export default function LandingPage() {
 
                         {/* VS */}
                         <div className="text-center">
-                          <span className="text-lg font-black text-[#27272a]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>VS</span>
+                          <span className="text-lg font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>VS</span>
                         </div>
 
                         {/* Blue corner */}
@@ -283,7 +283,7 @@ export default function LandingPage() {
                   <div className="text-8xl font-black leading-none mb-3 text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>3</div>
                   <p className="text-[#a1a1aa] text-sm font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>POINTS</p>
                   <p className="text-[#71717a] text-sm">Correct method — KO/TKO, Submission, or Decision</p>
-                  <p className="text-[#3f3f46] text-xs mt-1.5">Requires correct winner</p>
+                  <p className="text-[#52525b] text-xs mt-1.5">Requires correct winner</p>
                 </div>
               </div>
 
@@ -298,7 +298,7 @@ export default function LandingPage() {
                   <div className="text-8xl font-black leading-none mb-3 text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>2</div>
                   <p className="text-[#a1a1aa] text-sm font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>POINTS</p>
                   <p className="text-[#71717a] text-sm">Correct round — KO or Sub finishes only</p>
-                  <p className="text-[#3f3f46] text-xs mt-1.5">Not available for Decision picks</p>
+                  <p className="text-[#52525b] text-xs mt-1.5">Not available for Decision picks</p>
                 </div>
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function LandingPage() {
         <footer className="border-t border-[#141414] py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-lg font-black text-[#e11d48] tracking-wider" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, letterSpacing: '0.08em' }}>JABSY</span>
-            <p className="text-xs text-[#3f3f46]">© {new Date().getFullYear()} Jabsy. Fantasy MMA Picks.</p>
+            <p className="text-xs text-[#52525b]">© {new Date().getFullYear()} Jabsy. Fantasy MMA Picks.</p>
           </div>
         </footer>
       </div>

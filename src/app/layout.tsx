@@ -39,6 +39,16 @@ export const metadata: Metadata = {
     title: 'Jabsy — Fantasy MMA Picks',
     description: 'Make your picks, compete with friends, and prove you know MMA.',
   },
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 }
 
 export default function RootLayout({

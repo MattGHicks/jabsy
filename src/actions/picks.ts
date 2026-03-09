@@ -39,6 +39,17 @@ export async function savePick(formData: FormData): Promise<{ error?: string } |
 
   if (!membership) return { error: 'You are not a member of this league.' }
 
+  // Verify fight exists in this event and is not cancelled
+  const { data: fight } = await supabase
+    .from('fights')
+    .select('id, status')
+    .eq('id', fight_id)
+    .eq('event_id', event_id)
+    .single()
+
+  if (!fight) return { error: 'Fight not found in this event.' }
+  if (fight.status === 'cancelled') return { error: 'This fight has been cancelled.' }
+
   // Upsert pick
   const { error } = await supabase.from('picks').upsert(
     {

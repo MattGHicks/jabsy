@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchCalendar, fetchEventById, extractEventId } from '@/lib/api/espn'
 import { mapEspnEvent, toEventInsert, toFightInsert } from '@/lib/api/sync'
-import { searchUpcomingUFCEvents } from '@/lib/api/claude-search'
+import { searchUpcomingUFCEvents, lookupSherdogUrls } from '@/lib/api/claude-search'
 import type { MappedEvent, MappedFight } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -208,6 +208,33 @@ export async function importEvent(espnEventId: string): Promise<{
         await adminClient.from('events').delete().eq('id', newEvent.id)
         return { success: false, error: `Failed to create fights: ${fightsError.message}` }
       }
+    }
+
+    // Look up exact Sherdog profile URLs (best-effort, non-blocking)
+    try {
+      const allFighterNames = mapped.fights.flatMap(f => [f.redName, f.blueName])
+      const { results: sherdogUrls } = await lookupSherdogUrls(allFighterNames)
+
+      if (Object.keys(sherdogUrls).length > 0) {
+        // Batch update fights with exact Sherdog URLs
+        for (const fight of mapped.fights) {
+          const redUrl = sherdogUrls[fight.redName]
+          const blueUrl = sherdogUrls[fight.blueName]
+          if (redUrl || blueUrl) {
+            const update: Record<string, string> = {}
+            if (redUrl) update.red_sherdog_url = redUrl
+            if (blueUrl) update.blue_sherdog_url = blueUrl
+            await adminClient
+              .from('fights')
+              .update(update)
+              .eq('event_id', newEvent.id)
+              .eq('red_name', fight.redName)
+              .eq('blue_name', fight.blueName)
+          }
+        }
+      }
+    } catch {
+      // Sherdog lookup is best-effort — search URL fallback is already in place
     }
 
     // Log the sync

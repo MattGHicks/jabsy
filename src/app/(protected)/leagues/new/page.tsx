@@ -15,7 +15,7 @@ export default async function NewLeaguePage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profile?.role !== 'admin' && profile?.role !== 'league_owner') redirect('/dashboard')
 
   return (
     <div className="max-w-lg mx-auto px-4 sm:px-6 py-10">
@@ -24,7 +24,7 @@ export default async function NewLeaguePage({ searchParams }: PageProps) {
           <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#3f3f46] uppercase mb-1">Back to</span>
+          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
           <span className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
         </div>
       </Link>

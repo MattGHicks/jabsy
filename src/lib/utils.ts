@@ -36,6 +36,19 @@ export function generateInviteCode(length = 8): string {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
+const NAME_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv'])
+
+/** Extract a short last-name form, handling suffixes like Jr., Sr., III */
+export function getLastName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length <= 1) return fullName
+  const last = parts[parts.length - 1]
+  if (NAME_SUFFIXES.has(last.toLowerCase()) && parts.length > 2) {
+    return parts[parts.length - 2] + ' ' + last
+  }
+  return last
+}
+
 export function getInitials(name: string): string {
   return name
     .split(' ')
@@ -75,6 +88,13 @@ export function isPicksOpen(startTime: string, lockTime: string | null): boolean
   if (lockTime && now >= new Date(lockTime)) return false
 
   return true
+}
+
+/**
+ * Generate a Sherdog fighter profile search URL from a fighter's name.
+ */
+export function sherdogSearchUrl(fighterName: string): string {
+  return `https://www.sherdog.com/stats/fightfinder?SearchTxt=${encodeURIComponent(fighterName)}`
 }
 
 /**

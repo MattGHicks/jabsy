@@ -4,50 +4,50 @@ export const runtime = 'edge'
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
-export default function Icon() {
+export default async function Icon() {
+  // Load a proper heavy weight font
+  const fontData = await fetch(
+    'https://fonts.gstatic.com/s/barlowcondensed/v13/HTxwL3I-JCGChYJ8VI-L6OO_au7B45L0_3E.ttf'
+  ).then((res) => res.arrayBuffer())
+
   return new ImageResponse(
     (
       <div
         style={{
-          background: '#0a0a0a',
+          background: '#e11d48',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: '7px',
-          position: 'relative',
-          overflow: 'hidden',
+          borderRadius: '6px',
         }}
       >
-        {/* Red bottom bar */}
         <div
           style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: '#e11d48',
-            display: 'flex',
-          }}
-        />
-        {/* J lettermark */}
-        <div
-          style={{
-            fontSize: 22,
+            fontSize: 28,
+            fontFamily: 'Barlow Condensed',
             fontWeight: 900,
-            color: '#f4f4f5',
-            fontFamily: 'sans-serif',
+            color: '#0a0a0a',
             lineHeight: 1,
-            marginBottom: 3,
             display: 'flex',
+            marginTop: -2,
           }}
         >
           J
         </div>
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: [
+        {
+          name: 'Barlow Condensed',
+          data: fontData,
+          weight: 900,
+          style: 'normal',
+        },
+      ],
+    }
   )
 }

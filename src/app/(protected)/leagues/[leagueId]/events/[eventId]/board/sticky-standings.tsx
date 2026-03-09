@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { cn, getInitials } from '@/lib/utils'
-import { Crown } from 'lucide-react'
+import { Crown, ChevronRight } from 'lucide-react'
 
 interface StandingEntry {
   uid: string
@@ -17,9 +18,10 @@ interface StickyStandingsProps {
   maxPts: number
   isLive: boolean
   isCompleted: boolean
+  leagueId: string
 }
 
-export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, isCompleted }: StickyStandingsProps) {
+export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, isCompleted, leagueId }: StickyStandingsProps) {
   const [isSticky, setIsSticky] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -40,19 +42,25 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
           const rank = idx + 1
           const isFirst = rank === 1
           const barPct = maxPts > 0 ? Math.round((totalPts / maxPts) * 100) : 0
+          const profileHref = isMe
+            ? '/profile'
+            : profile?.username
+            ? `/profile/${encodeURIComponent(profile.username)}?from=${leagueId}`
+            : '#'
 
           return (
-            <div
+            <Link
               key={uid}
+              href={profileHref}
               className={cn(
-                'relative flex items-center gap-3 px-4 py-3.5 rounded-xl border overflow-hidden',
+                'group relative flex items-center gap-3 px-4 py-3.5 rounded-xl border overflow-hidden transition-colors',
                 isFirst && isMe
-                  ? 'bg-[#e11d48]/5 border-[#e11d48]/25'
+                  ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
                   : isFirst
-                  ? 'bg-yellow-500/[0.04] border-yellow-500/20'
+                  ? 'bg-yellow-500/[0.04] border-yellow-500/20 hover:bg-yellow-500/[0.07]'
                   : isMe
-                  ? 'bg-[#e11d48]/5 border-[#e11d48]/20'
-                  : 'bg-[#0f0f0f] border-[#1a1a1a]'
+                  ? 'bg-[#e11d48]/5 border-[#e11d48]/20 hover:bg-[#e11d48]/8'
+                  : 'bg-[#0f0f0f] border-[#1a1a1a] hover:bg-[#131313] hover:border-[#222]'
               )}
             >
               {/* Watermark rank */}
@@ -92,7 +100,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                   </span>
                 ) : (
                   <span
-                    className="text-sm text-[#3f3f46]"
+                    className="text-sm text-[#52525b]"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
                   >
                     {rank}
@@ -132,17 +140,15 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                 <div className="flex items-center gap-2 mb-2">
                   <span
                     className={cn(
-                      'text-sm font-bold truncate',
+                      'text-sm font-bold truncate group-hover:underline decoration-1 underline-offset-2',
                       isMe ? 'text-[#e11d48]' : isFirst ? 'text-yellow-200' : 'text-[#e4e4e7]'
                     )}
                   >
                     {profile?.username ?? 'Unknown'}
                   </span>
-                  {isMe && (
-                    <span className="text-[9px] text-[#e11d48]/40 font-bold uppercase tracking-wider shrink-0">
-                      you
-                    </span>
-                  )}
+                  <span className="text-[9px] text-[#52525b] group-hover:text-[#71717a] transition-colors shrink-0">
+                    View profile
+                  </span>
                 </div>
                 <div
                   className="h-1.5 rounded-full overflow-hidden"
@@ -162,20 +168,23 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                 </div>
               </div>
 
-              {/* Points */}
-              <div className="shrink-0 text-right relative z-10">
-                <span
-                  className={cn(
-                    'tabular-nums leading-none',
-                    isFirst ? 'text-yellow-400' : isMe ? 'text-[#e11d48]' : 'text-[#f4f4f5]'
-                  )}
-                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.7rem', lineHeight: 1 }}
-                >
-                  {totalPts}
-                </span>
-                <span className="block text-[9px] text-[#52525b] mt-0.5 tracking-wider">PTS</span>
+              {/* Points + chevron */}
+              <div className="shrink-0 flex items-center gap-2 relative z-10">
+                <div className="text-right">
+                  <span
+                    className={cn(
+                      'tabular-nums leading-none',
+                      isFirst ? 'text-yellow-400' : isMe ? 'text-[#e11d48]' : 'text-[#f4f4f5]'
+                    )}
+                    style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.7rem', lineHeight: 1 }}
+                  >
+                    {totalPts}
+                  </span>
+                  <span className="block text-[9px] text-[#52525b] mt-0.5 tracking-wider">PTS</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#3f3f46] group-hover:text-[#52525b] transition-colors" />
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>
@@ -248,7 +257,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                       <span
                         className={cn(
                           'tabular-nums w-4 text-center leading-none',
-                          isFirst ? 'text-yellow-500' : 'text-[#3f3f46]'
+                          isFirst ? 'text-yellow-500' : 'text-[#52525b]'
                         )}
                         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '0.75rem' }}
                       >
