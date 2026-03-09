@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { Trophy, Users, Target, ChevronRight, Zap, Shield, Clock } from 'lucide-react'
+import { StaleAuthCleaner } from '@/components/stale-auth-cleaner'
 
 export default function LandingPage() {
   return (
     <>
+      <StaleAuthCleaner />
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(32px); }
