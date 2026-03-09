@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, User, LogOut, X, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, User, LogOut, X, ShieldCheck, ChevronDown, Menu } from 'lucide-react'
 import { signOut } from '@/actions/auth'
 import { cn, getInitials } from '@/lib/utils'
 import type { Profile } from '@/types'
@@ -78,7 +78,7 @@ export function NavBar({ user }: NavBarProps) {
             <div className="relative hidden md:block">
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
-                className="flex items-center gap-2 h-9 pl-1 pr-3 rounded-md hover:bg-[#141414] transition-colors cursor-pointer"
+                className="group flex items-center gap-2 h-9 pl-1 pr-2.5 rounded-full hover:bg-[#141414] border border-transparent hover:border-[#1e1e1e] transition-all duration-200 cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-full bg-[#e11d48]/20 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden">
                   {user.avatar_url ? (
@@ -88,7 +88,11 @@ export function NavBar({ user }: NavBarProps) {
                     <span className="text-[10px] font-bold text-[#e11d48]">{initials}</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-[#a1a1aa]">{user.username}</span>
+                <span className="text-sm font-medium text-[#a1a1aa] group-hover:text-[#f4f4f5] transition-colors">{user.username}</span>
+                <ChevronDown className={cn(
+                  'w-3 h-3 text-[#52525b] group-hover:text-[#71717a] transition-all duration-200',
+                  userMenuOpen && 'rotate-180'
+                )} />
               </button>
               {userMenuOpen && (
                 <>
@@ -117,20 +121,23 @@ export function NavBar({ user }: NavBarProps) {
               )}
             </div>
 
-            {/* Mobile: avatar trigger */}
+            {/* Mobile: hamburger + avatar */}
             <button
               onClick={() => setMenuOpen(true)}
-              className="md:hidden relative w-9 h-9 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden active:scale-95 transition-transform cursor-pointer"
+              className="md:hidden flex items-center gap-2 h-9 pl-1.5 pr-2.5 rounded-full bg-[#141414] border border-[#1e1e1e] active:scale-95 transition-transform duration-150 cursor-pointer"
               aria-label="Open menu"
             >
-              {user.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-[11px] font-bold text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                  {initials}
-                </span>
-              )}
+              <div className="w-7 h-7 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden shrink-0">
+                {user.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] font-bold text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    {initials}
+                  </span>
+                )}
+              </div>
+              <Menu className="w-4 h-4 text-[#71717a]" />
             </button>
           </div>
         </div>

@@ -60,7 +60,7 @@ export default async function AdminPage() {
   const { data: events } = await supabase
     .from('events')
     .select('*, fights(id)')
-    .order('start_time', { ascending: false })
+    .order('start_time', { ascending: true })
 
   // Recent alerts (last 7 days)
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -200,109 +200,137 @@ export default async function AdminPage() {
       )}
 
       {/* Events list */}
-      <div>
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4">
-          Events
-        </h2>
+      {(() => {
+        const activeEvents = (events ?? []).filter(e => e.status === 'upcoming' || e.status === 'live')
+        const completedEvents = (events ?? []).filter(e => e.status === 'completed' || e.status === 'cancelled')
 
-        {(!events || events.length === 0) && (
-          <div className="flex flex-col items-center py-16 text-center">
-            <Calendar className="w-8 h-8 text-[#52525b] mb-3" />
-            <p className="text-sm text-[#71717a]">No events yet. Create one to get started.</p>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {(events ?? []).map((event) => {
-            const fightCount = (event.fights as { id: string }[])?.length ?? 0
-            const issueCount = warningsByEvent.get(event.id)
-            return (
-              <div
-                key={event.id}
-                className="flex flex-col gap-4 p-5 rounded-xl bg-[#141414] border border-[#1e1e1e] hover:border-[#27272a] transition-colors"
-              >
-                {/* Top row: status badge + action buttons */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border capitalize ${STATUS_STYLES[event.status] ?? STATUS_STYLES.upcoming}`}>
-                    {event.status === 'live' && (
-                      <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse inline-block" />
-                    )}
-                    {event.status}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Link
-                      href={`/admin/events/${event.id}`}
-                      className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-xs font-semibold border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
-                    >
-                      <Swords className="w-3.5 h-3.5" />
-                      Manage Fights
-                    </Link>
-                    <Link
-                      href={`/admin/events/${event.id}/edit`}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-md text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#1e1e1e] border border-transparent hover:border-[#27272a] transition-colors"
-                      title="Edit event"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Link>
-                    <form action={async () => {
-                      'use server'
-                      await deleteEvent(event.id)
-                    }}>
-                      <button
-                        type="submit"
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-md text-[#52525b] hover:text-[#e11d48] hover:bg-[#e11d48]/5 border border-transparent hover:border-[#e11d48]/20 transition-colors cursor-pointer"
-                        title="Delete event"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </form>
-                  </div>
+        const renderEventCard = (event: typeof activeEvents[number]) => {
+          const fightCount = (event.fights as { id: string }[])?.length ?? 0
+          const issueCount = warningsByEvent.get(event.id)
+          return (
+            <div
+              key={event.id}
+              className="flex flex-col gap-4 p-5 rounded-xl bg-[#141414] border border-[#1e1e1e] hover:border-[#27272a] transition-colors"
+            >
+              {/* Top row: status badge + action buttons */}
+              <div className="flex items-center justify-between gap-3">
+                <div className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border capitalize ${STATUS_STYLES[event.status] ?? STATUS_STYLES.upcoming}`}>
+                  {event.status === 'live' && (
+                    <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse inline-block" />
+                  )}
+                  {event.status}
                 </div>
-
-                {/* Event name */}
-                <div className="flex items-center gap-2">
-                  <p
-                    className="text-xl text-[#f4f4f5] uppercase leading-tight truncate"
-                    style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                <div className="flex items-center gap-1 shrink-0">
+                  <Link
+                    href={`/admin/events/${event.id}`}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-xs font-semibold border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
                   >
-                    {event.name}
-                  </p>
-                  {event.espn_event_id && (
-                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <RefreshCw className="w-2.5 h-2.5" />
-                      Synced
-                    </span>
-                  )}
-                  {issueCount && (
-                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      <AlertTriangle className="w-2.5 h-2.5" />
-                      {issueCount} issue{issueCount > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-
-                {/* Bottom row: meta info */}
-                <div className="pt-3 border-t border-[#1e1e1e] flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-[#71717a]">
-                    {formatDateTime(event.start_time)}
-                    <span className="mx-1.5 text-[#333]">·</span>
-                    {fightCount} {fightCount === 1 ? 'fight' : 'fights'}
-                    {event.venue && (
-                      <>
-                        <span className="mx-1.5 text-[#333]">·</span>
-                        {event.venue}
-                      </>
-                    )}
-                  </p>
-                  <span className="text-xs">
-                    <LockCountdown lockTime={(event as { lock_time?: string | null }).lock_time ?? null} />
-                  </span>
+                    <Swords className="w-3.5 h-3.5" />
+                    Manage Fights
+                  </Link>
+                  <Link
+                    href={`/admin/events/${event.id}/edit`}
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-md text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#1e1e1e] border border-transparent hover:border-[#27272a] transition-colors"
+                    title="Edit event"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Link>
+                  <form action={async () => {
+                    'use server'
+                    await deleteEvent(event.id)
+                  }}>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-md text-[#52525b] hover:text-[#e11d48] hover:bg-[#e11d48]/5 border border-transparent hover:border-[#e11d48]/20 transition-colors cursor-pointer"
+                      title="Delete event"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      </div>
+
+              {/* Event name */}
+              <div className="flex items-center gap-2">
+                <p
+                  className="text-xl text-[#f4f4f5] uppercase leading-tight truncate"
+                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                >
+                  {event.name}
+                </p>
+                {event.espn_event_id && (
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <RefreshCw className="w-2.5 h-2.5" />
+                    Synced
+                  </span>
+                )}
+                {issueCount && (
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    {issueCount} issue{issueCount > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              {/* Bottom row: meta info */}
+              <div className="pt-3 border-t border-[#1e1e1e] flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-[#71717a]">
+                  {formatDateTime(event.start_time)}
+                  <span className="mx-1.5 text-[#333]">·</span>
+                  {fightCount} {fightCount === 1 ? 'fight' : 'fights'}
+                  {event.venue && (
+                    <>
+                      <span className="mx-1.5 text-[#333]">·</span>
+                      {event.venue}
+                    </>
+                  )}
+                </p>
+                <span className="text-xs">
+                  <LockCountdown lockTime={(event as { lock_time?: string | null }).lock_time ?? null} />
+                </span>
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <>
+            {/* Upcoming / Live Events */}
+            <div>
+              <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4">
+                Upcoming Events
+              </h2>
+
+              {activeEvents.length === 0 && (
+                <div className="flex flex-col items-center py-16 text-center">
+                  <Calendar className="w-8 h-8 text-[#52525b] mb-3" />
+                  <p className="text-sm text-[#71717a]">No upcoming events. Search for one to get started.</p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3">
+                {activeEvents.map(renderEventCard)}
+              </div>
+            </div>
+
+            {/* Completed / Cancelled Events */}
+            {completedEvents.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-sm font-semibold text-[#52525b] uppercase tracking-widest mb-4">
+                  Completed
+                  <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-500 border border-zinc-700">
+                    {completedEvents.length}
+                  </span>
+                </h2>
+
+                <div className="flex flex-col gap-2">
+                  {completedEvents.map(renderEventCard)}
+                </div>
+              </div>
+            )}
+          </>
+        )
+      })()}
     </div>
   )
 }
