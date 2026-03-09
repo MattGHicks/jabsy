@@ -58,7 +58,7 @@ export default async function DashboardPage() {
 
   let memberCounts: Record<string, number> = {}
   let eventCounts: Record<string, number> = {}
-  let nextEvents: Record<string, { name: string; start_time: string }> = {}
+  let nextEvents: Record<string, { id: string; name: string; start_time: string }> = {}
 
   if (leagueIds.length > 0) {
     const [membersRes, leagueEventsRes, upcomingEventsRes] = await Promise.all([
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
     for (const le of upcomingEventsRes.data ?? []) {
       const ev = le.events as { id: string; name: string; start_time: string; status: string } | null
       if (ev && ev.status === 'upcoming' && !nextEvents[le.league_id]) {
-        nextEvents[le.league_id] = { name: ev.name, start_time: ev.start_time }
+        nextEvents[le.league_id] = { id: ev.id, name: ev.name, start_time: ev.start_time }
       }
     }
   }
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
     const league = l as { id: string; name: string }
     leagueNameMap[league.id] = league.name
   }
-  let globalNextEvent: { name: string; start_time: string; league_name: string; league_id: string } | null = null
+  let globalNextEvent: { id: string; name: string; start_time: string; league_name: string; league_id: string } | null = null
   for (const [lid, ev] of Object.entries(nextEvents)) {
     if (!globalNextEvent || new Date(ev.start_time) < new Date(globalNextEvent.start_time)) {
       globalNextEvent = { ...ev, league_name: leagueNameMap[lid] ?? '', league_id: lid }
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
       {globalNextEvent && (
         <section className="mb-10">
           <Link
-            href={`/leagues/${globalNextEvent.league_id}`}
+            href={`/leagues/${globalNextEvent.league_id}/events/${globalNextEvent.id}/board`}
             className="group flex items-center gap-4 p-5 rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99]"
           >
             <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
