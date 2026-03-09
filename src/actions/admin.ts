@@ -177,11 +177,16 @@ export async function saveResult(data: {
 }): Promise<{ success: boolean; error?: string }> {
   const { supabase } = await requireAdmin()
 
+  // For draw/nc methods, auto-set the winner field
+  const effectiveWinner = data.result_method === 'draw' ? 'draw'
+    : data.result_method === 'nc' ? 'nc'
+    : data.result_winner
+
   const { error } = await supabase
     .from('fights')
     .update({
-      result_winner: data.result_winner as 'red' | 'blue' | 'draw' | 'nc',
-      result_method: data.result_method as 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc',
+      result_winner: effectiveWinner as 'red' | 'blue' | 'draw' | 'nc',
+      result_method: data.result_method as 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null,
       result_round: data.result_round,
       status: 'final' as const,
     })
@@ -216,6 +221,29 @@ export async function saveResult(data: {
   return { success: true }
 }
 
+export async function clearResult(fightId: string, eventId: string): Promise<{ success: boolean; error?: string }> {
+  const { supabase } = await requireAdmin()
+
+  const { error } = await supabase
+    .from('fights')
+    .update({
+      result_winner: null,
+      result_method: null,
+      result_round: null,
+      status: 'scheduled' as const,
+    })
+    .eq('id', fightId)
+
+  if (error) return { success: false, error: error.message }
+
+  const adminClient = createAdminClient()
+  await adminClient.rpc('recalculate_event_picks', { p_event_id: eventId })
+
+  revalidatePath('/leagues', 'layout')
+
+  return { success: true }
+}
+
 export async function reorderFights(eventId: string, orderedIds: string[]): Promise<void> {
   const { supabase } = await requireAdmin()
   await Promise.all(
@@ -237,4 +265,99 @@ export async function setEventStatus(eventId: string, status: 'upcoming' | 'live
   await supabase.from('events').update({ status }).eq('id', eventId)
   revalidatePath('/admin')
   revalidatePath(`/admin/events/${eventId}`)
+}
+
+/**
+ * Backfill Sherdog URLs for fights that still have search-style URLs.
+ * Calls Claude API with web search to find exact profile URLs.
+ */
+export async function backfillSherdogUrls(): Promise<{ success: boolean; updated: number; remaining: number; error?: string }> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+
+  // Get all fights with search URLs
+  const { data: fights, error: fetchError } = await adminClient
+    .from('fights')
+    .select('id, red_name, red_sherdog_url, blue_name, blue_sherdog_url, event_id')
+    .or('red_sherdog_url.like.%fightfinder%,blue_sherdog_url.like.%fightfinder%')
+
+  if (fetchError || !fights) {
+    return { success: false, updated: 0, remaining: 0, error: fetchError?.message ?? 'Failed to fetch fights' }
+  }
+
+  if (fights.length === 0) {
+    return { success: true, updated: 0, remaining: 0 }
+  }
+
+  // Dynamically import to avoid issues when key isn't present
+  const { lookupSherdogUrls, lookupSherdogUrlsWithAI } = await import('@/lib/api/claude-search')
+
+  // Collect all unique fighter names needing lookup
+  const allNamesNeeding = new Set<string>()
+  for (const f of fights) {
+    if (f.red_sherdog_url?.includes('fightfinder')) allNamesNeeding.add(f.red_name)
+    if (f.blue_sherdog_url?.includes('fightfinder')) allNamesNeeding.add(f.blue_name)
+  }
+
+  let totalUpdated = 0
+  const errors: string[] = []
+
+  // Step 1: Try direct scraping first
+  let urls: Record<string, string> = {}
+  try {
+    const scraperResult = await lookupSherdogUrls([...allNamesNeeding])
+    urls = scraperResult.results
+    const scraperFound = Object.keys(urls).length
+    errors.push(`Scraper: found ${scraperFound}/${allNamesNeeding.size}`)
+    if (scraperResult.errors.length > 0) {
+      errors.push(`Scraper issues: ${scraperResult.errors.slice(0, 5).join(', ')}`)
+    }
+  } catch (err) {
+    errors.push(`Scraper error: ${String(err).slice(0, 100)}`)
+  }
+
+  // Step 2: Use Claude AI for any fighters the scraper missed
+  const stillMissing = [...allNamesNeeding].filter(name => !urls[name])
+  if (stillMissing.length > 0) {
+    try {
+      const aiUrls = await lookupSherdogUrlsWithAI(stillMissing)
+      const aiFound = Object.keys(aiUrls).length
+      errors.push(`AI fallback: found ${aiFound}/${stillMissing.length}`)
+      Object.assign(urls, aiUrls)
+    } catch (err) {
+      errors.push(`AI fallback error: ${String(err).slice(0, 150)}`)
+    }
+  }
+
+  // Step 3: Update all fights with resolved URLs
+  for (const fight of fights) {
+    const update: Record<string, string> = {}
+    if (fight.red_sherdog_url?.includes('fightfinder') && urls[fight.red_name]) {
+      update.red_sherdog_url = urls[fight.red_name]
+    }
+    if (fight.blue_sherdog_url?.includes('fightfinder') && urls[fight.blue_name]) {
+      update.blue_sherdog_url = urls[fight.blue_name]
+    }
+
+    if (Object.keys(update).length > 0) {
+      await adminClient.from('fights').update(update).eq('id', fight.id)
+      totalUpdated++
+    }
+  }
+
+  // Count remaining
+  const { count } = await adminClient
+    .from('fights')
+    .select('id', { count: 'exact', head: true })
+    .or('red_sherdog_url.like.%fightfinder%,blue_sherdog_url.like.%fightfinder%')
+
+  revalidatePath('/admin', 'layout')
+  revalidatePath('/leagues', 'layout')
+
+  return {
+    success: true,
+    updated: totalUpdated,
+    remaining: count ?? 0,
+    error: errors.length > 0 ? errors.join('; ') : undefined,
+  }
 }

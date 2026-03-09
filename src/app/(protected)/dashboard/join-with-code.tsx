@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Hash, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { Ticket, Loader2, ArrowRight } from 'lucide-react'
 import { joinViaInvite } from '@/actions/invites'
 
 export function JoinWithCode() {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   function handleJoin() {
     const trimmed = code.trim().toUpperCase()
@@ -31,43 +31,47 @@ export function JoinWithCode() {
     if (e.key === 'Enter') handleJoin()
   }
 
-  return (
-    <div className="mt-6 flex flex-col items-center">
-      <button
-        onClick={() => { setOpen((o) => !o); setError(null) }}
-        className="inline-flex items-center gap-1.5 text-xs text-[#52525b] hover:text-[#71717a] transition-colors cursor-pointer"
-      >
-        <Hash className="w-3.5 h-3.5" />
-        Have an invite code?
-        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
+  const hasCode = code.trim().length > 0
 
-      {open && (
-        <div className="mt-3 w-full max-w-xs">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter code (e.g. AB12CD34)"
-              maxLength={8}
-              disabled={isPending}
-              className="flex-1 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-sm text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#e11d48]/50 font-mono tracking-widest uppercase disabled:opacity-50"
-            />
+  return (
+    <div className="flex items-center gap-4 p-5 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+      {/* Icon */}
+      <div className="w-11 h-11 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] flex items-center justify-center shrink-0">
+        <Ticket className="w-5 h-5 text-[#52525b]" />
+      </div>
+
+      {/* Label + input */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-2">Join a League</p>
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={code}
+            onChange={(e) => { setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setError(null) }}
+            onKeyDown={handleKeyDown}
+            placeholder="ENTER CODE"
+            maxLength={8}
+            disabled={isPending}
+            className="w-full h-9 pl-3 pr-10 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#27272a] font-mono tracking-[0.2em] uppercase disabled:opacity-50 transition-colors"
+          />
+          {hasCode && (
             <button
               onClick={handleJoin}
-              disabled={isPending || code.trim().length === 0}
-              className="h-9 px-4 rounded-lg bg-[#e11d48] text-white text-xs font-semibold hover:bg-[#be123c] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+              disabled={isPending}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-[#e11d48] flex items-center justify-center hover:bg-[#be123c] transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Join'}
+              {isPending
+                ? <Loader2 className="w-3 h-3 text-white animate-spin" />
+                : <ArrowRight className="w-3 h-3 text-white" />
+              }
             </button>
-          </div>
-          {error && (
-            <p className="mt-2 text-xs text-[#e11d48] text-center">{error}</p>
           )}
         </div>
-      )}
+        {error && (
+          <p className="text-[11px] text-[#e11d48] mt-2">{error}</p>
+        )}
+      </div>
     </div>
   )
 }

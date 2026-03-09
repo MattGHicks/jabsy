@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchEventById } from '@/lib/api/espn'
 import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
-import { validateEventData } from '@/lib/api/claude-search'
+import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI } from '@/lib/api/claude-search'
 import type { ValidationWarning } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -132,10 +132,65 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Update event sync time
+        // Resolve any search-style Sherdog URLs to exact profile URLs
+        try {
+          const { data: fightsNeedingUrls } = await adminClient
+            .from('fights')
+            .select('id, red_name, red_sherdog_url, blue_name, blue_sherdog_url')
+            .eq('event_id', event.id)
+            .or('red_sherdog_url.like.%fightfinder%,blue_sherdog_url.like.%fightfinder%')
+
+          if (fightsNeedingUrls && fightsNeedingUrls.length > 0) {
+            const namesNeeding = new Set<string>()
+            for (const f of fightsNeedingUrls) {
+              if (f.red_sherdog_url?.includes('fightfinder')) namesNeeding.add(f.red_name)
+              if (f.blue_sherdog_url?.includes('fightfinder')) namesNeeding.add(f.blue_name)
+            }
+
+            const { results: sherdogUrls } = await lookupSherdogUrls([...namesNeeding])
+
+            // AI fallback for fighters the scraper missed (name mismatches, special chars)
+            const stillMissing = [...namesNeeding].filter(name => !sherdogUrls[name])
+            if (stillMissing.length > 0) {
+              try {
+                const aiUrls = await lookupSherdogUrlsWithAI(stillMissing)
+                Object.assign(sherdogUrls, aiUrls)
+              } catch {
+                // AI fallback is best-effort
+              }
+            }
+
+            for (const fight of fightsNeedingUrls) {
+              const update: Record<string, string> = {}
+              if (fight.red_sherdog_url?.includes('fightfinder') && sherdogUrls[fight.red_name]) {
+                update.red_sherdog_url = sherdogUrls[fight.red_name]
+              }
+              if (fight.blue_sherdog_url?.includes('fightfinder') && sherdogUrls[fight.blue_name]) {
+                update.blue_sherdog_url = sherdogUrls[fight.blue_name]
+              }
+              if (Object.keys(update).length > 0) {
+                await adminClient.from('fights').update(update).eq('id', fight.id)
+              }
+            }
+          }
+        } catch {
+          // Sherdog lookup is best-effort
+        }
+
+        // Update event metadata (start time, name, venue may change if fights are cancelled/rescheduled)
+        const eventUpdate: Record<string, string | null> = {
+          last_synced_at: new Date().toISOString(),
+          name: mapped.name,
+          venue: mapped.venue,
+        }
+        if (mapped.startTime !== event.start_time) {
+          eventUpdate.start_time = mapped.startTime
+          // Keep lock_time in sync with start_time
+          eventUpdate.lock_time = mapped.startTime
+        }
         await adminClient
           .from('events')
-          .update({ last_synced_at: new Date().toISOString() })
+          .update(eventUpdate)
           .eq('id', event.id)
 
         results.push({ eventId: event.id, name: event.name, ...changes, warnings: eventWarnings.length })

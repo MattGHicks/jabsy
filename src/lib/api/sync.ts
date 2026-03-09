@@ -1,5 +1,6 @@
 import type { EspnEvent, EspnCompetition, MappedEvent, MappedFight, ValidationWarning, ValidatedResult } from './types'
 import { getCorners, getResultMethod, mapFightStatus } from './espn'
+import { sherdogSearchUrl } from '@/lib/utils'
 import type { Database } from '@/types/database'
 
 type EventInsert = Database['public']['Tables']['events']['Insert']
@@ -126,8 +127,10 @@ export function toFightInsert(mapped: MappedFight, eventId: string): FightInsert
     event_id: eventId,
     red_name: mapped.redName,
     red_record: mapped.redRecord,
+    red_sherdog_url: sherdogSearchUrl(mapped.redName),
     blue_name: mapped.blueName,
     blue_record: mapped.blueRecord,
+    blue_sherdog_url: sherdogSearchUrl(mapped.blueName),
     weight_class: mapped.weightClass,
     scheduled_rounds: mapped.scheduledRounds,
     is_main_event: mapped.isMainEvent,

@@ -93,7 +93,7 @@ export interface Database {
           blue_sherdog_url: string | null
           status: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
           result_winner: 'red' | 'blue' | 'draw' | 'nc' | null
-          result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round: number | null
           espn_competition_id: string | null
           sync_status: 'synced' | 'modified' | 'manual'
@@ -118,7 +118,7 @@ export interface Database {
           blue_sherdog_url?: string | null
           status?: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
-          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
           espn_competition_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
@@ -143,7 +143,7 @@ export interface Database {
           blue_sherdog_url?: string | null
           status?: 'scheduled' | 'live' | 'final' | 'cancelled' | 'no_contest'
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
-          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+          result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
           espn_competition_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'

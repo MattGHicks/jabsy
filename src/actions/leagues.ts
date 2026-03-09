@@ -14,6 +14,12 @@ async function getAuthUser() {
 export async function createLeague(formData: FormData) {
   const { supabase, user } = await getAuthUser()
 
+  // Only admin and league_owner can create leagues
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin' && profile?.role !== 'league_owner') {
+    redirect('/dashboard')
+  }
+
   const name = (formData.get('name') as string)?.trim()
   const description = (formData.get('description') as string)?.trim() || null
 
@@ -35,43 +41,58 @@ export async function createLeague(formData: FormData) {
     role: 'admin',
   })
 
-  // Update role to league_owner if currently 'player'
-  await supabase
-    .from('profiles')
-    .update({ role: 'league_owner' })
-    .eq('id', user.id)
-    .eq('role', 'player')
-
   revalidatePath('/dashboard')
   redirect(`/leagues/${league.id}`)
 }
 
-export async function updateLeague(formData: FormData) {
+export async function updateLeague(formData: FormData): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
 
   const id = formData.get('id') as string
   const name = (formData.get('name') as string)?.trim()
   const description = (formData.get('description') as string)?.trim() || null
 
-  // Verify ownership
+  if (!name) return { error: 'League name is required' }
+
+  // Verify ownership or admin membership
   const { data: league } = await supabase
     .from('leagues')
     .select('owner_id')
     .eq('id', id)
     .single()
 
-  if (league?.owner_id !== user.id) redirect(`/leagues/${id}/settings?error=Not+authorized`)
+  if (league?.owner_id !== user.id) return { error: 'Not authorized' }
+
+  // Handle avatar upload
+  let avatarUrl: string | undefined
+  const avatarFile = formData.get('avatar') as File | null
+  if (avatarFile && avatarFile.size > 0) {
+    const fileExt = avatarFile.name.split('.').pop()
+    const filePath = `${user.id}/league-${id}.${fileExt}`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, avatarFile, { upsert: true })
+    if (uploadError) {
+      return { error: `Logo upload failed: ${uploadError.message}` }
+    }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    avatarUrl = urlData.publicUrl
+  }
+
+  const updateData: { name: string; description: string | null; avatar_url?: string } = { name, description }
+  if (avatarUrl) updateData.avatar_url = avatarUrl
 
   const { error } = await supabase
     .from('leagues')
-    .update({ name, description })
+    .update(updateData)
     .eq('id', id)
 
-  if (error) redirect(`/leagues/${id}/settings?error=${encodeURIComponent(error.message)}`)
+  if (error) return { error: error.message }
 
   revalidatePath(`/leagues/${id}`)
   revalidatePath(`/leagues/${id}/settings`)
-  redirect(`/leagues/${id}/settings`)
+  revalidatePath('/dashboard')
+  return {}
 }
 
 export async function deleteLeague(id: string) {

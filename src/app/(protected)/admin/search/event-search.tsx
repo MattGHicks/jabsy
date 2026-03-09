@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Loader2, CheckCircle2, ChevronDown, ChevronUp, MapPin, Calendar, Swords, Star, AlertCircle } from 'lucide-react'
+import { Search, Loader2, CheckCircle2, ChevronDown, ChevronUp, Star, AlertCircle } from 'lucide-react'
 import { searchForEvents, importEvent } from '@/actions/sync'
+import { cn } from '@/lib/utils'
 import type { MappedEvent, MappedFight } from '@/lib/api/types'
 
 export function EventSearch() {
@@ -29,7 +30,6 @@ export function EventSearch() {
       setSource(result.source)
       if (result.error) setError(result.error)
 
-      // Track already-imported events
       const imported = new Set(
         result.events.filter(e => e.alreadyImported).map(e => e.espnEventId)
       )
@@ -106,7 +106,7 @@ export function EventSearch() {
         <p className="text-sm text-[#a1a1aa] mb-4">{error}</p>
         <button
           onClick={loadEvents}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#1e1e1e] border border-[#27272a] text-sm text-[#a1a1aa] hover:text-[#f4f4f5] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-sm text-[#a1a1aa] hover:text-[#f4f4f5] transition-colors cursor-pointer"
         >
           <Search className="w-4 h-4" />
           Try Again
@@ -119,8 +119,11 @@ export function EventSearch() {
     <div>
       {/* Source indicator */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-xs text-[#52525b]">
-          Found {events.length} upcoming events via {source === 'espn' ? 'ESPN' : source === 'claude' ? 'Claude AI' : 'multiple sources'}
+        <p className="text-[10px] font-bold text-[#52525b] uppercase tracking-widest">
+          {events.length} events found
+          <span className="ml-1.5 font-normal normal-case text-[#3f3f46]">
+            via {source === 'espn' ? 'ESPN' : source === 'claude' ? 'Claude AI' : 'multiple sources'}
+          </span>
         </p>
         <button
           onClick={loadEvents}
@@ -132,13 +135,13 @@ export function EventSearch() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-[#e11d48]/5 border border-[#e11d48]/20 text-sm text-[#e11d48]">
+        <div className="mb-6 p-4 rounded-xl bg-[#e11d48]/5 border border-[#e11d48]/20 text-sm text-[#e11d48]">
           {error}
         </div>
       )}
 
       {/* Event cards */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {events.map((event) => {
           const isExpanded = expandedEvent === event.espnEventId
           const isImported = importedIds.has(event.espnEventId)
@@ -147,56 +150,33 @@ export function EventSearch() {
           return (
             <div
               key={event.espnEventId}
-              className={`rounded-xl border transition-colors ${
+              className={cn(
+                'rounded-xl border transition-colors',
                 isImported
                   ? 'bg-[#111111] border-emerald-500/20'
-                  : 'bg-[#141414] border-[#1e1e1e] hover:border-[#27272a]'
-              }`}
+                  : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a]'
+              )}
             >
-              {/* Event header */}
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-[#e11d48] bg-[#e11d48]/10 px-2 py-0.5 rounded">
-                        {daysUntil(event.startTime)}
+              {/* Event card */}
+              <div className="p-5 sm:p-6">
+                {/* Top: badges + actions */}
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-[#e11d48] uppercase tracking-wider">
+                      {daysUntil(event.startTime)}
+                    </span>
+                    {isImported && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Imported
                       </span>
-                      {isImported && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Imported
-                        </span>
-                      )}
-                    </div>
-                    <h3
-                      className="text-lg text-[#f4f4f5] uppercase leading-tight"
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                    >
-                      {event.name}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                      <span className="inline-flex items-center gap-1 text-xs text-[#71717a]">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(event.startTime)} · {formatTime(event.startTime)}
-                      </span>
-                      {event.venue && (
-                        <span className="inline-flex items-center gap-1 text-xs text-[#71717a]">
-                          <MapPin className="w-3 h-3" />
-                          {event.venue}
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-xs text-[#71717a]">
-                        <Swords className="w-3 h-3" />
-                        {event.fightCount} fights
-                      </span>
-                    </div>
+                    )}
                   </div>
-
                   <div className="flex items-center gap-2 shrink-0">
                     {event.fights.length > 0 && (
                       <button
                         onClick={() => setExpandedEvent(isExpanded ? null : event.espnEventId)}
-                        className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-xs font-semibold border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border border-[#1e1e1e] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#27272a] transition-colors cursor-pointer"
                       >
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                         {isExpanded ? 'Hide' : 'Preview'}
@@ -206,7 +186,7 @@ export function EventSearch() {
                       <button
                         onClick={() => handleImport(event.espnEventId)}
                         disabled={isImporting}
-                        className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#e11d48] text-white text-xs font-semibold hover:bg-[#be123c] disabled:opacity-50 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-2 h-8 px-4 rounded-lg bg-[#e11d48] text-white text-xs font-semibold hover:bg-[#be123c] disabled:opacity-50 transition-colors cursor-pointer"
                       >
                         {isImporting ? (
                           <>
@@ -214,18 +194,39 @@ export function EventSearch() {
                             Importing...
                           </>
                         ) : (
-                          <>Add Event</>
+                          'Import'
                         )}
                       </button>
                     )}
                   </div>
                 </div>
+
+                {/* Event name */}
+                <h3
+                  className="text-[#f4f4f5] uppercase leading-[0.95] mb-3"
+                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 'clamp(1.15rem, 3vw, 1.4rem)' }}
+                >
+                  {event.name}
+                </h3>
+
+                {/* Meta line */}
+                <p className="text-xs text-[#52525b]">
+                  {formatDate(event.startTime)} · {formatTime(event.startTime)}
+                  {event.venue && (
+                    <><span className="mx-1.5 text-[#333]">·</span>{event.venue}</>
+                  )}
+                  <span className="mx-1.5 text-[#333]">·</span>
+                  {event.fightCount} fights
+                </p>
               </div>
 
               {/* Expanded fight card preview */}
               {isExpanded && event.fights.length > 0 && (
-                <div className="border-t border-[#1e1e1e] px-5 py-4">
-                  <div className="flex flex-col gap-2">
+                <div className="border-t border-[#1a1a1a] px-5 sm:px-6 py-4">
+                  <p className="text-[10px] font-bold text-[#3f3f46] uppercase tracking-widest mb-3">
+                    Fight Card
+                  </p>
+                  <div className="flex flex-col gap-1.5">
                     {event.fights.map((fight, i) => (
                       <FightRow key={fight.espnCompetitionId} fight={fight} index={i} />
                     ))}
@@ -242,23 +243,36 @@ export function EventSearch() {
 
 function FightRow({ fight, index }: { fight: MappedFight; index: number }) {
   return (
-    <div className={`flex items-center gap-3 py-2 px-3 rounded-lg ${fight.isMainEvent ? 'bg-[#e11d48]/5 border border-[#e11d48]/10' : 'bg-[#111111]'}`}>
+    <div className={cn(
+      'flex items-center gap-3 py-2.5 px-3 rounded-lg',
+      fight.isMainEvent ? 'bg-[#e11d48]/5' : 'bg-[#0a0a0a]'
+    )}>
       {/* Bout order */}
-      <span className="text-xs text-[#52525b] w-5 text-center shrink-0">
-        {fight.isMainEvent ? <Star className="w-3.5 h-3.5 text-[#e11d48]" /> : index + 1}
+      <span className="text-[11px] text-[#3f3f46] w-5 text-center shrink-0 font-bold">
+        {fight.isMainEvent ? <Star className="w-3 h-3 text-[#e11d48]" /> : index + 1}
       </span>
 
       {/* Fighters */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-[#f4f4f5] font-medium truncate">{fight.redName}</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className="text-[13px] text-[#e11d48] uppercase truncate"
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+          >
+            {fight.redName}
+          </span>
           {fight.redRecord && (
-            <span className="text-[10px] text-[#52525b] shrink-0">({fight.redRecord})</span>
+            <span className="text-[10px] text-[#3f3f46] shrink-0">({fight.redRecord})</span>
           )}
-          <span className="text-xs text-[#52525b] mx-1">vs</span>
-          <span className="text-sm text-[#f4f4f5] font-medium truncate">{fight.blueName}</span>
+          <span className="text-[10px] text-[#3f3f46] font-bold">vs</span>
+          <span
+            className="text-[13px] text-blue-400 uppercase truncate"
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+          >
+            {fight.blueName}
+          </span>
           {fight.blueRecord && (
-            <span className="text-[10px] text-[#52525b] shrink-0">({fight.blueRecord})</span>
+            <span className="text-[10px] text-[#3f3f46] shrink-0">({fight.blueRecord})</span>
           )}
         </div>
       </div>
@@ -266,11 +280,11 @@ function FightRow({ fight, index }: { fight: MappedFight; index: number }) {
       {/* Meta */}
       <div className="flex items-center gap-2 shrink-0">
         {fight.weightClass && (
-          <span className="text-[10px] text-[#52525b] bg-[#1e1e1e] px-1.5 py-0.5 rounded">
+          <span className="text-[10px] text-[#3f3f46]">
             {fight.weightClass}
           </span>
         )}
-        <span className="text-[10px] text-[#52525b]">
+        <span className="text-[10px] text-[#3f3f46]">
           {fight.scheduledRounds}R
         </span>
       </div>

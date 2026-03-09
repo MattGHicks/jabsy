@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Users, Crown, ExternalLink } from 'lucide-react'
+import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award } from 'lucide-react'
 import { cn, formatDateTime, getInitials } from '@/lib/utils'
 import { LockCountdown } from '@/components/admin/lock-countdown'
 import { isPicksOpen } from '@/lib/utils'
@@ -29,20 +29,28 @@ type WinnerInfo = { username: string | null; avatar_url: string | null; points: 
 type ProfileInfo = { username: string | null; avatar_url: string | null }
 type MemberInfo = { id: string; username: string | null; avatar_url: string | null }
 
+export interface LeagueStats {
+  mostEventWins: { username: string | null; avatar_url: string | null; count: number } | null
+  highestAccuracy: { username: string | null; avatar_url: string | null; value: number } | null
+  mostPoints: { username: string | null; avatar_url: string | null; value: number } | null
+  bestEventScore: { username: string | null; avatar_url: string | null; value: number; eventName: string } | null
+  tightestFinish: { eventName: string; margin: number } | null
+}
+
 interface LeagueTabsProps {
   leagueId: string
   events: Event[]
   isOwner: boolean
   pickCounts: Record<string, number>
   eventWinners: Record<string, WinnerInfo[]>
-  standings: { userId: string; totalPoints: number }[]
+  standings: { userId: string; totalPoints: number; accuracy: number | null }[]
   profilesMap: Record<string, ProfileInfo>
   currentUserId: string
-  // Members tab props
   members: MemberInfo[]
   ownerProfile: MemberInfo | null
   leagueOwnerId: string
   standingsTotals: Record<string, number>
+  leagueStats: LeagueStats
 }
 
 const RANK_STYLES = [
@@ -51,60 +59,88 @@ const RANK_STYLES = [
   { color: 'text-amber-600', bg: 'bg-amber-700/10 border-amber-700/20' },
 ]
 
-type TabKey = 'events' | 'completed' | 'standings' | 'members'
+type TabKey = 'events' | 'completed' | 'standings' | 'stats'
 
-export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals }: LeagueTabsProps) {
+export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals, leagueStats }: LeagueTabsProps) {
   const [tab, setTab] = useState<TabKey>('events')
+  const [showAccuracyInfo, setShowAccuracyInfo] = useState(false)
 
   const activeEvents = events.filter(e => e.status !== 'completed' && e.status !== 'cancelled')
   const completedEvents = events.filter(e => e.status === 'completed')
   const memberCount = (ownerProfile ? 1 : 0) + members.filter(m => m.id !== ownerProfile?.id).length
 
-  const tabs: { key: TabKey; label: string; icon: typeof Calendar; count: number }[] = [
-    { key: 'events', label: 'Events', icon: Calendar, count: activeEvents.length },
-    { key: 'completed', label: 'Completed', icon: Trophy, count: completedEvents.length },
-    { key: 'standings', label: 'Standings', icon: BarChart2, count: standings.length },
-    { key: 'members', label: 'Members', icon: Users, count: memberCount },
+  const tabs: { key: TabKey; label: string; icon: typeof Calendar; count: number | string; accent: string; accentBg: string; accentBorder: string }[] = [
+    { key: 'events', label: 'Events', icon: Calendar, count: activeEvents.length, accent: '#60a5fa', accentBg: 'rgba(96,165,250,0.08)', accentBorder: 'rgba(96,165,250,0.15)' },
+    { key: 'completed', label: 'Completed', icon: Trophy, count: completedEvents.length, accent: '#fbbf24', accentBg: 'rgba(251,191,36,0.08)', accentBorder: 'rgba(251,191,36,0.15)' },
+    { key: 'standings', label: 'Standings', icon: BarChart2, count: memberCount, accent: '#e11d48', accentBg: 'rgba(225,29,72,0.08)', accentBorder: 'rgba(225,29,72,0.15)' },
+    { key: 'stats', label: 'League Stats', icon: Zap, count: 'VIEW', accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.15)' },
   ]
 
   return (
     <div>
-      {/* Tabs — 2x2 grid on mobile, single row on desktop */}
-      <div className="mb-6">
-        <div className="grid grid-cols-2 sm:flex gap-2">
-          {tabs.map(({ key, label, icon: Icon, count }) => {
-            const isActive = tab === key
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
+      {/* Tab cards — matching dashboard stat-card style */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-8">
+        {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder }) => {
+          const isActive = tab === key
+          return (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={cn(
+                'relative flex flex-col items-center gap-2 py-4 sm:py-5 px-3 rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden active:scale-[0.97]',
+                isActive
+                  ? 'bg-[#141414] border-[#27272a] shadow-[0_0_12px_rgba(0,0,0,0.3)]'
+                  : 'bg-[#111111] border-[#1e1e1e] hover:bg-[#141414] hover:border-[#27272a] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
+              )}
+            >
+              {/* Active indicator bar — full width */}
+              <div
                 className={cn(
-                  'inline-flex items-center justify-center sm:justify-start gap-2 h-9 px-4 rounded-lg text-xs transition-all cursor-pointer whitespace-nowrap border',
-                  isActive
-                    ? 'bg-[#e11d48] text-white border-[#e11d48] shadow-sm'
-                    : 'bg-[#111111] text-[#71717a] border-[#1e1e1e] hover:text-[#a1a1aa] hover:border-[#27272a]'
+                  'absolute bottom-0 left-0 right-0 h-[3px] transition-all duration-200',
+                  isActive ? 'opacity-100' : 'opacity-0'
                 )}
-                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                style={{ backgroundColor: accent }}
+              />
+              <div
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-opacity duration-200"
+                style={{
+                  background: isActive ? accentBg : 'rgba(113,113,122,0.06)',
+                  border: `1px solid ${isActive ? accentBorder : 'rgba(113,113,122,0.1)'}`,
+                }}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="uppercase tracking-wide">{label}</span>
-                <span className={cn(
-                  'text-[10px] px-1.5 py-0.5 rounded-md font-bold',
-                  isActive ? 'bg-white/20 text-white' : 'bg-[#1a1a1a] text-[#52525b]'
-                )}>
+                <Icon
+                  className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200"
+                  style={{ color: isActive ? accent : '#52525b' }}
+                />
+              </div>
+              <div className="text-center">
+                <p
+                  className={cn(
+                    'leading-none mb-1 transition-colors duration-200',
+                    typeof count === 'string' && count.length > 2 ? 'text-sm sm:text-base' : 'text-xl sm:text-2xl',
+                    isActive ? 'text-[#f4f4f5]' : 'text-[#71717a]'
+                  )}
+                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                >
                   {count}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+                </p>
+                <p className={cn(
+                  'text-[9px] sm:text-[10px] uppercase tracking-wider transition-colors duration-200',
+                  isActive ? 'text-[#52525b]' : 'text-[#3f3f46]'
+                )}>
+                  {label}
+                </p>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Events tab (upcoming + live only) */}
       {tab === 'events' && (
         <div>
           {activeEvents.length === 0 ? (
-            <div className="flex flex-col items-center py-16 text-center">
+            <div className="flex flex-col items-center py-20 text-center">
               <Calendar className="w-8 h-8 text-[#52525b] mb-3" />
               <p className="text-sm text-[#71717a] mb-2">No upcoming events in this league.</p>
               {isOwner && (
@@ -117,7 +153,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
               {activeEvents.map((event) => renderEventCard(event, leagueId, pickCounts, eventWinners))}
             </div>
           )}
@@ -128,23 +164,67 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
       {tab === 'completed' && (
         <div>
           {completedEvents.length === 0 ? (
-            <div className="flex flex-col items-center py-16 text-center">
+            <div className="flex flex-col items-center py-20 text-center">
               <Trophy className="w-8 h-8 text-[#52525b] mb-3" />
               <p className="text-sm text-[#71717a]">No completed events yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
               {completedEvents.map((event) => renderEventCard(event, leagueId, pickCounts, eventWinners))}
             </div>
           )}
         </div>
       )}
 
-      {/* Standings tab */}
+      {/* Standings tab — merged with Members functionality */}
       {tab === 'standings' && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
+          {/* Accuracy info toggle */}
+          <div className="flex items-center justify-end">
+            <button
+              onClick={() => setShowAccuracyInfo(!showAccuracyInfo)}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] uppercase tracking-wider transition-all cursor-pointer',
+                showAccuracyInfo
+                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  : 'text-[#52525b] hover:text-[#71717a] border border-transparent hover:border-[#1e1e1e]'
+              )}
+              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+            >
+              {showAccuracyInfo ? <X className="w-3 h-3" /> : <Info className="w-3 h-3" />}
+              How accuracy works
+            </button>
+          </div>
+
+          {/* Accuracy explainer card */}
+          {showAccuracyInfo && (
+            <div className="p-5 rounded-xl bg-blue-500/[0.04] border border-blue-500/15 mb-1">
+              <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-[0.15em] mb-3">Weighted Accuracy</p>
+              <p className="text-[13px] text-[#a1a1aa] leading-relaxed mb-4">
+                Your accuracy reflects how well you predict fight outcomes — not just the winner, but the method and round too. It&apos;s calculated as <span className="text-[#f4f4f5] font-semibold">points earned ÷ max possible points</span>.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
+                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>5</span>
+                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">winner</span></span>
+                </div>
+                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
+                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+3</span>
+                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">method</span></span>
+                </div>
+                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
+                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+2</span>
+                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">round</span></span>
+                </div>
+              </div>
+              <p className="text-[11px] text-[#52525b] mt-3 leading-relaxed">
+                Max per fight: <span className="text-[#71717a]">10 pts</span> (KO/Sub) or <span className="text-[#71717a]">8 pts</span> (Decision). Draws &amp; No Contests are excluded. Missing an event won&apos;t hurt your accuracy.
+              </p>
+            </div>
+          )}
+
           {standings.length === 0 ? (
-            <div className="flex flex-col items-center py-16 text-center">
+            <div className="flex flex-col items-center py-20 text-center">
               <BarChart2 className="w-8 h-8 text-[#52525b] mb-3" />
               <p className="text-sm text-[#71717a]">No standings yet. Make picks to get on the board.</p>
             </div>
@@ -152,30 +232,33 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
             standings.map((s, i) => {
               const profile = profilesMap[s.userId]
               const isMe = s.userId === currentUserId
+              const isLeagueOwner = s.userId === leagueOwnerId
               const rankStyle = RANK_STYLES[i] ?? null
               const rank = i + 1
+              const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
 
               return (
-                <div
+                <Link
                   key={s.userId}
+                  href={profileUrl}
                   className={cn(
-                    'flex items-center gap-4 px-4 py-3 rounded-lg border transition-colors',
+                    'flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-200 group',
                     isMe
-                      ? 'bg-[#e11d48]/5 border-[#e11d48]/25'
-                      : 'bg-[#141414] border-[#1e1e1e]'
+                      ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
+                      : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
                   )}
                 >
                   {/* Rank */}
                   <div className={cn(
-                    'w-8 h-8 rounded-md flex items-center justify-center shrink-0 text-sm font-bold border',
-                    rankStyle ? rankStyle.bg : 'bg-[#1e1e1e] border-[#27272a]',
+                    'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border',
+                    rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
                     rankStyle ? rankStyle.color : 'text-[#52525b]'
                   )}>
                     {rank}
                   </div>
 
                   {/* Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors">
                     {profile?.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -185,118 +268,190 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
 
                   {/* Name */}
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-sm font-semibold truncate', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
-                      {profile?.username ?? 'Unknown'}
-                      {isMe && <span className="ml-2 text-xs text-[#e11d48] font-normal">you</span>}
+                    <div className="flex items-center gap-2">
+                      <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                        {profile?.username ?? 'Unknown'}
+                      </p>
+                      {isMe && <span className="text-xs text-[#e11d48] font-normal shrink-0">you</span>}
+                      {isLeagueOwner && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                          <Crown className="w-2.5 h-2.5" />
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
+                  </div>
+
+                  {/* Remove button — stop propagation so it doesn't navigate */}
+                  {isOwner && !isMe && !isLeagueOwner && (
+                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                    <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
+                      <RemoveMemberButton
+                        leagueId={leagueId}
+                        memberId={s.userId}
+                        username={profile?.username ?? null}
+                      />
+                    </div>
+                  )}
+
+                  {/* Accuracy + Points */}
+                  <div className="text-right shrink-0">
+                    <p
+                      className={cn('text-xl font-bold leading-none', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
+                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                    >
+                      {s.accuracy !== null ? `${s.accuracy}%` : '—'}
+                    </p>
+                    <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide">
+                      {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
                     </p>
                   </div>
 
-                  {/* Points */}
-                  <div className="text-right shrink-0">
-                    <p
-                      className={cn('text-lg font-bold leading-none', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-                    >
-                      {s.totalPoints}
-                    </p>
-                    <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide">pts</p>
-                  </div>
-                </div>
+                  {/* Chevron hint */}
+                  <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                </Link>
               )
             })
           )}
         </div>
       )}
 
-      {/* Members tab */}
-      {tab === 'members' && (
-        <div className="flex flex-col gap-2">
-          {/* Owner always first */}
-          {ownerProfile && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#141414] border border-[#e11d48]/15">
-              <div className="w-8 h-8 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/25 flex items-center justify-center overflow-hidden shrink-0">
-                {ownerProfile.avatar_url
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={ownerProfile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                  : <span className="text-xs font-bold text-[#e11d48]">{getInitials(ownerProfile.username ?? 'O')}</span>
-                }
-              </div>
-              <div className="flex-1 min-w-0 flex items-center gap-2">
-                <p className="text-sm font-semibold text-[#f4f4f5] truncate">{ownerProfile.username}</p>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
-                  <Crown className="w-2.5 h-2.5" /> Owner
-                </span>
-                {ownerProfile.id === currentUserId && (
-                  <span className="text-[10px] text-[#52525b]">you</span>
+      {/* League Stats tab */}
+      {tab === 'stats' && (
+        <div>
+          {!leagueStats.mostEventWins && !leagueStats.highestAccuracy && !leagueStats.mostPoints && !leagueStats.bestEventScore && !leagueStats.tightestFinish ? (
+            <div className="flex flex-col items-center py-20 text-center">
+              <TrendingUp className="w-8 h-8 text-[#52525b] mb-3" />
+              <p className="text-sm text-[#71717a]">No league stats yet. Complete some events to see stats here.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {/* ── Hero: Most Event Wins ── */}
+              {leagueStats.mostEventWins && (
+                <div className="relative rounded-xl bg-[#111111] border border-[#1e1e1e] overflow-hidden">
+                  {/* Subtle gold gradient bleed */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/[0.04] via-transparent to-transparent pointer-events-none" />
+                  <div className="relative flex items-center gap-5 p-6 sm:p-7">
+                    {/* Large avatar */}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#1e1e1e] border-2 border-yellow-500/20 overflow-hidden shrink-0">
+                      {leagueStats.mostEventWins.avatar_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={leagueStats.mostEventWins.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        : <span className="text-2xl font-black text-[#52525b] flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{getInitials(leagueStats.mostEventWins.username ?? 'U')}</span>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Trophy className="w-4 h-4 text-yellow-500" />
+                        <p className="text-[10px] font-semibold text-yellow-500/60 uppercase tracking-[0.15em]">Most Event Wins</p>
+                      </div>
+                      <p className="text-sm font-semibold text-[#a1a1aa] truncate mb-1">{leagueStats.mostEventWins.username ?? 'Unknown'}</p>
+                      <p className="text-4xl sm:text-5xl text-[#f4f4f5] leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
+                        {leagueStats.mostEventWins.count}
+                        <span className="text-base sm:text-lg text-[#3f3f46] font-semibold ml-2">{leagueStats.mostEventWins.count === 1 ? 'win' : 'wins'}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Row cards ── */}
+              <div className="flex flex-col gap-2">
+                {/* Highest Accuracy */}
+                {leagueStats.highestAccuracy && (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)' }}>
+                      <Target className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Highest Accuracy</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                          {leagueStats.highestAccuracy.avatar_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={leagueStats.highestAccuracy.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.highestAccuracy.username ?? 'U')}</span>
+                          }
+                        </div>
+                        <p className="text-xs text-[#71717a] truncate">{leagueStats.highestAccuracy.username ?? 'Unknown'}</p>
+                      </div>
+                    </div>
+                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.highestAccuracy.value}<span className="text-sm text-[#52525b]">%</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Most Points */}
+                {leagueStats.mostPoints && (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.15)' }}>
+                      <Zap className="w-5 h-5 text-[#e11d48]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Most Points</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                          {leagueStats.mostPoints.avatar_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={leagueStats.mostPoints.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.mostPoints.username ?? 'U')}</span>
+                          }
+                        </div>
+                        <p className="text-xs text-[#71717a] truncate">{leagueStats.mostPoints.username ?? 'Unknown'}</p>
+                      </div>
+                    </div>
+                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.mostPoints.value}<span className="text-sm text-[#52525b] ml-1">pts</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Best Event Score */}
+                {leagueStats.bestEventScore && (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.15)' }}>
+                      <Award className="w-5 h-5 text-[#a78bfa]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Best Event Score</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                          {leagueStats.bestEventScore.avatar_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={leagueStats.bestEventScore.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.bestEventScore.username ?? 'U')}</span>
+                          }
+                        </div>
+                        <p className="text-xs text-[#71717a] truncate">{leagueStats.bestEventScore.username ?? 'Unknown'}</p>
+                        <span className="text-[10px] text-[#3f3f46]">·</span>
+                        <p className="text-[10px] text-[#52525b] truncate">{leagueStats.bestEventScore.eventName}</p>
+                      </div>
+                    </div>
+                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.bestEventScore.value}<span className="text-sm text-[#52525b] ml-1">pts</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Tightest Finish */}
+                {leagueStats.tightestFinish && (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}>
+                      <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Tightest Finish</p>
+                      <p className="text-xs text-[#71717a] truncate">{leagueStats.tightestFinish.eventName}</p>
+                    </div>
+                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.tightestFinish.margin}<span className="text-sm text-[#52525b] ml-1">pt gap</span>
+                    </p>
+                  </div>
                 )}
               </div>
-              {(standingsTotals[leagueOwnerId] ?? 0) > 0 && (
-                <span
-                  className="text-sm font-bold text-[#e11d48] shrink-0"
-                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                >
-                  {standingsTotals[leagueOwnerId]} <span className="text-[10px] font-normal text-[#52525b]">pts</span>
-                </span>
-              )}
-              <Link
-                href={ownerProfile.id === currentUserId ? '/profile' : `/profile/${ownerProfile.username ?? ''}`}
-                className="inline-flex items-center gap-1.5 text-[#71717a] hover:text-[#a1a1aa] transition-colors shrink-0 text-xs"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">View profile</span>
-              </Link>
             </div>
           )}
-
-          {/* Other members */}
-          {members
-            .filter(m => m.id !== ownerProfile?.id)
-            .map((p) => {
-              const isMe = p.id === currentUserId
-              return (
-                <div
-                  key={p.id}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg border',
-                    isMe ? 'bg-[#e11d48]/5 border-[#e11d48]/15' : 'bg-[#141414] border-[#1e1e1e]'
-                  )}
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#27272a] flex items-center justify-center overflow-hidden shrink-0">
-                    {p.avatar_url
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={p.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                      : <span className="text-xs font-bold text-[#71717a]">{getInitials(p.username ?? 'M')}</span>
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[#a1a1aa] truncate">{p.username}</p>
-                    {isMe && <span className="text-[10px] text-[#52525b]">you</span>}
-                  </div>
-                  {(standingsTotals[p.id] ?? 0) > 0 && (
-                    <span
-                      className="text-sm font-bold text-[#a1a1aa] shrink-0"
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                    >
-                      {standingsTotals[p.id]} <span className="text-[10px] font-normal text-[#52525b]">pts</span>
-                    </span>
-                  )}
-                  <Link
-                    href={isMe ? '/profile' : `/profile/${p.username ?? ''}?from=${leagueId}`}
-                    className="inline-flex items-center gap-1.5 text-[#71717a] hover:text-[#a1a1aa] transition-colors shrink-0 text-xs"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">View profile</span>
-                  </Link>
-                  {isOwner && !isMe && (
-                    <RemoveMemberButton
-                      leagueId={leagueId}
-                      memberId={p.id}
-                      username={p.username}
-                    />
-                  )}
-                </div>
-              )
-            })}
         </div>
       )}
     </div>
@@ -323,10 +478,10 @@ function renderEventCard(
   let btnClass: string
   if (isLocked) {
     btnLabel = 'View Board'
-    btnClass = 'bg-[#1e1e1e] border-[#27272a] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333]'
+    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#27272a]'
   } else if (!picksOpen && event.status === 'upcoming') {
     btnLabel = 'Not Yet Open'
-    btnClass = 'bg-[#1e1e1e] border-[#1e1e1e] text-[#3f3f46] cursor-not-allowed'
+    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#52525b] cursor-not-allowed'
   } else if (allPicked) {
     btnLabel = 'Edit Picks'
     btnClass = 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
@@ -335,7 +490,7 @@ function renderEventCard(
     btnClass = 'bg-[#e11d48]/10 border-[#e11d48]/30 text-[#e11d48] hover:bg-[#e11d48]/20'
   } else {
     btnLabel = 'Make Picks'
-    btnClass = 'bg-[#1e1e1e] border-[#27272a] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333]'
+    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#27272a]'
   }
 
   const winners = eventWinners[event.id] ?? []
@@ -343,88 +498,54 @@ function renderEventCard(
   return (
     <div
       key={event.id}
-      className="flex flex-col gap-4 p-5 rounded-xl bg-[#141414] border border-[#1e1e1e] hover:border-[#27272a] transition-colors"
+      className="flex flex-col rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-colors overflow-hidden"
     >
-      {/* Top row: status + action buttons */}
-      <div className="flex items-center justify-between gap-3">
-        <div className={cn('inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0', style.badge)}>
-          {event.status === 'live' && (
-            <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse inline-block" />
-          )}
-          {style.label}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Always show View Board link for upcoming events (so players can see fight card) */}
-          {!isLocked && (
-            <Link
-              href={`/leagues/${leagueId}/events/${event.id}/board`}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors uppercase tracking-wide"
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-            >
-              View Board
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          )}
-          {(!picksOpen && event.status === 'upcoming') ? (
-            <span
-              className={cn('inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs border uppercase tracking-wide', btnClass)}
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-            >
-              <Lock className="w-3 h-3" />
-              {btnLabel}
-            </span>
-          ) : (
-            <Link
-              href={isLocked
-                ? `/leagues/${leagueId}/events/${event.id}/board`
-                : `/leagues/${leagueId}/events/${event.id}`
-              }
-              className={cn('inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs border transition-colors uppercase tracking-wide', btnClass)}
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-            >
-              {btnLabel}
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Event name */}
-      <div>
-        <p
-          className="text-xl text-[#f4f4f5] uppercase leading-tight truncate"
-          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-        >
-          {event.name}
-        </p>
-      </div>
-
-      {/* Bottom row: meta + winner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#1e1e1e]">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-[#71717a]">
-            {formatDateTime(event.start_time)}
-            <span className="mx-1.5 text-[#333]">·</span>
+      {/* Card body */}
+      <div className="p-5 sm:p-6 flex flex-col gap-5">
+        {/* Status badge */}
+        <div className="flex items-center justify-between gap-3">
+          <div className={cn('inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0', style.badge)}>
+            {event.status === 'live' && (
+              <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse inline-block" />
+            )}
+            {style.label}
+          </div>
+          <p className="text-xs text-[#52525b]">
             {fightCount} {fightCount === 1 ? 'fight' : 'fights'}
+          </p>
+        </div>
+
+        {/* Event name */}
+        <div>
+          <p
+            className="text-xl sm:text-2xl text-[#f4f4f5] uppercase leading-tight"
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+          >
+            {event.name}
+          </p>
+          <p className="text-xs text-[#52525b] mt-1.5">
+            {formatDateTime(event.start_time)}
             {event.venue && (
               <>
-                <span className="mx-1.5 text-[#333]">·</span>
+                <span className="mx-1.5 text-[#3f3f46]">·</span>
                 {event.venue}
               </>
             )}
           </p>
-          {event.status === 'upcoming' && (
-            <p className="text-xs">
-              {picksOpen ? (
-                <LockCountdown lockTime={event.lock_time} />
-              ) : (
-                <span className="text-[#52525b]">
-                  Picks open day of event
-                </span>
-              )}
-            </p>
-          )}
         </div>
+
+        {/* Lock time / countdown */}
+        {event.status === 'upcoming' && (
+          <div className="text-xs">
+            {picksOpen ? (
+              <LockCountdown lockTime={event.lock_time} />
+            ) : (
+              <span className="text-[#52525b]">
+                Picks open day of event
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Winner(s) */}
         {winners.length > 0 && (
@@ -449,6 +570,42 @@ function renderEventCard(
               <span className="text-xs text-[#52525b]">· {winners[0].points} pts</span>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Action buttons — footer */}
+      <div className="flex items-center gap-2 px-5 sm:px-6 py-3.5 border-t border-[#1e1e1e]/60 bg-[#0e0e0e]">
+        {/* Always show View Board link for upcoming events */}
+        {!isLocked && (
+          <Link
+            href={`/leagues/${leagueId}/events/${event.id}/board`}
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border border-[#1e1e1e] bg-[#0a0a0a] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#27272a] transition-colors uppercase tracking-wide"
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+          >
+            View Board
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        )}
+        {(!picksOpen && event.status === 'upcoming') ? (
+          <span
+            className={cn('inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border uppercase tracking-wide', btnClass)}
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+          >
+            <Lock className="w-3 h-3" />
+            {btnLabel}
+          </span>
+        ) : (
+          <Link
+            href={isLocked
+              ? `/leagues/${leagueId}/events/${event.id}/board`
+              : `/leagues/${leagueId}/events/${event.id}`
+            }
+            className={cn('inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border transition-colors uppercase tracking-wide', btnClass)}
+            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+          >
+            {btnLabel}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         )}
       </div>
     </div>

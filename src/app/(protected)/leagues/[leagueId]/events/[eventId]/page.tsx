@@ -75,8 +75,8 @@ export default async function PicksPage({ params }: PageProps) {
   const isLocked = isEventOver
     || (event.lock_time != null && new Date() >= new Date(event.lock_time))
 
-  // Sort fights by bout order descending (main event first)
-  const fights = [...(event.fights ?? [])].sort((a, b) => b.bout_order - a.bout_order)
+  // Sort fights by bout order ascending (main event first, bout_order 1 = main event)
+  const fights = [...(event.fights ?? [])].sort((a, b) => a.bout_order - b.bout_order)
   const activeFights = fights.filter((f) => f.status !== 'cancelled')
 
   // Get user's existing picks for this event
@@ -93,7 +93,7 @@ export default async function PicksPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       {/* Back */}
       <Link
         href={`/leagues/${leagueId}`}
@@ -103,7 +103,7 @@ export default async function PicksPage({ params }: PageProps) {
           <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#3f3f46] uppercase mb-1">League</span>
+          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
           <span
             className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}
@@ -114,33 +114,27 @@ export default async function PicksPage({ params }: PageProps) {
       </Link>
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-10">
+        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-1.5">
+          {formatDateTime(event.start_time)}{event.venue ? ` · ${event.venue}` : ''}
+        </p>
         <h1
-          className="text-[#f4f4f5] leading-tight mb-1 uppercase"
-          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}
+          className="leading-[0.9] text-[#f4f4f5] uppercase"
+          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2.2rem, 5vw, 3rem)' }}
         >
           {event.name}
         </h1>
-        <p className="text-sm text-[#71717a]">
-          {formatDateTime(event.start_time)}
-          {event.venue ? ` · ${event.venue}` : ''}
-        </p>
-        {event.lock_time && (
-          <p className="text-xs text-[#52525b] mt-0.5">
-            Early prelims: <LocalTime isoString={event.lock_time} />
-          </p>
-        )}
       </div>
 
       {/* Lock notice */}
       {isLocked && event.status === 'upcoming' && (
-        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-sm text-zinc-400">
+        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-zinc-400">
           <Lock className="w-4 h-4 shrink-0" />
           Picks are locked — the event has started.
         </div>
       )}
       {!isLocked && event.lock_time && (
-        <div className="mb-6 flex items-start gap-2 px-4 py-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-sm text-[#71717a]">
+        <div className="mb-6 flex items-start gap-2 px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#27272a] text-sm text-[#71717a]">
           <Lock className="w-4 h-4 shrink-0 mt-0.5" />
           <span>Picks lock at <LocalTime isoString={event.lock_time} /> (early prelims)</span>
         </div>
@@ -148,7 +142,7 @@ export default async function PicksPage({ params }: PageProps) {
 
       {/* Cancelled notice */}
       {event.status === 'cancelled' && (
-        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-sm text-zinc-400">
+        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-zinc-400">
           <Lock className="w-4 h-4 shrink-0" />
           This event has been cancelled.
         </div>
