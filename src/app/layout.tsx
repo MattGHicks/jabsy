@@ -59,8 +59,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Unregister any stale service workers left over from the old Vite build */}
-        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(sw){sw.unregister()})})}` }} />
+        {/* Unregister stale service workers and clear all caches (old Vite/PWA build) */}
+        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(sw){sw.unregister()})})}if('caches' in window){caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})})}` }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} antialiased bg-[#0a0a0a] text-[#f4f4f5]`}
