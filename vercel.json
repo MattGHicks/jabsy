@@ -1,5 +1,16 @@
 {
   "framework": "nextjs",
+  "headers": [
+    {
+      "source": "/clear-cache",
+      "headers": [
+        {
+          "key": "Clear-Site-Data",
+          "value": "\"cache\", \"storage\""
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/sync-cards",
