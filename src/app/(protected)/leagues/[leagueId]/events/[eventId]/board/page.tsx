@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { ChevronLeft, TrendingUp, Trophy, ExternalLink } from 'lucide-react'
+import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cn, formatDateTime, getInitials, getLastName } from '@/lib/utils'
+import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate } from '@/lib/utils'
 import { StickyStandings } from './sticky-standings'
 import { BoardLiveUpdater } from './board-live-updater'
 
@@ -139,6 +139,7 @@ export default async function BoardPage({ params }: PageProps) {
 
   const isLive = event.status === 'live'
   const isCompleted = event.status === 'completed'
+  const picksOpen = event.status === 'upcoming' && isPicksOpen(event.start_time, event.lock_time)
   const maxPts = leaderboard[0]?.totalPts ?? 1
 
   // Winner(s): players tied at the top when event is completed
@@ -268,13 +269,24 @@ export default async function BoardPage({ params }: PageProps) {
               <p className="text-xs text-[#3f3f46] mt-1">
                 Standings will appear once members start making picks.
               </p>
-              {!isLive && !isCompleted && (
+              {!isLive && !isCompleted && picksOpen && (
                 <Link
                   href={`/leagues/${leagueId}/events/${eventId}`}
                   className="mt-4 inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#e11d48] text-white text-xs font-semibold hover:bg-[#be123c] transition-colors"
                 >
                   Make Your Picks
                 </Link>
+              )}
+              {!isLive && !isCompleted && !picksOpen && (
+                <div className="mt-4 flex flex-col items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#52525b] text-xs font-semibold cursor-not-allowed">
+                    <Lock className="w-3 h-3" />
+                    Picks Locked
+                  </span>
+                  <span className="text-[10px] text-[#3f3f46]">
+                    Opens {getPicksOpenDate(event.start_time)} at midnight ET
+                  </span>
+                </div>
               )}
             </div>
           </section>
