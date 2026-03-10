@@ -856,21 +856,21 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
           </div>
         )}
 
-        <div className="px-2.5 sm:px-3 py-2 flex items-center gap-1.5">
+        <div className="px-2.5 sm:px-3 py-2 flex items-center gap-2">
           {/* Attachment buttons */}
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616] transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616] transition-colors cursor-pointer"
               title="Attach image"
             >
-              <ImagePlus className="w-4 h-4" />
+              <ImagePlus className="w-[18px] h-[18px]" />
             </button>
             <button
               onClick={() => setShowGifPicker(!showGifPicker)}
               className={cn(
-                'h-8 px-2 rounded-lg flex items-center justify-center text-[10px] font-black tracking-wide transition-colors cursor-pointer',
+                'h-9 px-2.5 rounded-xl flex items-center justify-center text-[11px] font-black tracking-wide transition-colors cursor-pointer',
                 showGifPicker
                   ? 'bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20'
                   : 'text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616]'
@@ -883,14 +883,14 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
               <button
                 onClick={() => { setShowEventPicker(!showEventPicker); setShowGifPicker(false) }}
                 className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer',
+                  'w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer',
                   showEventPicker
                     ? 'bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20'
                     : 'text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616]'
                 )}
                 title="Share fight card"
               >
-                <Trophy className="w-4 h-4" />
+                <Trophy className="w-[18px] h-[18px]" />
               </button>
             )}
           </div>
