@@ -856,9 +856,9 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
           </div>
         )}
 
-        <div className="px-2.5 sm:px-3 py-2 flex items-end gap-1.5">
+        <div className="px-2.5 sm:px-3 py-2 flex items-center gap-1.5">
           {/* Attachment buttons */}
-          <div className="flex items-center gap-0.5 shrink-0 pb-0.5">
+          <div className="flex items-center gap-0.5 shrink-0">
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -943,7 +943,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
             onClick={handleSend}
             disabled={!canSend}
             className={cn(
-              'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer mb-0.5',
+              'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer',
               canSend
                 ? 'bg-[#e11d48] text-white hover:bg-[#be123c] shadow-lg shadow-[#e11d48]/20'
                 : 'bg-[#161616] text-[#3f3f46] cursor-not-allowed'
