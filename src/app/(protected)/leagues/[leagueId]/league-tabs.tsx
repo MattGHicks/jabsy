@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award } from 'lucide-react'
+import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, MessageCircle, Activity } from 'lucide-react'
 import { cn, formatDateTime, getInitials } from '@/lib/utils'
 import { LockCountdown } from '@/components/admin/lock-countdown'
 import { isPicksOpen } from '@/lib/utils'
 import { RemoveMemberButton } from './remove-member-button'
+import { ChatTab } from './chat-tab'
+import { ActivityTab } from './activity-tab'
+import { getUnreadCount, markChatRead } from '@/actions/chat'
 
 const STATUS_STYLES: Record<string, { badge: string; label: string }> = {
   upcoming: { badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', label: 'Upcoming' },
@@ -51,6 +54,8 @@ interface LeagueTabsProps {
   leagueOwnerId: string
   standingsTotals: Record<string, number>
   leagueStats: LeagueStats
+  currentUserProfile: { username: string | null; avatar_url: string | null }
+  initialTab?: TabKey
 }
 
 const RANK_STYLES = [
@@ -59,33 +64,55 @@ const RANK_STYLES = [
   { color: 'text-amber-600', bg: 'bg-amber-700/10 border-amber-700/20' },
 ]
 
-type TabKey = 'events' | 'completed' | 'standings' | 'stats'
+type TabKey = 'events' | 'completed' | 'standings' | 'stats' | 'chat' | 'activity'
 
-export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals, leagueStats }: LeagueTabsProps) {
-  const [tab, setTab] = useState<TabKey>('events')
+export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals, leagueStats, currentUserProfile, initialTab }: LeagueTabsProps) {
+  const [tab, setTab] = useState<TabKey>(initialTab ?? 'events')
   const [showAccuracyInfo, setShowAccuracyInfo] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Fetch unread count on mount (or mark read immediately if opening on chat tab)
+  useEffect(() => {
+    if (initialTab === 'chat') {
+      markChatRead(leagueId)
+      setUnreadCount(0)
+    } else {
+      getUnreadCount(leagueId).then(setUnreadCount)
+    }
+  }, [leagueId, initialTab])
+
+  // When switching to chat tab, mark as read and clear badge
+  function handleTabChange(key: TabKey) {
+    setTab(key)
+    if (key === 'chat') {
+      markChatRead(leagueId)
+      setUnreadCount(0)
+    }
+  }
 
   const activeEvents = events.filter(e => e.status !== 'completed' && e.status !== 'cancelled')
   const completedEvents = events.filter(e => e.status === 'completed')
   const memberCount = (ownerProfile ? 1 : 0) + members.filter(m => m.id !== ownerProfile?.id).length
 
-  const tabs: { key: TabKey; label: string; icon: typeof Calendar; count: number | string; accent: string; accentBg: string; accentBorder: string }[] = [
+  const tabs: { key: TabKey; label: string; icon: typeof Calendar; count: number | string; accent: string; accentBg: string; accentBorder: string; badge?: number }[] = [
     { key: 'events', label: 'Events', icon: Calendar, count: activeEvents.length, accent: '#60a5fa', accentBg: 'rgba(96,165,250,0.08)', accentBorder: 'rgba(96,165,250,0.15)' },
     { key: 'completed', label: 'Completed', icon: Trophy, count: completedEvents.length, accent: '#fbbf24', accentBg: 'rgba(251,191,36,0.08)', accentBorder: 'rgba(251,191,36,0.15)' },
     { key: 'standings', label: 'Standings', icon: BarChart2, count: memberCount, accent: '#e11d48', accentBg: 'rgba(225,29,72,0.08)', accentBorder: 'rgba(225,29,72,0.15)' },
     { key: 'stats', label: 'League Stats', icon: Zap, count: 'VIEW', accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.15)' },
+    { key: 'chat', label: 'Chat', icon: MessageCircle, count: 'OPEN', accent: '#22c55e', accentBg: 'rgba(34,197,94,0.08)', accentBorder: 'rgba(34,197,94,0.15)', badge: unreadCount },
+    { key: 'activity', label: 'Activity', icon: Activity, count: 'FEED', accent: '#f97316', accentBg: 'rgba(249,115,22,0.08)', accentBorder: 'rgba(249,115,22,0.15)' },
   ]
 
   return (
     <div>
       {/* Tab cards — matching dashboard stat-card style */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-8">
-        {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder }) => {
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-8">
+        {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder, badge }) => {
           const isActive = tab === key
           return (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => handleTabChange(key)}
               className={cn(
                 'relative flex flex-col items-center gap-2 py-4 sm:py-5 px-3 rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden active:scale-[0.97]',
                 isActive
@@ -101,17 +128,24 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                 )}
                 style={{ backgroundColor: accent }}
               />
-              <div
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-opacity duration-200"
-                style={{
-                  background: isActive ? accentBg : 'rgba(113,113,122,0.06)',
-                  border: `1px solid ${isActive ? accentBorder : 'rgba(113,113,122,0.1)'}`,
-                }}
-              >
-                <Icon
-                  className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200"
-                  style={{ color: isActive ? accent : '#52525b' }}
-                />
+              <div className="relative">
+                <div
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-opacity duration-200"
+                  style={{
+                    background: isActive ? accentBg : 'rgba(113,113,122,0.06)',
+                    border: `1px solid ${isActive ? accentBorder : 'rgba(113,113,122,0.1)'}`,
+                  }}
+                >
+                  <Icon
+                    className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200"
+                    style={{ color: isActive ? accent : '#52525b' }}
+                  />
+                </div>
+                {badge && badge > 0 && !isActive && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#e11d48] text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#e11d48]/30">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
               </div>
               <div className="text-center">
                 <p
@@ -178,7 +212,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
 
       {/* Standings tab — merged with Members functionality */}
       {tab === 'standings' && (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 max-w-3xl">
           {/* Accuracy info toggle */}
           <div className="flex items-center justify-end">
             <button
@@ -316,6 +350,25 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
         </div>
       )}
 
+      {/* Activity tab */}
+      {tab === 'activity' && (
+        <ActivityTab leagueId={leagueId} currentUserId={currentUserId} />
+      )}
+
+      {/* Chat tab */}
+      {tab === 'chat' && (
+        <ChatTab
+          leagueId={leagueId}
+          currentUserId={currentUserId}
+          currentUserProfile={currentUserProfile}
+          members={[
+            ...(ownerProfile ? [ownerProfile] : []),
+            ...members.filter(m => m.id !== ownerProfile?.id),
+          ]}
+          leagueEvents={events.map(e => ({ id: e.id, name: e.name, status: e.status }))}
+        />
+      )}
+
       {/* League Stats tab */}
       {tab === 'stats' && (
         <div>
@@ -356,7 +409,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
               )}
 
               {/* ── Row cards ── */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:grid md:grid-cols-2">
                 {/* Highest Accuracy */}
                 {leagueStats.highestAccuracy && (
                   <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">

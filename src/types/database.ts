@@ -349,6 +349,125 @@ export interface Database {
         }
         Relationships: []
       }
+      league_messages: {
+        Row: {
+          id: string
+          league_id: string
+          user_id: string
+          content: string | null
+          message_type: 'text' | 'image' | 'gif' | 'fight_card'
+          image_url: string | null
+          reply_to_id: string | null
+          event_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          user_id: string
+          content?: string | null
+          message_type?: 'text' | 'image' | 'gif' | 'fight_card'
+          image_url?: string | null
+          reply_to_id?: string | null
+          event_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          user_id?: string
+          content?: string | null
+          message_type?: 'text' | 'image' | 'gif' | 'fight_card'
+          image_url?: string | null
+          reply_to_id?: string | null
+          event_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'league_messages_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+          { foreignKeyName: 'league_messages_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          id: string
+          message_id: string
+          user_id: string
+          emoji: 'fire' | 'thumbsup' | 'laugh' | 'skull' | 'trophy'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          user_id: string
+          emoji: 'fire' | 'thumbsup' | 'laugh' | 'skull' | 'trophy'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          user_id?: string
+          emoji?: 'fire' | 'thumbsup' | 'laugh' | 'skull' | 'trophy'
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'message_reactions_message_id_fkey'; columns: ['message_id']; isOneToOne: false; referencedRelation: 'league_messages'; referencedColumns: ['id'] },
+          { foreignKeyName: 'message_reactions_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] },
+        ]
+      }
+      message_link_previews: {
+        Row: {
+          id: string
+          message_id: string
+          url: string
+          title: string | null
+          description: string | null
+          image_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          url: string
+          title?: string | null
+          description?: string | null
+          image_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          url?: string
+          title?: string | null
+          description?: string | null
+          image_url?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'message_link_previews_message_id_fkey'; columns: ['message_id']; isOneToOne: false; referencedRelation: 'league_messages'; referencedColumns: ['id'] },
+        ]
+      }
+      league_chat_reads: {
+        Row: {
+          user_id: string
+          league_id: string
+          last_read_at: string
+        }
+        Insert: {
+          user_id: string
+          league_id: string
+          last_read_at?: string
+        }
+        Update: {
+          user_id?: string
+          league_id?: string
+          last_read_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'league_chat_reads_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'profiles'; referencedColumns: ['id'] },
+          { foreignKeyName: 'league_chat_reads_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+        ]
+      }
       espn_health: {
         Row: {
           id: string

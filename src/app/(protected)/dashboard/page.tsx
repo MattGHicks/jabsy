@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Clock, Lock, ChevronRight } from 'lucide-react'
+import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Clock, Lock, ChevronRight, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getInitials } from '@/lib/utils'
 import { JoinWithCode } from './join-with-code'
 import { calcWeightedAccuracy } from '@/lib/accuracy'
+import { getUnreadCounts } from '@/actions/chat'
 
 export const dynamic = 'force-dynamic'
 
@@ -162,6 +163,9 @@ export default async function DashboardPage() {
     }
   }
 
+  // Unread chat counts per league
+  const unreadCounts = leagueIds.length > 0 ? await getUnreadCounts(leagueIds) : {}
+
   const canCreateLeague = profile?.role === 'admin' || profile?.role === 'league_owner'
 
   const stats = [
@@ -318,6 +322,7 @@ export default async function DashboardPage() {
               const eventCount = eventCounts[l.id] ?? 0
               const nextEvent = nextEvents[l.id]
               const rank = userRanks[l.id]
+              const unread = unreadCounts[l.id] ?? 0
 
               return (
                 <Link
@@ -326,18 +331,25 @@ export default async function DashboardPage() {
                   className="group flex items-center gap-3.5 p-4 rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.98]"
                 >
                   {/* League logo */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
-                    isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
-                  }`}>
-                    {l.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                    ) : (
-                      <span
-                        className={`text-base leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
-                        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
-                      >
-                        {getInitials(l.name)}
+                  <div className="relative shrink-0">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ${
+                      isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
+                    }`}>
+                      {l.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                      ) : (
+                        <span
+                          className={`text-base leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
+                        >
+                          {getInitials(l.name)}
+                        </span>
+                      )}
+                    </div>
+                    {unread > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-[#22c55e] text-[#0a0a0a] text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-sm shadow-[#22c55e]/30">
+                        {unread > 99 ? '99+' : unread}
                       </span>
                     )}
                   </div>
@@ -390,17 +402,26 @@ export default async function DashboardPage() {
               const nextEvent = nextEvents[l.id]
               const rank = userRanks[l.id]
               const leaguePts = rank?.total ?? 0
+              const unread = unreadCounts[l.id] ?? 0
 
               return (
                 <Link
                   key={l.id}
                   href={`/leagues/${l.id}`}
-                  className={`group flex flex-col rounded-xl bg-[#111111] border overflow-hidden transition-all hover:border-[#27272a] ${
+                  className={`group relative flex flex-col rounded-xl bg-[#111111] border overflow-hidden transition-all hover:border-[#27272a] ${
                     isOwner ? 'border-[#e11d48]/15' : 'border-[#1e1e1e]'
                   }`}
                 >
                   {/* Top accent */}
                   <div className={`h-0.5 w-full ${isOwner ? 'bg-gradient-to-r from-[#e11d48] to-[#e11d48]/20' : 'bg-[#1e1e1e]'}`} />
+
+                  {/* Unread chat badge */}
+                  {unread > 0 && (
+                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-full px-1.5 py-0.5 z-10">
+                      <MessageCircle className="w-3 h-3 text-[#22c55e]" />
+                      <span className="text-[9px] font-bold text-[#22c55e]">{unread > 99 ? '99+' : unread}</span>
+                    </div>
+                  )}
 
                   <div className="p-5 flex-1 flex flex-col">
                     {/* League logo + Name */}

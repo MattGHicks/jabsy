@@ -11,10 +11,12 @@ export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ leagueId: string }>
+  searchParams: Promise<{ tab?: string }>
 }
 
-export default async function LeaguePage({ params }: PageProps) {
+export default async function LeaguePage({ params, searchParams }: PageProps) {
   const { leagueId } = await params
+  const { tab } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -323,6 +325,8 @@ export default async function LeaguePage({ params }: PageProps) {
         leagueOwnerId={league.owner_id}
         standingsTotals={standingsTotals}
         leagueStats={leagueStats}
+        currentUserProfile={profilesMap[user.id] ?? { username: null, avatar_url: null }}
+        initialTab={tab === 'chat' || tab === 'events' || tab === 'completed' || tab === 'standings' || tab === 'stats' || tab === 'activity' ? tab : undefined}
       />
     </div>
   )

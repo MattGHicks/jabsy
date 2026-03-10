@@ -211,7 +211,7 @@ export default async function ProfilePage() {
             <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
               <Users className="w-3.5 h-3.5" /> My Leagues
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2">
               {allLeagues.map((league) => (
                 <Link
                   key={league.id}
