@@ -4,8 +4,10 @@ import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock } from 'lucide-reac
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate } from '@/lib/utils'
+import { getUnreadCount } from '@/actions/chat'
 import { StickyStandings } from './sticky-standings'
 import { BoardLiveUpdater } from './board-live-updater'
+import { BoardChatBadge } from './board-chat-badge'
 
 export const dynamic = 'force-dynamic'
 
@@ -140,6 +142,9 @@ export default async function BoardPage({ params }: PageProps) {
   const isLive = event.status === 'live'
   const isCompleted = event.status === 'completed'
   const picksOpen = event.status === 'upcoming' && isPicksOpen(event.start_time, event.lock_time)
+
+  // Fetch unread chat count for the league
+  const unreadChatCount = await getUnreadCount(leagueId)
   const maxPts = leaderboard[0]?.totalPts ?? 1
 
   // Winner(s): players tied at the top when event is completed
@@ -150,6 +155,9 @@ export default async function BoardPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Floating chat badge — sticky at bottom-right */}
+      <BoardChatBadge leagueId={leagueId} initialCount={unreadChatCount} currentUserId={user.id} />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
 
         {/* Top bar */}
@@ -171,17 +179,19 @@ export default async function BoardPage({ params }: PageProps) {
               </span>
             </div>
           </Link>
-          {isLive && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#e11d48]/10 border border-[#e11d48]/20 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse" />
-              <span className="text-[11px] font-bold text-[#e11d48] tracking-widest uppercase">Live</span>
-            </div>
-          )}
-          {isCompleted && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#27272a]/60 border border-[#3f3f46]/40 shrink-0">
-              <span className="text-[11px] font-bold text-[#71717a] tracking-widest uppercase">Final</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {isLive && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#e11d48]/10 border border-[#e11d48]/20 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse" />
+                <span className="text-[11px] font-bold text-[#e11d48] tracking-widest uppercase">Live</span>
+              </div>
+            )}
+            {isCompleted && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#27272a]/60 border border-[#3f3f46]/40 shrink-0">
+                <span className="text-[11px] font-bold text-[#71717a] tracking-widest uppercase">Final</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Event heading */}
@@ -298,7 +308,7 @@ export default async function BoardPage({ params }: PageProps) {
             <span className="text-[10px] font-bold tracking-widest text-[#52525b] uppercase">Fight Picks</span>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 xl:grid xl:grid-cols-2">
             {fights.map((fight) => {
               const isCancelled = fight.status === 'cancelled'
               const isFinal = fight.status === 'final' || fight.status === 'no_contest'

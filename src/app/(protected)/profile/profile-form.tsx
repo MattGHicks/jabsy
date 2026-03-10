@@ -104,11 +104,18 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role, me
         </div>
       </div>
 
-      {/* ── Server-rendered stats + leagues ── */}
-      {children}
+      {/* ── Desktop: two-column layout (stats+leagues | account form) ── */}
+      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10">
+        {/* Left column: stats + leagues (server-rendered) */}
+        <div className="min-w-0">
+          {children}
+        </div>
 
-      {/* ── Account details ── */}
-      <div className="max-w-lg flex flex-col gap-5">
+        {/* Right column: account details */}
+        <div className="lg:sticky lg:top-20 lg:self-start">
+          <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-4 hidden lg:block">Account Settings</p>
+          <div className="lg:rounded-xl lg:bg-[#111111] lg:border lg:border-[#1e1e1e] lg:p-6">
+      <div className="flex flex-col gap-5">
         {/* Username edit */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em]">Username</label>
@@ -163,6 +170,9 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role, me
             'Save Changes'
           )}
         </button>
+      </div>
+          </div>
+        </div>
       </div>
     </form>
   )
