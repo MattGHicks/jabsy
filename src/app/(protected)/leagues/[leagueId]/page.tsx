@@ -176,6 +176,7 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
     mostPoints: null,
     bestEventScore: null,
     tightestFinish: null,
+    mostPerfectPicks: null,
   }
 
   // Most Event Wins — count appearances per user in eventWinners
@@ -245,6 +246,24 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
     leagueStats.tightestFinish = { eventName: tightestEventName, margin: tightestMargin }
   }
 
+  // Most Perfect Picks — user(s) with most 10-point picks (handles ties)
+  const perfectCounts: Record<string, number> = {}
+  for (const pick of allLeaguePicks ?? []) {
+    if (pick.points_earned === 10) {
+      perfectCounts[pick.user_id] = (perfectCounts[pick.user_id] ?? 0) + 1
+    }
+  }
+  const maxPerfect = Math.max(...Object.values(perfectCounts), 0)
+  if (maxPerfect > 0) {
+    const tiedUsers = Object.entries(perfectCounts)
+      .filter(([, count]) => count === maxPerfect)
+      .map(([uid]) => {
+        const p = profilesMap[uid]
+        return { username: p?.username ?? null, avatar_url: p?.avatar_url ?? null }
+      })
+    leagueStats.mostPerfectPicks = { users: tiedUsers, count: maxPerfect }
+  }
+
   // Flatten members for the League Stats tab
   const flatMembers = (members ?? [])
     .map((m) => m.profiles as { id: string; username: string | null; avatar_url: string | null } | null)
@@ -263,45 +282,89 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
         </div>
       </Link>
 
-      {/* Header */}
-      <div className="flex items-stretch gap-4 mb-8">
-        {/* League logo */}
-        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
-          isOwner ? 'bg-[#e11d48]/8 border-2 border-[#e11d48]/20' : 'bg-[#111111] border-2 border-[#27272a]'
-        }`}>
-          {league.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={league.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-          ) : (
-            <span
-              className={`text-xl sm:text-2xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
-            >
-              {getInitials(league.name)}
-            </span>
-          )}
-        </div>
+      {/* ── League Hero ── */}
+      <div className="relative rounded-2xl overflow-hidden mb-8 border border-[#1e1e1e]">
+        {/* Neutral gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#141414] via-[#111111] to-[#0d0d0d]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(225,29,72,0.06),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.02),transparent_60%)]" />
 
-        <div className="flex-1 min-w-0 py-0.5">
-          {/* Title row */}
-          <div className="flex items-center gap-3 mb-1.5">
-            <h1
-              className="flex-1 min-w-0 leading-none text-[#f4f4f5] uppercase"
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 4vw, 3rem)' }}
-            >
-              {league.name}
-            </h1>
+        {/* Content */}
+        <div className="relative px-5 sm:px-7 pt-8 sm:pt-10 pb-5 sm:pb-6">
+          {/* League image + title */}
+          <div className="flex items-end gap-4 sm:gap-5 mb-4">
+            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-xl shrink-0 overflow-hidden shadow-2xl ring-1 ring-white/5 ${
+              !league.avatar_url ? (isOwner ? 'bg-[#e11d48]/10 border-2 border-[#e11d48]/20 flex items-center justify-center' : 'bg-[#1a1a1a] border-2 border-[#27272a] flex items-center justify-center') : ''
+            }`}>
+              {league.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={league.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              ) : (
+                <span
+                  className={`text-2xl sm:text-3xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
+                >
+                  {getInitials(league.name)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0 pb-0.5">
+              <h1
+                className="text-[#f4f4f5] uppercase leading-[0.9] mb-2 drop-shadow-lg"
+                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 5vw, 3rem)' }}
+              >
+                {league.name}
+              </h1>
+              {league.description && (
+                <p className="text-[13px] text-[#a1a1aa]/70 leading-snug line-clamp-2">{league.description}</p>
+              )}
+            </div>
           </div>
 
-          {/* Subtitle */}
-          <div className="flex flex-col gap-1.5">
-            {league.description && (
-              <p className="text-[13px] text-[#52525b] leading-snug">{league.description}</p>
-            )}
+          {/* Bottom bar: member avatars + settings */}
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              {/* Stacked member avatars */}
+              <div className="flex -space-x-2">
+                {(() => {
+                  const seen = new Set<string>()
+                  const all = [ownerProfile, ...((members ?? []).map((m) => m.profiles as { id: string; username: string | null; avatar_url: string | null } | null).filter(Boolean))].filter((m): m is { id: string; username: string | null; avatar_url: string | null } => {
+                    if (!m || seen.has(m.id)) return false
+                    seen.add(m.id)
+                    return true
+                  })
+                  const overflow = all.length - 8
+                  return (<>
+                    {all.slice(0, 8).map((m, i) => (
+                      <div key={m.id} className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#1e1e1e] overflow-hidden shrink-0" style={{ zIndex: 8 - i }}>
+                        {m.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[8px] font-bold text-[#52525b] flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                            {getInitials(m.username ?? 'U')}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    {overflow > 0 && (
+                      <div className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#1e1e1e] shrink-0 flex items-center justify-center" style={{ zIndex: 0 }}>
+                        <span className="text-[8px] font-bold text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+{overflow}</span>
+                      </div>
+                    )}
+                  </>)
+                })()}
+              </div>
+              <span className="text-[11px] text-[#71717a]">
+                {uniqueMemberIds.length} {uniqueMemberIds.length === 1 ? 'member' : 'members'} · {events.length} {events.length === 1 ? 'event' : 'events'}
+              </span>
+            </div>
+
             {isOwner && (
               <Link
                 href={`/leagues/${leagueId}/settings`}
-                className="self-start inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-[#161616] border border-[#1e1e1e] text-[#52525b] hover:text-[#a1a1aa] hover:border-[#333] transition-all"
+                className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/[0.10] transition-all"
               >
                 <Settings className="w-3 h-3" />
                 <span className="text-[10px] uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.06em' }}>Settings</span>

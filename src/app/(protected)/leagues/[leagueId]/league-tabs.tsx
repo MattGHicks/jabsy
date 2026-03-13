@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, MessageCircle, Activity } from 'lucide-react'
+import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, Crosshair, MessageCircle, Activity } from 'lucide-react'
 import { cn, formatDateTime, getInitials } from '@/lib/utils'
 import { LockCountdown } from '@/components/admin/lock-countdown'
 import { isPicksOpen } from '@/lib/utils'
@@ -38,6 +38,7 @@ export interface LeagueStats {
   mostPoints: { username: string | null; avatar_url: string | null; value: number } | null
   bestEventScore: { username: string | null; avatar_url: string | null; value: number; eventName: string } | null
   tightestFinish: { eventName: string; margin: number } | null
+  mostPerfectPicks: { users: { username: string | null; avatar_url: string | null }[]; count: number } | null
 }
 
 interface LeagueTabsProps {
@@ -467,7 +468,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
       {/* League Stats tab */}
       {tab === 'stats' && (
         <div>
-          {!leagueStats.mostEventWins && !leagueStats.highestAccuracy && !leagueStats.mostPoints && !leagueStats.bestEventScore && !leagueStats.tightestFinish ? (
+          {!leagueStats.mostEventWins && !leagueStats.highestAccuracy && !leagueStats.mostPoints && !leagueStats.bestEventScore && !leagueStats.tightestFinish && !leagueStats.mostPerfectPicks ? (
             <div className="flex flex-col items-center py-20 text-center">
               <TrendingUp className="w-8 h-8 text-[#52525b] mb-3" />
               <p className="text-sm text-[#71717a]">No league stats yet. Complete some events to see stats here.</p>
@@ -594,6 +595,36 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                     </div>
                     <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                       {leagueStats.tightestFinish.margin}<span className="text-sm text-[#52525b] ml-1">pt gap</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Most Perfect Picks */}
+                {leagueStats.mostPerfectPicks && (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.15)' }}>
+                      <Crosshair className="w-5 h-5 text-[#a78bfa]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Most Perfect Picks</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {leagueStats.mostPerfectPicks.users.map((u, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            {i > 0 && <span className="text-[10px] text-[#3f3f46]">·</span>}
+                            <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                              {u.avatar_url
+                                // eslint-disable-next-line @next/next/no-img-element
+                                ? <img src={u.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                                : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(u.username ?? 'U')}</span>
+                              }
+                            </div>
+                            <p className="text-xs text-[#71717a] truncate">{u.username ?? 'Unknown'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.mostPerfectPicks.count}
                     </p>
                   </div>
                 )}

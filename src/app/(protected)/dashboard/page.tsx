@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Clock, Lock, ChevronRight, MessageCircle } from 'lucide-react'
+import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Crosshair, Clock, Lock, ChevronRight, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getInitials } from '@/lib/utils'
 import { JoinWithCode } from './join-with-code'
@@ -109,6 +109,7 @@ export default async function DashboardPage() {
     })
   )
   const totalPicksMade = (myPicks ?? []).length
+  const perfectPicks = scoredPicks.filter((p) => p.points_earned === 10).length
 
   // Best single-event score
   const eventScores: Record<string, number> = {}
@@ -182,6 +183,7 @@ export default async function DashboardPage() {
     { label: 'Total Picks', value: totalPicksMade > 0 ? totalPicksMade.toString() : '—', icon: TrendingUp, accent: '#71717a', accentBg: 'rgba(113,113,122,0.08)', accentBorder: 'rgba(113,113,122,0.15)' },
     { label: 'Best Event', value: bestEventScore !== null ? bestEventScore.toString() : '—', icon: Trophy, accent: '#fbbf24', accentBg: 'rgba(251,191,36,0.08)', accentBorder: 'rgba(251,191,36,0.15)' },
     { label: 'Total Wins', value: winCount > 0 ? winCount.toString() : '—', icon: Award, accent: '#34d399', accentBg: 'rgba(52,211,153,0.08)', accentBorder: 'rgba(52,211,153,0.15)' },
+    { label: 'Perfect Picks', value: perfectPicks > 0 ? perfectPicks.toString() : '—', icon: Crosshair, accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.15)' },
   ]
 
   return (
@@ -204,48 +206,28 @@ export default async function DashboardPage() {
       <section className="mb-10">
         <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3">Your Stats</p>
 
-        {/* Mobile: 3 top + 2 bottom */}
-        <div className="sm:hidden flex flex-col gap-2.5">
-          <div className="grid grid-cols-3 gap-2.5">
-            {stats.slice(0, 3).map((s) => (
-              <div key={s.label} className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ background: s.accentBg, border: `1px solid ${s.accentBorder}` }}
-                >
-                  <s.icon className="w-4 h-4" style={{ color: s.accent }} />
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                    {s.value}
-                  </p>
-                  <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{s.label}</p>
-                </div>
+        {/* Mobile: 3+3 grid */}
+        <div className="sm:hidden grid grid-cols-3 gap-2.5">
+          {stats.map((s) => (
+            <div key={s.label} className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: s.accentBg, border: `1px solid ${s.accentBorder}` }}
+              >
+                <s.icon className="w-4 h-4" style={{ color: s.accent }} />
               </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {stats.slice(3).map((s) => (
-              <div key={s.label} className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ background: s.accentBg, border: `1px solid ${s.accentBorder}` }}
-                >
-                  <s.icon className="w-4 h-4" style={{ color: s.accent }} />
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                    {s.value}
-                  </p>
-                  <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{s.label}</p>
-                </div>
+              <div className="text-center">
+                <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                  {s.value}
+                </p>
+                <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{s.label}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* Desktop: 5-col */}
-        <div className="hidden sm:grid grid-cols-5 gap-2.5">
+        {/* Desktop: 6-col */}
+        <div className="hidden sm:grid grid-cols-6 gap-2.5">
           {stats.map((s) => (
             <div key={s.label} className="flex flex-col items-center gap-2 py-5 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]">
               <div

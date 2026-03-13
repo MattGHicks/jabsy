@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ChevronLeft, Zap, Target, TrendingUp, Trophy, Award, Users, Crown } from 'lucide-react'
+import { ChevronLeft, Zap, Target, TrendingUp, Trophy, Award, Crosshair, Users, Crown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getInitials } from '@/lib/utils'
 import { calcWeightedAccuracy } from '@/lib/accuracy'
@@ -51,6 +51,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     })
   )
   const totalPicksMade = (allPicks ?? []).length
+  const perfectPicks = scoredPicks.filter((p) => p.points_earned === 10).length
 
   // Best single-event score
   const eventScores: Record<string, number> = {}
@@ -132,6 +133,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     { label: 'Total Picks', value: totalPicksMade > 0 ? `${totalPicksMade}` : '—', icon: TrendingUp, accent: '#71717a', accentBg: 'rgba(113,113,122,0.08)', accentBorder: 'rgba(113,113,122,0.15)' },
     { label: 'Best Event', value: bestEventScore !== null ? `${bestEventScore}` : '—', icon: Trophy, accent: '#fbbf24', accentBg: 'rgba(251,191,36,0.08)', accentBorder: 'rgba(251,191,36,0.15)' },
     { label: 'Total Wins', value: winCount > 0 ? `${winCount}` : '—', icon: Award, accent: '#34d399', accentBg: 'rgba(52,211,153,0.08)', accentBorder: 'rgba(52,211,153,0.15)' },
+    { label: 'Perfect Picks', value: perfectPicks > 0 ? `${perfectPicks}` : '—', icon: Crosshair, accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.15)' },
   ]
 
   return (
@@ -195,60 +197,34 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
 
       {/* ── Stats hero ───────────────────────────────── */}
       <div className="mb-10">
-        {/* Mobile: 3 top + 2 bottom */}
-        <div className="sm:hidden flex flex-col gap-2.5">
-          <div className="grid grid-cols-3 gap-2.5">
-            {stats.slice(0, 3).map((stat) => {
-              const Icon = stat.icon
-              return (
+        {/* Mobile: 3x2 grid */}
+        <div className="sm:hidden grid grid-cols-3 gap-2.5">
+          {stats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div
+                key={stat.label}
+                className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]"
+              >
                 <div
-                  key={stat.label}
-                  className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: stat.accentBg, border: `1px solid ${stat.accentBorder}` }}
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: stat.accentBg, border: `1px solid ${stat.accentBorder}` }}
-                  >
-                    <Icon className="w-4 h-4" style={{ color: stat.accent }} />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {stat.value}
-                    </p>
-                    <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{stat.label}</p>
-                  </div>
+                  <Icon className="w-4 h-4" style={{ color: stat.accent }} />
                 </div>
-              )
-            })}
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {stats.slice(3).map((stat) => {
-              const Icon = stat.icon
-              return (
-                <div
-                  key={stat.label}
-                  className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-[#111111] border border-[#1e1e1e]"
-                >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: stat.accentBg, border: `1px solid ${stat.accentBorder}` }}
-                  >
-                    <Icon className="w-4 h-4" style={{ color: stat.accent }} />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {stat.value}
-                    </p>
-                    <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{stat.label}</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{stat.label}</p>
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Desktop: 5-col */}
-        <div className="hidden sm:grid sm:grid-cols-5 gap-2.5">
+        {/* Desktop: 6-col */}
+        <div className="hidden sm:grid sm:grid-cols-6 gap-2.5">
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
