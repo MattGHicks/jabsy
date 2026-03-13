@@ -25,25 +25,15 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const [profileRes, ownedLeaguesRes, membershipsRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('leagues').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('league_members').select('league_id, role, leagues(*)').eq('user_id', user.id).order('joined_at', { ascending: false }),
+  ])
 
-  // Leagues I own
-  const { data: ownedLeagues } = await supabase
-    .from('leagues')
-    .select('*')
-    .eq('owner_id', user.id)
-    .order('created_at', { ascending: false })
-
-  // Leagues I'm a member of (not owner)
-  const { data: memberships } = await supabase
-    .from('league_members')
-    .select('league_id, role, leagues(*)')
-    .eq('user_id', user.id)
-    .order('joined_at', { ascending: false })
+  const profile = profileRes.data
+  const ownedLeagues = ownedLeaguesRes.data
+  const memberships = membershipsRes.data
 
   // Build a unified list, avoiding duplicates (owner is also a member)
   const ownedIds = new Set((ownedLeagues ?? []).map((l) => l.id))
@@ -91,11 +81,23 @@ export default async function DashboardPage() {
     }
   }
 
-  // Personal stats — my picks across all leagues (join fights for weighted accuracy)
-  const { data: myPicks } = await supabase
-    .from('picks')
-    .select('points_earned, event_id, league_id, fights!inner(result_method, result_winner)')
-    .eq('user_id', user.id)
+  // Personal stats + league rankings + unread counts — parallel where possible
+  const [myPicksRes, ...leagueDataRes] = await Promise.all([
+    supabase
+      .from('picks')
+      .select('points_earned, event_id, league_id, fights!inner(result_method, result_winner)')
+      .eq('user_id', user.id),
+    ...(leagueIds.length > 0
+      ? [
+          supabase.from('picks').select('league_id, user_id, points_earned').in('league_id', leagueIds),
+          getUnreadCounts(leagueIds),
+        ]
+      : []),
+  ])
+
+  const myPicks = myPicksRes.data
+  const allLeaguePicksData = leagueIds.length > 0 ? (leagueDataRes[0] as { data: { league_id: string; user_id: string; points_earned: number | null }[] | null }).data : null
+  const unreadCounts: Record<string, number> = leagueIds.length > 0 ? (leagueDataRes[1] as Record<string, number>) : {}
 
   type FightJoin = { result_method: string; result_winner: string | null }
   const scoredPicks = (myPicks ?? []).filter((p) => p.points_earned !== null)
@@ -120,10 +122,7 @@ export default async function DashboardPage() {
   // League rankings — all picks in user's leagues grouped by (league_id, user_id)
   let userRanks: Record<string, { rank: number; total: number; of: number }> = {}
   if (leagueIds.length > 0) {
-    const { data: allLeaguePicks } = await supabase
-      .from('picks')
-      .select('league_id, user_id, points_earned')
-      .in('league_id', leagueIds)
+    const allLeaguePicks = allLeaguePicksData
 
     // Build totals per (league, user)
     const leagueUserTotals: Record<string, Record<string, number>> = {}
@@ -174,9 +173,6 @@ export default async function DashboardPage() {
       })
     )
   }
-
-  // Unread chat counts per league
-  const unreadCounts = leagueIds.length > 0 ? await getUnreadCounts(leagueIds) : {}
 
   const canCreateLeague = profile?.role === 'admin' || profile?.role === 'league_owner'
 

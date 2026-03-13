@@ -21,11 +21,25 @@ export default async function ProfilePage() {
 
   if (!profile) redirect('/login')
 
-  // ── Stats queries (same pattern as dashboard) ──
-  const { data: myPicks } = await supabase
-    .from('picks')
-    .select('points_earned, event_id, league_id, fights!inner(result_method, result_winner)')
-    .eq('user_id', user.id)
+  // ── Parallel queries for stats + leagues ──
+  const [picksRes, memberLeaguesRes, ownedLeaguesRes] = await Promise.all([
+    supabase
+      .from('picks')
+      .select('points_earned, event_id, league_id, fights!inner(result_method, result_winner)')
+      .eq('user_id', user.id),
+    supabase
+      .from('league_members')
+      .select('league_id, leagues(id, name, owner_id, avatar_url)')
+      .eq('user_id', user.id),
+    supabase
+      .from('leagues')
+      .select('id, name, owner_id, avatar_url')
+      .eq('owner_id', user.id),
+  ])
+
+  const myPicks = picksRes.data
+  const memberLeagues = memberLeaguesRes.data
+  const ownedLeagues = ownedLeaguesRes.data
 
   type FightJoin = { result_method: string; result_winner: string | null }
   const scoredPicks = (myPicks ?? []).filter((p) => p.points_earned !== null)
@@ -46,17 +60,6 @@ export default async function ProfilePage() {
   const bestEventScore = Object.values(eventScores).length > 0
     ? Math.max(...Object.values(eventScores))
     : null
-
-  // Leagues
-  const { data: memberLeagues } = await supabase
-    .from('league_members')
-    .select('league_id, leagues(id, name, owner_id, avatar_url)')
-    .eq('user_id', user.id)
-
-  const { data: ownedLeagues } = await supabase
-    .from('leagues')
-    .select('id, name, owner_id, avatar_url')
-    .eq('owner_id', user.id)
 
   type LeagueJoin = { id: string; name: string; owner_id: string; avatar_url: string | null }
   const memberLeagueIds = new Set((memberLeagues ?? []).map((l) => l.league_id))
