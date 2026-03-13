@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { loginWithEmail } from '@/actions/auth'
+import { PasswordInput } from './password-input'
 
 function GoogleIcon() {
   return (
@@ -65,11 +66,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 className="h-10 w-full rounded-md px-3 text-sm bg-[#0a0a0a] border border-[#27272a] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors" />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium text-[#a1a1aa]">Password</label>
-              <input id="password" name="password" type="password" required autoComplete="current-password" placeholder="••••••••"
-                className="h-10 w-full rounded-md px-3 text-sm bg-[#0a0a0a] border border-[#27272a] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors" />
-            </div>
+            <PasswordInput />
 
             <button type="submit" className="h-10 w-full rounded-md bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors cursor-pointer mt-1">
               Sign in

@@ -160,6 +160,28 @@ export async function updateProfile(formData: FormData) {
   redirect('/dashboard')
 }
 
+export async function updateAvatar(formData: FormData): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const avatarFile = formData.get('avatar') as File | null
+  if (!avatarFile || avatarFile.size === 0) return { error: 'No file provided' }
+
+  const fileExt = avatarFile.name.split('.').pop()
+  const filePath = `${user.id}/avatar.${fileExt}`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, avatarFile, { upsert: true })
+  if (uploadError) return { error: `Avatar upload failed: ${uploadError.message}` }
+
+  const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+  const { error } = await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', user.id)
+  if (error) return { error: error.message }
+
+  return {}
+}
+
 export async function updateProfileSettings(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

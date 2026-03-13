@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, User, LogOut, X, ShieldCheck, ChevronDown, Menu } from 'lucide-react'
+import { LayoutDashboard, User, LogOut, X, ShieldCheck, Menu } from 'lucide-react'
 import { signOut } from '@/actions/auth'
 import { cn, getInitials } from '@/lib/utils'
 import type { Profile } from '@/types'
@@ -17,11 +17,6 @@ type NavItem = { href: string; label: string; icon: React.ElementType; danger?: 
 export function NavBar({ user }: NavBarProps) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-
-  const navLinks: NavItem[] = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  ]
 
   const isAdmin = user.role === 'admin'
   const initials = getInitials(user.username ?? user.id.slice(0, 2))
@@ -39,112 +34,29 @@ export function NavBar({ user }: NavBarProps) {
             JABSY
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium transition-colors',
-                  pathname === href || pathname.startsWith(href + '/')
-                    ? 'text-[#f4f4f5] bg-[#1e1e1e]'
-                    : 'text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#141414]'
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            ))}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className={cn(
-                  'inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium transition-colors',
-                  pathname.startsWith('/admin')
-                    ? 'text-[#e11d48] bg-[#e11d48]/10'
-                    : 'text-[#71717a] hover:text-[#e11d48] hover:bg-[#e11d48]/5'
-                )}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Admin
-              </Link>
-            )}
-          </nav>
-
-          {/* Right: user menu (desktop) + avatar trigger (mobile) */}
-          <div className="flex items-center gap-2">
-            {/* Desktop user menu */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => setUserMenuOpen((o) => !o)}
-                className="group flex items-center gap-2 h-9 pl-1 pr-2.5 rounded-full hover:bg-[#141414] border border-transparent hover:border-[#1e1e1e] transition-all duration-200 cursor-pointer"
-              >
-                <div className="w-7 h-7 rounded-full bg-[#e11d48]/20 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden">
-                  {user.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] font-bold text-[#e11d48]">{initials}</span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-[#a1a1aa] group-hover:text-[#f4f4f5] transition-colors">{user.username}</span>
-                <ChevronDown className={cn(
-                  'w-3 h-3 text-[#52525b] group-hover:text-[#71717a] transition-all duration-200',
-                  userMenuOpen && 'rotate-180'
-                )} />
-              </button>
-              {userMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-[#141414] border border-[#27272a] rounded-lg shadow-xl z-40 overflow-hidden">
-                    <Link
-                      href="/profile"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-sm text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#1e1e1e] transition-colors"
-                    >
-                      <User className="w-4 h-4" />
-                      Profile
-                    </Link>
-                    <div className="h-px bg-[#1e1e1e] mx-2" />
-                    <form action={signOut}>
-                      <button
-                        type="submit"
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#71717a] hover:text-[#e11d48] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Sign out
-                      </button>
-                    </form>
-                  </div>
-                </>
+          {/* Menu trigger — same on all screen sizes */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="flex items-center gap-2 h-9 pl-1.5 pr-2.5 rounded-full bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] hover:border-[#27272a] active:scale-95 transition-all duration-150 cursor-pointer"
+            aria-label="Open menu"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden shrink-0">
+              {user.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                  {initials}
+                </span>
               )}
             </div>
-
-            {/* Mobile: hamburger + avatar */}
-            <button
-              onClick={() => setMenuOpen(true)}
-              className="md:hidden flex items-center gap-2 h-9 pl-1.5 pr-2.5 rounded-full bg-[#141414] border border-[#1e1e1e] active:scale-95 transition-transform duration-150 cursor-pointer"
-              aria-label="Open menu"
-            >
-              <div className="w-7 h-7 rounded-full bg-[#e11d48]/15 border border-[#e11d48]/30 flex items-center justify-center overflow-hidden shrink-0">
-                {user.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.avatar_url} alt={user.username ?? ''} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[10px] font-bold text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                    {initials}
-                  </span>
-                )}
-              </div>
-              <Menu className="w-4 h-4 text-[#71717a]" />
-            </button>
-          </div>
+            <Menu className="w-4 h-4 text-[#71717a]" />
+          </button>
         </div>
       </header>
 
-      {/* ── Mobile panel — always in DOM, CSS-transitioned ── */}
-      <div className="md:hidden">
+      {/* ── Slide-in panel — all screen sizes ── */}
+      <div>
         {/* Backdrop */}
         <div
           className={cn(
