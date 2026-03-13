@@ -392,18 +392,21 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
     }
   }, [activeMsgId])
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages — use container scroll to avoid moving outer page
   useEffect(() => {
     if (messages.length > prevMessageCountRef.current && shouldScrollRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      const el = messagesContainerRef.current
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
     prevMessageCountRef.current = messages.length
   }, [messages.length])
 
-  // Initial scroll to bottom
+  // Initial scroll to bottom — use instant for first load, container scroll instead of scrollIntoView
+  // to avoid moving the entire page
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView()
+      const el = messagesContainerRef.current
+      if (el) el.scrollTop = el.scrollHeight
     }
   }, [isLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -933,7 +936,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
               placeholder={pendingImage ? 'Add a caption...' : 'Message...'}
               maxLength={500}
               rows={1}
-              className="w-full resize-none bg-[#111111] border border-[#1e1e1e] rounded-xl px-3 py-2 text-[13px] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#27272a] transition-colors min-h-[36px] max-h-[100px]"
+              className="w-full resize-none bg-[#111111] border border-[#1e1e1e] rounded-xl px-3 py-2 text-[16px] sm:text-[13px] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#27272a] transition-colors min-h-[36px] max-h-[100px]"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
             />
           </div>

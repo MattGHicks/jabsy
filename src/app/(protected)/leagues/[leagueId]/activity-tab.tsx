@@ -97,7 +97,7 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl">
+    <div className="flex flex-col gap-6">
       {grouped.map((group) => (
         <div key={group.label}>
           <p

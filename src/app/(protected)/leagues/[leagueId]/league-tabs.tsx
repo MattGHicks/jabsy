@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, MessageCircle, Activity } from 'lucide-react'
 import { cn, formatDateTime, getInitials } from '@/lib/utils'
@@ -70,6 +70,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
   const [tab, setTab] = useState<TabKey>(initialTab ?? 'events')
   const [showAccuracyInfo, setShowAccuracyInfo] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const tabBarRef = useRef<HTMLDivElement>(null)
 
   // Fetch unread count on mount (or mark read immediately if opening on chat tab)
   useEffect(() => {
@@ -88,6 +89,10 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
       markChatRead(leagueId)
       setUnreadCount(0)
     }
+    // Scroll tab bar into view so content stays visible after switch
+    requestAnimationFrame(() => {
+      tabBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   const activeEvents = events.filter(e => e.status !== 'completed' && e.status !== 'cancelled')
@@ -106,7 +111,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
   return (
     <div>
       {/* Tab cards — matching dashboard stat-card style */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-8">
+      <div ref={tabBarRef} className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-8 scroll-mt-16">
         {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder, badge }) => {
           const isActive = tab === key
           return (
@@ -141,7 +146,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                     style={{ color: isActive ? accent : '#52525b' }}
                   />
                 </div>
-                {badge && badge > 0 && !isActive && (
+                {badge !== undefined && badge > 0 && !isActive && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#e11d48] text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#e11d48]/30">
                     {badge > 99 ? '99+' : badge}
                   </span>
@@ -169,6 +174,9 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
           )
         })}
       </div>
+
+      {/* Tab content — keyed wrapper for fade-in on switch */}
+      <div key={tab} className="animate-fade-in" style={{ animationDuration: '0.25s' }}>
 
       {/* Events tab (upcoming + live only) */}
       {tab === 'events' && (
@@ -212,7 +220,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
 
       {/* Standings tab — merged with Members functionality */}
       {tab === 'standings' && (
-        <div className="flex flex-col gap-2.5 max-w-3xl">
+        <div className="flex flex-col gap-2.5">
           {/* Accuracy info toggle */}
           <div className="flex items-center justify-end">
             <button
@@ -263,89 +271,176 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
               <p className="text-sm text-[#71717a]">No standings yet. Make picks to get on the board.</p>
             </div>
           ) : (
-            standings.map((s, i) => {
-              const profile = profilesMap[s.userId]
-              const isMe = s.userId === currentUserId
-              const isLeagueOwner = s.userId === leagueOwnerId
-              const rankStyle = RANK_STYLES[i] ?? null
-              const rank = i + 1
-              const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
+            <div className="flex flex-col gap-2.5">
+              {/* Top 3 — compact 3-col on mobile, spacious podium on desktop */}
+              {standings.length >= 1 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {standings.slice(0, 3).map((s, i) => {
+                    const profile = profilesMap[s.userId]
+                    const isMe = s.userId === currentUserId
+                    const isLeagueOwner = s.userId === leagueOwnerId
+                    const rankStyle = RANK_STYLES[i] ?? null
+                    const rank = i + 1
+                    const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
 
-              return (
-                <Link
-                  key={s.userId}
-                  href={profileUrl}
-                  className={cn(
-                    'flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-200 group',
-                    isMe
-                      ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
-                      : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
-                  )}
-                >
-                  {/* Rank */}
-                  <div className={cn(
-                    'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border',
-                    rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
-                    rankStyle ? rankStyle.color : 'text-[#52525b]'
-                  )}>
-                    {rank}
-                  </div>
+                    return (
+                      <Link
+                        key={s.userId}
+                        href={profileUrl}
+                        className={cn(
+                          'flex flex-col items-center gap-2 md:gap-3 px-2 py-3 md:px-5 md:py-5 rounded-xl border transition-all duration-200 group',
+                          isMe
+                            ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
+                            : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
+                        )}
+                      >
+                        {/* Rank badge */}
+                        <div className={cn(
+                          'w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center text-xs md:text-sm font-bold border self-start',
+                          rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
+                          rankStyle ? rankStyle.color : 'text-[#52525b]'
+                        )}>
+                          {rank}
+                        </div>
 
-                  {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors">
-                    {profile?.avatar_url
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                      : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
-                    }
-                  </div>
+                        {/* Avatar */}
+                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-[#1e1e1e] border-2 overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors"
+                          style={{ borderColor: rankStyle ? undefined : '#27272a' }}
+                        >
+                          {profile?.avatar_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-xs md:text-base font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
+                          }
+                        </div>
 
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
-                        {profile?.username ?? 'Unknown'}
-                      </p>
-                      {isMe && <span className="text-xs text-[#e11d48] font-normal shrink-0">you</span>}
-                      {isLeagueOwner && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
-                          <Crown className="w-2.5 h-2.5" />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
-                  </div>
+                        {/* Name */}
+                        <div className="text-center min-w-0 w-full">
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            <p className={cn('text-[11px] md:text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                              {profile?.username ?? 'Unknown'}
+                            </p>
+                            {isMe && <span className="text-[10px] md:text-xs text-[#e11d48] font-normal shrink-0">you</span>}
+                            {isLeagueOwner && (
+                              <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                                <Crown className="w-2 h-2" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                  {/* Remove button — stop propagation so it doesn't navigate */}
-                  {isOwner && !isMe && !isLeagueOwner && (
-                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                    <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
-                      <RemoveMemberButton
-                        leagueId={leagueId}
-                        memberId={s.userId}
-                        username={profile?.username ?? null}
-                      />
-                    </div>
-                  )}
+                        {/* Accuracy */}
+                        <p
+                          className={cn('text-lg md:text-2xl font-bold leading-none', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
+                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                        >
+                          {s.accuracy !== null ? `${s.accuracy}%` : '—'}
+                        </p>
+                        <p className="text-[9px] md:text-[10px] text-[#52525b] uppercase tracking-wide -mt-1">
+                          {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
+                        </p>
 
-                  {/* Accuracy + Points */}
-                  <div className="text-right shrink-0">
-                    <p
-                      className={cn('text-xl font-bold leading-none', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-                    >
-                      {s.accuracy !== null ? `${s.accuracy}%` : '—'}
-                    </p>
-                    <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide">
-                      {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
-                    </p>
-                  </div>
+                        {/* Remove button */}
+                        {isOwner && !isMe && !isLeagueOwner && (
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                          <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
+                            <RemoveMemberButton
+                              leagueId={leagueId}
+                              memberId={s.userId}
+                              username={profile?.username ?? null}
+                            />
+                          </div>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
 
-                  {/* Chevron hint */}
-                  <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
-                </Link>
-              )
-            })
+              {/* Rank 4+ — horizontal rows in 2-col grid */}
+              {standings.length > 3 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {standings.slice(3).map((s, i) => {
+                    const profile = profilesMap[s.userId]
+                    const isMe = s.userId === currentUserId
+                    const isLeagueOwner = s.userId === leagueOwnerId
+                    const rank = i + 4
+                    const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
+
+                    return (
+                      <Link
+                        key={s.userId}
+                        href={profileUrl}
+                        className={cn(
+                          'flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-200 group',
+                          isMe
+                            ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
+                            : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
+                        )}
+                      >
+                        {/* Rank */}
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border bg-[#0a0a0a] border-[#1e1e1e] text-[#52525b]">
+                          {rank}
+                        </div>
+
+                        {/* Avatar */}
+                        <div className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors">
+                          {profile?.avatar_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
+                          }
+                        </div>
+
+                        {/* Name */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                              {profile?.username ?? 'Unknown'}
+                            </p>
+                            {isMe && <span className="text-xs text-[#e11d48] font-normal shrink-0">you</span>}
+                            {isLeagueOwner && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                                <Crown className="w-2.5 h-2.5" />
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
+                        </div>
+
+                        {/* Remove button */}
+                        {isOwner && !isMe && !isLeagueOwner && (
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                          <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
+                            <RemoveMemberButton
+                              leagueId={leagueId}
+                              memberId={s.userId}
+                              username={profile?.username ?? null}
+                            />
+                          </div>
+                        )}
+
+                        {/* Accuracy + Points */}
+                        <div className="text-right shrink-0">
+                          <p
+                            className="text-xl font-bold leading-none text-[#f4f4f5]"
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                          >
+                            {s.accuracy !== null ? `${s.accuracy}%` : '—'}
+                          </p>
+                          <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide">
+                            {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
+                          </p>
+                        </div>
+
+                        {/* Chevron hint */}
+                        <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -507,6 +602,8 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
           )}
         </div>
       )}
+
+      </div>{/* end tab content fade wrapper */}
     </div>
   )
 }

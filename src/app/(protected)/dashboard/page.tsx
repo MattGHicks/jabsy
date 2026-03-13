@@ -163,6 +163,18 @@ export default async function DashboardPage() {
     }
   }
 
+  // Per-league accuracy from already-fetched picks
+  const leagueAccuracy: Record<string, number | null> = {}
+  for (const lid of leagueIds) {
+    const lPicks = scoredPicks.filter((p) => p.league_id === lid)
+    leagueAccuracy[lid] = calcWeightedAccuracy(
+      lPicks.map((p) => {
+        const f = p.fights as unknown as FightJoin
+        return { points_earned: p.points_earned, result_method: f.result_method, result_winner: f.result_winner }
+      })
+    )
+  }
+
   // Unread chat counts per league
   const unreadCounts = leagueIds.length > 0 ? await getUnreadCounts(leagueIds) : {}
 
@@ -323,69 +335,100 @@ export default async function DashboardPage() {
               const nextEvent = nextEvents[l.id]
               const rank = userRanks[l.id]
               const unread = unreadCounts[l.id] ?? 0
+              const acc = leagueAccuracy[l.id]
 
               return (
                 <Link
                   key={l.id}
                   href={`/leagues/${l.id}`}
-                  className="group flex items-center gap-3.5 p-4 rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.98]"
+                  className={`group relative flex flex-col rounded-2xl bg-[#111111] border overflow-hidden transition-all active:scale-[0.98] ${
+                    isOwner ? 'border-[#e11d48]/20' : 'border-[#1e1e1e]'
+                  }`}
                 >
-                  {/* League logo */}
-                  <div className="relative shrink-0">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ${
-                      isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
-                    }`}>
-                      {l.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                      ) : (
-                        <span
-                          className={`text-base leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
-                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
-                        >
-                          {getInitials(l.name)}
-                        </span>
-                      )}
-                    </div>
-                    {unread > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-[#22c55e] text-[#0a0a0a] text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-sm shadow-[#22c55e]/30">
-                        {unread > 99 ? '99+' : unread}
-                      </span>
-                    )}
-                  </div>
+                  {/* Top accent bar */}
+                  <div className={`h-0.5 w-full ${isOwner ? 'bg-gradient-to-r from-[#e11d48] to-[#e11d48]/20' : 'bg-[#1e1e1e]'}`} />
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <h3
-                        className="text-[15px] text-[#f4f4f5] uppercase leading-tight truncate group-hover:text-white transition-colors"
-                        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                      >
-                        {l.name}
-                      </h3>
-                      {isOwner && <Crown className="w-3 h-3 text-[#e11d48]/40 shrink-0" />}
-                    </div>
-                    {nextEvent ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1 h-1 rounded-full bg-blue-400 shrink-0 animate-pulse" />
-                        <span className="truncate text-[11px] text-[#52525b]">{nextEvent.name}</span>
+                  <div className="p-4">
+                    {/* Top row: avatar + name + unread */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="relative shrink-0">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden ${
+                          isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
+                        }`}>
+                          {l.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          ) : (
+                            <span
+                              className={`text-lg leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
+                            >
+                              {getInitials(l.name)}
+                            </span>
+                          )}
+                        </div>
+                        {unread > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-[#22c55e] text-[#0a0a0a] text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-sm shadow-[#22c55e]/30">
+                            {unread > 99 ? '99+' : unread}
+                          </span>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-[11px] text-[#52525b]">{memberCount} members · {eventCount} events</p>
-                    )}
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <h3
+                            className="text-base text-[#f4f4f5] uppercase leading-tight truncate group-hover:text-white transition-colors"
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                          >
+                            {l.name}
+                          </h3>
+                          {isOwner && <Crown className="w-3 h-3 text-[#e11d48]/40 shrink-0" />}
+                        </div>
+                        {nextEvent ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-blue-400 shrink-0 animate-pulse" />
+                            <span className="truncate text-sm uppercase text-blue-400/70" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{nextEvent.name}</span>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-[#52525b]">No upcoming events</p>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#3f3f46] group-hover:text-[#52525b] transition-colors shrink-0" />
+                    </div>
 
-                  {/* Rank + chevron */}
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    {rank && rank.of > 1 && (
-                      <span
-                        className="text-xs text-[#52525b]"
-                        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-                      >
-                        #{rank.rank}<span className="text-[#3f3f46]">/{rank.of}</span>
-                      </span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-[#3f3f46] group-hover:text-[#52525b] transition-colors" />
+                    {/* Stats row */}
+                    <div className="flex items-center gap-0 border-t border-[#1e1e1e] pt-3">
+                      <div className="flex-1 text-center">
+                        <div
+                          className={`text-2xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#f4f4f5]'}`}
+                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                        >
+                          {acc !== null ? `${acc}%` : '—'}
+                        </div>
+                        <div className="text-[9px] text-[#52525b] uppercase tracking-wider mt-1">accuracy</div>
+                      </div>
+                      <div className="w-px h-8 bg-[#1e1e1e]" />
+                      <div className="flex-1 text-center">
+                        <div
+                          className="text-2xl leading-none text-[#52525b]"
+                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                        >
+                          {rank && rank.of > 1 ? `#${rank.rank}` : '—'}
+                        </div>
+                        <div className="text-[9px] text-[#3f3f46] uppercase tracking-wider mt-1">
+                          {rank && rank.of > 1 ? `of ${rank.of}` : 'rank'}
+                        </div>
+                      </div>
+                      <div className="w-px h-8 bg-[#1e1e1e]" />
+                      <div className="flex-1 text-center">
+                        <div
+                          className="text-2xl leading-none text-[#71717a]"
+                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                        >
+                          {memberCount}
+                        </div>
+                        <div className="text-[9px] text-[#3f3f46] uppercase tracking-wider mt-1">members</div>
+                      </div>
+                    </div>
                   </div>
                 </Link>
               )
@@ -393,7 +436,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Desktop: card grid */}
-          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className={`hidden sm:grid gap-3 ${allLeagues.length === 1 ? 'sm:grid-cols-1' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
             {allLeagues.map((league) => {
               const l = league as { id: string; name: string; created_at: string; description?: string | null; avatar_url?: string | null; _role: string }
               const isOwner = l._role === 'owner' || l._role === 'admin'
@@ -401,8 +444,8 @@ export default async function DashboardPage() {
               const eventCount = eventCounts[l.id] ?? 0
               const nextEvent = nextEvents[l.id]
               const rank = userRanks[l.id]
-              const leaguePts = rank?.total ?? 0
               const unread = unreadCounts[l.id] ?? 0
+              const acc = leagueAccuracy[l.id]
 
               return (
                 <Link
@@ -423,10 +466,11 @@ export default async function DashboardPage() {
                     </div>
                   )}
 
-                  <div className="p-5 flex-1 flex flex-col">
-                    {/* League logo + Name */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
+                  {allLeagues.length === 1 ? (
+                    /* ── Full-width single-league layout ── */
+                    <div className="p-7 flex items-center gap-8">
+                      {/* Avatar */}
+                      <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden ${
                         isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
                       }`}>
                         {l.avatar_url ? (
@@ -434,73 +478,154 @@ export default async function DashboardPage() {
                           <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                         ) : (
                           <span
-                            className={`text-sm leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                            className={`text-2xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
                             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
                           >
                             {getInitials(l.name)}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                        <h3
-                          className="text-base text-[#f4f4f5] group-hover:text-white transition-colors uppercase leading-tight truncate"
-                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                        >
-                          {l.name}
-                        </h3>
-                        {isOwner && <Crown className="w-3.5 h-3.5 text-[#e11d48]/40 shrink-0" />}
-                      </div>
-                    </div>
 
-                    {/* Stats row */}
-                    <div className="flex items-baseline gap-5 mb-4">
-                      <div>
-                        <span
-                          className={`text-2xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#f4f4f5]'}`}
-                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                        >
-                          {leaguePts > 0 ? leaguePts : '—'}
-                        </span>
-                        <span className="text-[9px] text-[#52525b] uppercase tracking-wider ml-1.5">pts</span>
+                      {/* Name + next event */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3
+                            className="text-2xl text-[#f4f4f5] group-hover:text-white transition-colors uppercase leading-tight truncate"
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                          >
+                            {l.name}
+                          </h3>
+                          {isOwner && <Crown className="w-4 h-4 text-[#e11d48]/40 shrink-0" />}
+                        </div>
+                        {nextEvent ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 animate-pulse" />
+                            <span className="truncate uppercase text-blue-400/70 text-sm" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                              {nextEvent.name}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-[#52525b]">No upcoming events</span>
+                        )}
                       </div>
-                      {rank && rank.of > 1 && (
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-8 shrink-0">
+                        <div className="text-center">
+                          <div
+                            className={`text-4xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#f4f4f5]'}`}
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                          >
+                            {acc !== null ? `${acc}%` : '—'}
+                          </div>
+                          <div className="text-[10px] text-[#52525b] uppercase tracking-wider mt-1">accuracy</div>
+                        </div>
+                        {rank && rank.of > 1 && (
+                          <div className="text-center">
+                            <div
+                              className="text-4xl leading-none text-[#52525b]"
+                              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                            >
+                              #{rank.rank}
+                            </div>
+                            <div className="text-[10px] text-[#3f3f46] uppercase tracking-wider mt-1">of {rank.of}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Divider + meta */}
+                      <div className="border-l border-[#1e1e1e] pl-8 shrink-0 flex flex-col gap-1.5">
+                        <span className="text-sm text-[#52525b]">
+                          <span className="text-[#a1a1aa] font-medium">{memberCount}</span> members
+                        </span>
+                        <span className="text-sm text-[#52525b]">
+                          <span className="text-[#a1a1aa] font-medium">{eventCount}</span> events
+                        </span>
+                      </div>
+
+                      <ChevronRight className="w-5 h-5 text-[#3f3f46] group-hover:text-[#52525b] transition-colors shrink-0" />
+                    </div>
+                  ) : (
+                    /* ── Multi-league card layout ── */
+                    <div className="p-5 flex-1 flex flex-col">
+                      {/* League logo + Name */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
+                          isOwner ? 'bg-[#e11d48]/8 border border-[#e11d48]/15' : 'bg-[#0a0a0a] border border-[#1e1e1e]'
+                        }`}>
+                          {l.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={l.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          ) : (
+                            <span
+                              className={`text-sm leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
+                            >
+                              {getInitials(l.name)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                          <h3
+                            className="text-base text-[#f4f4f5] group-hover:text-white transition-colors uppercase leading-tight truncate"
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                          >
+                            {l.name}
+                          </h3>
+                          {isOwner && <Crown className="w-3.5 h-3.5 text-[#e11d48]/40 shrink-0" />}
+                        </div>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex items-baseline gap-5 mb-4">
                         <div>
                           <span
-                            className="text-xl leading-none text-[#52525b]"
-                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                            className={`text-2xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#f4f4f5]'}`}
+                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
                           >
-                            #{rank.rank}
+                            {acc !== null ? `${acc}%` : '—'}
                           </span>
-                          <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">of {rank.of}</span>
+                          <span className="text-[9px] text-[#52525b] uppercase tracking-wider ml-1.5">accuracy</span>
+                        </div>
+                        {rank && rank.of > 1 && (
+                          <div>
+                            <span
+                              className="text-xl leading-none text-[#52525b]"
+                              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+                            >
+                              #{rank.rank}
+                            </span>
+                            <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">of {rank.of}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Next event */}
+                      {nextEvent ? (
+                        <div className="flex items-center gap-1.5 mb-4">
+                          <div className="w-1 h-1 rounded-full bg-blue-400 shrink-0 animate-pulse" />
+                          <span className="truncate uppercase text-blue-400/70 text-xs" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                            {nextEvent.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <span className="text-xs text-[#52525b]">No upcoming events</span>
                         </div>
                       )}
-                    </div>
 
-                    {/* Next event */}
-                    {nextEvent ? (
-                      <div className="flex items-center gap-1.5 mb-4">
-                        <div className="w-1 h-1 rounded-full bg-blue-400 shrink-0 animate-pulse" />
-                        <span className="truncate uppercase text-blue-400/70 text-xs" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
-                          {nextEvent.name}
+                      {/* Footer */}
+                      <div className="flex items-center gap-3 pt-3 border-t border-[#1e1e1e]/60 mt-auto">
+                        <span className="text-[11px] text-[#52525b]">
+                          <span className="text-[#71717a] font-medium">{memberCount}</span> members
+                        </span>
+                        <span className="text-[#3f3f46]">·</span>
+                        <span className="text-[11px] text-[#52525b]">
+                          <span className="text-[#71717a] font-medium">{eventCount}</span> events
                         </span>
                       </div>
-                    ) : (
-                      <div className="mb-4">
-                        <span className="text-xs text-[#52525b]">No upcoming events</span>
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="flex items-center gap-3 pt-3 border-t border-[#1e1e1e]/60 mt-auto">
-                      <span className="text-[11px] text-[#52525b]">
-                        <span className="text-[#71717a] font-medium">{memberCount}</span> members
-                      </span>
-                      <span className="text-[#3f3f46]">·</span>
-                      <span className="text-[11px] text-[#52525b]">
-                        <span className="text-[#71717a] font-medium">{eventCount}</span> events
-                      </span>
                     </div>
-                  </div>
+                  )}
                 </Link>
               )
             })}
