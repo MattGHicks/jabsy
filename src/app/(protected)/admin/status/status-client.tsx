@@ -8,13 +8,21 @@ import type { SystemTestResult } from '@/actions/admin'
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
-export function StatusRefresher({ intervalMs = 30000 }: { intervalMs?: number }) {
+export function StatusRefresher({ intervalMs = 60000 }: { intervalMs?: number }) {
   const router = useRouter()
   useEffect(() => {
     const id = setInterval(() => router.refresh(), intervalMs)
     return () => clearInterval(id)
   }, [router, intervalMs])
   return null
+}
+
+export function RefreshTimestamp() {
+  const [time, setTime] = useState('')
+  useEffect(() => {
+    setTime(new Date().toLocaleTimeString())
+  }, [])
+  return <>{time}</>
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

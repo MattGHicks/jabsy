@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Activity, Wifi, Bot, Zap, AlertTriangle, CheckCircle2, ShieldCheck, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { StatusRefresher, ActivityFeed, SystemTestButton } from './status-client'
+import { StatusRefresher, RefreshTimestamp, ActivityFeed, SystemTestButton } from './status-client'
 import type { LogEntry } from './status-client'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export default async function StatusPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <StatusRefresher intervalMs={30000} />
+      {liveEvent?.status === 'live' && <StatusRefresher intervalMs={60000} />}
 
       {/* ─── Back button ─────────────────────────────────────────────────── */}
       <Link href="/admin" className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70">
@@ -179,10 +179,14 @@ export default async function StatusPage() {
         </div>
         <div className="text-right shrink-0 mt-1">
           <div className="flex items-center gap-1.5 justify-end mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-[10px] text-[#71717a]">Auto-refreshing</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${liveEvent?.status === 'live' ? 'bg-green-400 animate-pulse' : 'bg-[#3f3f46]'}`} />
+            <span className="text-[10px] text-[#71717a]">
+              {liveEvent?.status === 'live' ? 'Auto-refreshing' : 'Manual refresh'}
+            </span>
           </div>
-          <p className="text-[10px] text-[#3f3f46]">Every 30s · {new Date().toLocaleTimeString()}</p>
+          <p className="text-[10px] text-[#3f3f46]">
+            {liveEvent?.status === 'live' ? 'Every 60s · ' : 'As of · '}<RefreshTimestamp />
+          </p>
         </div>
       </div>
 
