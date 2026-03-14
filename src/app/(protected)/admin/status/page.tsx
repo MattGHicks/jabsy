@@ -139,7 +139,7 @@ export default async function StatusPage() {
     status: l.status,
     request_count: l.request_count,
     details: l.details,
-    event_name: (l.events as { name: string } | null)?.name ?? null,
+    event_name: (l.events as unknown as { name: string } | null)?.name ?? null,
   }))
 
   const integrityCount = pendingInCompleted.length + (crossValWarnings?.length ?? 0)
