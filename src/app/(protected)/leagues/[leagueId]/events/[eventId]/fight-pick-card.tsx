@@ -339,7 +339,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
               {/* Method row */}
               <div className="flex items-center gap-1.5">
                 <span className={cn(
-                  'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors w-14',
+                  'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
                   methodFlash ? 'text-amber-400' : 'text-[#3f3f46]'
                 )}>
                   {methodFlash ? 'Method ▸' : 'Method'}
@@ -368,7 +368,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
               {showRounds && (
                 <div className="flex items-center gap-1.5 mt-2">
                   <span className={cn(
-                    'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors w-14',
+                    'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
                     roundFlash ? 'text-amber-400' : 'text-[#3f3f46]'
                   )}>
                     {roundFlash ? 'Round ▸' : 'Round'}
