@@ -469,7 +469,7 @@ export default async function StatusPage() {
                       <div className="min-w-0">
                         <p className="text-[11px] text-[#f4f4f5]">Cross-validation mismatch</p>
                         <p className="text-[10px] text-[#52525b] mt-0.5">
-                          <span className="text-[#71717a]">{(w.events as { name: string } | null)?.name ?? 'Unknown event'}</span>
+                          <span className="text-[#71717a]">{(w.events as unknown as { name: string } | null)?.name ?? 'Unknown event'}</span>
                           <span className="text-[#3f3f46] mx-1">·</span>
                           <span className="font-mono">{relTime(w.created_at)}</span>
                         </p>

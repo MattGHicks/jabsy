@@ -113,7 +113,7 @@ function LogEntryRow({ log }: { log: LogEntry }) {
               {log.request_count > 0 && (
                 <span className="text-[9px] text-[#3f3f46]">{log.request_count}req</span>
               )}
-              {log.details && (
+              {!!log.details && (
                 <span className="text-[9px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors">
                   {expanded ? '▲ hide' : '▼ details'}
                 </span>
@@ -131,10 +131,10 @@ function LogEntryRow({ log }: { log: LogEntry }) {
         </div>
       </button>
 
-      {expanded && log.details && (
+      {expanded && !!log.details && (
         <div className="px-3 pb-3">
           <pre className="text-[9px] font-mono text-[#71717a] bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-2.5 overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">
-            {JSON.stringify(log.details, null, 2)}
+            {JSON.stringify(log.details as Record<string, unknown>, null, 2)}
           </pre>
         </div>
       )}
