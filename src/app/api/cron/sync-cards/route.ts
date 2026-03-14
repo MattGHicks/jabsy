@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchEventById } from '@/lib/api/espn'
 import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
 import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI } from '@/lib/api/claude-search'
+import { fetchUfcLiveEvent } from '@/lib/api/ufc'
 import type { ValidationWarning } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     // Find events that need syncing
     const { data: events } = await adminClient
       .from('events')
-      .select('id, name, espn_event_id, start_time')
+      .select('id, name, espn_event_id, start_time, ufc_event_fmid')
       .eq('status', 'upcoming')
       .eq('auto_sync_enabled', true)
       .not('espn_event_id', 'is', null)
@@ -193,6 +194,13 @@ export async function GET(request: NextRequest) {
           .update(eventUpdate)
           .eq('id', event.id)
 
+        // Sync UFC CloudFront API IDs (fmid + per-fight IDs) if not yet populated
+        try {
+          await syncUfcIds(adminClient, event)
+        } catch {
+          // UFC ID sync is best-effort — doesn't block the main sync
+        }
+
         results.push({ eventId: event.id, name: event.name, ...changes, warnings: eventWarnings.length })
       } catch (err) {
         console.error(`Sync failed for event ${event.id}:`, err)
@@ -251,4 +259,85 @@ export async function GET(request: NextRequest) {
     console.error('Card sync cron error:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
+}
+
+/**
+ * Fetch the UFC CloudFront event fmid from the UFC.com event page and
+ * populate ufc_event_fmid on the event + ufc_fight_id on each fight.
+ * Matches UFC fights to DB fights by normalizing fighter names.
+ * Safe to call multiple times — skips fields already populated.
+ */
+async function syncUfcIds(
+  adminClient: ReturnType<typeof createAdminClient>,
+  event: { id: string; name: string; ufc_event_fmid: string | null }
+) {
+  // Step 1: Get the fmid if we don't have it yet
+  let fmid = event.ufc_event_fmid
+
+  if (!fmid) {
+    const slug = eventNameToSlug(event.name)
+    const url = `https://www.ufc.com/event/${slug}`
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      })
+      if (!res.ok) return
+      const html = await res.text()
+      const match = html.match(/"event_fmid"\s*:\s*"(\d+)"/)
+      if (!match?.[1]) return
+      fmid = match[1]
+      await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
+    } catch {
+      return
+    }
+  }
+
+  // Step 2: Get UFC fight IDs and match to DB fights by name
+  const ufcFights = await fetchUfcLiveEvent(fmid)
+  if (!ufcFights) return
+
+  const { data: dbFights } = await adminClient
+    .from('fights')
+    .select('id, red_name, blue_name, ufc_fight_id')
+    .eq('event_id', event.id)
+
+  if (!dbFights) return
+
+  const normalize = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+  for (const dbFight of dbFights) {
+    if (dbFight.ufc_fight_id) continue // already have it
+
+    const redNorm = normalize(dbFight.red_name)
+    const blueNorm = normalize(dbFight.blue_name)
+
+    const match = ufcFights.find(uf => {
+      const ufRed = uf.redName ? normalize(uf.redName) : ''
+      const ufBlue = uf.blueName ? normalize(uf.blueName) : ''
+      return (
+        (ufRed.includes(redNorm.split(' ').pop()!) || redNorm.includes(ufRed.split(' ').pop()!)) &&
+        (ufBlue.includes(blueNorm.split(' ').pop()!) || blueNorm.includes(ufBlue.split(' ').pop()!))
+      )
+    })
+
+    if (match) {
+      await adminClient
+        .from('fights')
+        .update({ ufc_fight_id: match.fightId })
+        .eq('id', dbFight.id)
+    }
+  }
+}
+
+/**
+ * Convert an event name like "UFC Fight Night: Emmett vs. Vallejos"
+ * to a UFC.com URL slug like "ufc-fight-night-emmett-vs-vallejos".
+ */
+function eventNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
 }
