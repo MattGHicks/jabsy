@@ -32,7 +32,7 @@ export function WebViewBanner() {
       <p className="text-xs text-amber-400 font-medium mb-1">Google sign-in not available here</p>
       <p className="text-xs text-amber-400/70 mb-2.5">
         Google doesn&apos;t allow sign-in inside Facebook or Messenger.
-        Tap <span className="font-semibold">⋯ → Open in Browser</span>, or copy the link and paste it in Safari/Chrome.
+        Tap <span className="font-semibold">⋯ and then Open in Browser</span>, or copy the link and paste it in Safari/Chrome.
       </p>
       <button
         onClick={copyUrl}
