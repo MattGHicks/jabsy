@@ -18,6 +18,25 @@ const STATUS_STYLES: Record<string, { badge: string; label: string }> = {
   cancelled: { badge: 'bg-zinc-900 text-zinc-600 border-zinc-800', label: 'Cancelled' },
 }
 
+function getUpcomingLabel(startTime: string): { label: string; badge: string; isToday: boolean } {
+  const now = new Date()
+  const eventDate = new Date(startTime)
+  const et = (d: Date) => new Date(d.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  const nowET = et(now)
+  const eventET = et(eventDate)
+  const todayET = new Date(nowET.getFullYear(), nowET.getMonth(), nowET.getDate())
+  const eventDayET = new Date(eventET.getFullYear(), eventET.getMonth(), eventET.getDate())
+  const diffDays = Math.round((eventDayET.getTime() - todayET.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays <= 0) {
+    return { label: 'Today', badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.15)]', isToday: true }
+  } else if (diffDays === 1) {
+    return { label: 'Tomorrow', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', isToday: false }
+  } else {
+    return { label: `${diffDays} days`, badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', isToday: false }
+  }
+}
+
 interface Event {
   id: string
   name: string
@@ -646,7 +665,10 @@ function renderEventCard(
   pickCounts: Record<string, number>,
   eventWinners: Record<string, WinnerInfo[]>
 ) {
-  const style = STATUS_STYLES[event.status] ?? STATUS_STYLES.upcoming
+  const upcomingInfo = event.status === 'upcoming' ? getUpcomingLabel(event.start_time) : null
+  const style = upcomingInfo
+    ? { badge: upcomingInfo.badge, label: upcomingInfo.label }
+    : STATUS_STYLES[event.status] ?? STATUS_STYLES.upcoming
   const isLocked = event.status === 'live' || event.status === 'completed'
   const picksOpen = event.status === 'upcoming' && isPicksOpen(event.start_time, event.lock_time)
   const activeFights = (event.fights ?? []).filter((f) => f.status !== 'cancelled')
@@ -688,6 +710,9 @@ function renderEventCard(
           <div className={cn('inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0', style.badge)}>
             {event.status === 'live' && (
               <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse inline-block" />
+            )}
+            {upcomingInfo?.isToday && (
+              <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
             )}
             {style.label}
           </div>
