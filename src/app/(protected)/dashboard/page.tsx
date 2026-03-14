@@ -247,39 +247,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* ═══ Next Event ═══ */}
-      {globalNextEvent && (
-        <section className="mb-10">
-          <Link
-            href={`/leagues/${globalNextEvent.league_id}/events/${globalNextEvent.id}/board`}
-            className="group flex items-center gap-4 p-5 rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99]"
-          >
-            <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5 text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-1">Up Next</p>
-              <p
-                className="text-base sm:text-lg text-[#f4f4f5] uppercase truncate leading-tight group-hover:text-white transition-colors"
-                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-              >
-                {globalNextEvent.name}
-              </p>
-              <p className="text-[11px] text-[#52525b] mt-0.5">{globalNextEvent.league_name}</p>
-            </div>
-            <div className="text-right shrink-0 pl-4">
-              <p
-                className="text-2xl sm:text-3xl text-blue-400 leading-none"
-                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-              >
-                {getTimeUntil(globalNextEvent.start_time)}
-              </p>
-              <p className="text-[9px] text-[#52525b] uppercase tracking-wider mt-1">until lock</p>
-            </div>
-          </Link>
-        </section>
-      )}
-
       {/* ═══ Leagues ═══ */}
       {allLeagues.length > 0 && (
         <section className="mb-10">
@@ -608,6 +575,39 @@ export default async function DashboardPage() {
               )
             })}
           </div>
+        </section>
+      )}
+
+      {/* ═══ Next Event ═══ */}
+      {globalNextEvent && (
+        <section className="mb-10">
+          <Link
+            href={`/leagues/${globalNextEvent.league_id}/events/${globalNextEvent.id}/board`}
+            className="group flex items-center gap-4 p-5 rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99]"
+          >
+            <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-1">Up Next</p>
+              <p
+                className="text-base sm:text-lg text-[#f4f4f5] uppercase truncate leading-tight group-hover:text-white transition-colors"
+                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+              >
+                {globalNextEvent.name}
+              </p>
+              <p className="text-[11px] text-[#52525b] mt-0.5">{globalNextEvent.league_name}</p>
+            </div>
+            <div className="text-right shrink-0 pl-4">
+              <p
+                className="text-2xl sm:text-3xl text-blue-400 leading-none"
+                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+              >
+                {getTimeUntil(globalNextEvent.start_time)}
+              </p>
+              <p className="text-[9px] text-[#52525b] uppercase tracking-wider mt-1">until lock</p>
+            </div>
+          </Link>
         </section>
       )}
 
