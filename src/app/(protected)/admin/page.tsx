@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { Calendar, Swords, Users, ShieldCheck, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+import { Calendar, Swords, Users, ShieldCheck, AlertTriangle, Activity, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/utils'
 import { AdminEvents } from './admin-events'
@@ -88,6 +89,17 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {/* Back */}
+      <Link href="/dashboard" className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70">
+        <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
+          <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+        </div>
+        <div className="flex flex-col justify-center leading-none">
+          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
+          <span className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
+        </div>
+      </Link>
+
       {/* Header */}
       <div className="mb-10">
         <p className="text-[10px] font-semibold text-[#e11d48] uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
@@ -146,7 +158,16 @@ export default async function AdminPage() {
       {/* Tools */}
       <section className="mb-10">
         <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3">Tools</p>
-        <SherdogBackfill />
+        <div className="flex flex-wrap gap-2">
+          <SherdogBackfill />
+          <Link
+            href="/admin/status"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#111111] border border-[#1e1e1e] text-[#71717a] text-xs font-semibold hover:text-[#a1a1aa] hover:border-[#27272a] transition-all"
+          >
+            <Activity className="w-3.5 h-3.5" />
+            System Status
+          </Link>
+        </div>
       </section>
 
       {/* Recent Alerts */}

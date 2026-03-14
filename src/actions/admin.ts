@@ -5,6 +5,89 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+export interface SystemTestResult {
+  espn: { ok: boolean; latencyMs: number; error?: string }
+  ufc: { ok: boolean; latencyMs: number; error?: string }
+  claude: { ok: boolean; error?: string }
+  supabase: { ok: boolean; latencyMs: number; error?: string }
+  ranAt: string
+}
+
+export async function runSystemTest(): Promise<SystemTestResult> {
+  await requireAdmin()
+
+  const [espnResult, ufcResult, supabaseResult] = await Promise.all([
+    // Test ESPN API
+    (async () => {
+      const start = Date.now()
+      try {
+        const res = await fetch(
+          'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+          { signal: AbortSignal.timeout(6000) }
+        )
+        return { ok: res.ok, latencyMs: Date.now() - start, error: res.ok ? undefined : `HTTP ${res.status}` }
+      } catch (err) {
+        return { ok: false, latencyMs: Date.now() - start, error: String(err).slice(0, 100) }
+      }
+    })(),
+
+    // Test UFC CloudFront API
+    (async () => {
+      const start = Date.now()
+      try {
+        const res = await fetch(
+          'https://d29dxerjsp82wz.cloudfront.net/api/v3/event/live/1300.json',
+          { signal: AbortSignal.timeout(6000) }
+        )
+        if (!res.ok) return { ok: false, latencyMs: Date.now() - start, error: `HTTP ${res.status}` }
+        const data = await res.json() as { LiveEventDetail?: unknown }
+        return { ok: 'LiveEventDetail' in data, latencyMs: Date.now() - start }
+      } catch (err) {
+        return { ok: false, latencyMs: Date.now() - start, error: String(err).slice(0, 100) }
+      }
+    })(),
+
+    // Test Supabase
+    (async () => {
+      const start = Date.now()
+      try {
+        const admin = createAdminClient()
+        const { error } = await admin.from('events').select('id', { count: 'exact', head: true })
+        return { ok: !error, latencyMs: Date.now() - start, error: error?.message }
+      } catch (err) {
+        return { ok: false, latencyMs: Date.now() - start, error: String(err).slice(0, 100) }
+      }
+    })(),
+  ])
+
+  // Claude: just verify key is configured (no API call to save cost)
+  let claudeOk = false
+  let claudeError: string | undefined
+  try {
+    const key = process.env.ANTHROPIC_API_KEY?.trim()
+    if (key) {
+      claudeOk = true
+    } else {
+      const { readFileSync } = await import('fs')
+      const { join } = await import('path')
+      const envFile = readFileSync(join(process.cwd(), '.env.local'), 'utf-8')
+      const match = envFile.match(/^ANTHROPIC_API_KEY=(.+)$/m)
+      claudeOk = !!(match?.[1]?.trim())
+      if (!claudeOk) claudeError = 'API key not configured'
+    }
+  } catch {
+    claudeError = 'Could not read API key'
+  }
+
+  return {
+    espn: espnResult,
+    ufc: ufcResult,
+    claude: { ok: claudeOk, error: claudeError },
+    supabase: supabaseResult,
+    ranAt: new Date().toISOString(),
+  }
+}
+
 /**
  * Treat a datetime-local string (YYYY-MM-DDTHH:MM, no tz info) as Eastern Time
  * and return a proper UTC ISO string for storage in Postgres.
