@@ -80,6 +80,12 @@ export default async function LoginPage({ searchParams }: PageProps) {
             Sign up
           </Link>
         </p>
+
+        <p className="text-center text-xs text-[#52525b] mt-4">
+          <Link href="/privacy" className="hover:text-[#71717a] transition-colors">Privacy Policy</Link>
+          {' · '}
+          <Link href="/terms" className="hover:text-[#71717a] transition-colors">Terms of Service</Link>
+        </p>
       </div>
     </div>
   )

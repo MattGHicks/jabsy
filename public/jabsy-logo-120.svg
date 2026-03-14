@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Background -->
+  <rect width="120" height="120" rx="24" fill="#111111"/>
+
+  <!-- Octagon shape (MMA ring) -->
+  <polygon
+    points="60,8 92,20 112,48 112,72 92,100 60,112 28,100 8,72 8,48 28,20"
+    fill="none"
+    stroke="#e11d48"
+    stroke-width="3"
+    opacity="0.35"
+  />
+
+  <!-- J letterform -->
+  <text
+    x="60"
+    y="80"
+    text-anchor="middle"
+    font-family="Arial Black, Arial, sans-serif"
+    font-weight="900"
+    font-size="72"
+    fill="#e11d48"
+    letter-spacing="-2"
+  >J</text>
+</svg>
