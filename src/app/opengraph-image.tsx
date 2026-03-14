@@ -1,176 +1,131 @@
 import { ImageResponse } from 'next/og'
+import fs from 'node:fs'
+import path from 'node:path'
 
-export const runtime = 'edge'
+// Node.js runtime for fs access
 export const alt = 'Jabsy — Fantasy MMA Picks'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function Image() {
+export default async function Image() {
+  // ── Font ──────────────────────────────────────────────────────
+  let fontData: ArrayBuffer | null = null
+  try {
+    const css = await fetch(
+      'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900',
+      { headers: { 'User-Agent': 'Mozilla/5.0' } }
+    ).then(r => r.text())
+    const urls = [...css.matchAll(/url\(([^)]+)\)/g)].map(m => m[1])
+    if (urls[0]) fontData = await fetch(urls[0]).then(r => r.arrayBuffer())
+  } catch { /* fall back to system font */ }
+
+  const ff = fontData ? 'Barlow Condensed' : 'sans-serif'
+  const fonts = fontData
+    ? [{ name: 'Barlow Condensed', data: fontData, weight: 900 as const, style: 'normal' as const }]
+    : []
+
+  // ── Background image ──────────────────────────────────────────
+  let bgData: string | null = null
+  try {
+    const buf = fs.readFileSync(path.join(process.cwd(), 'public/fighters/background.jpg'))
+    bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
+  } catch { /* fallback to dark bg */ }
+
   return new ImageResponse(
     (
-      <div
-        style={{
-          background: '#0a0a0a',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          fontFamily: 'sans-serif',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Dot grid texture */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-            display: 'flex',
-          }}
-        />
+      <div style={{
+        width: 1200, height: 630,
+        background: '#060202',
+        display: 'flex',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: ff,
+      }}>
 
-        {/* Corner brackets */}
-        <div style={{ position: 'absolute', top: 40, left: 40, width: 40, height: 40, borderTop: '2px solid #e11d48', borderLeft: '2px solid #e11d48', display: 'flex' }} />
-        <div style={{ position: 'absolute', bottom: 40, right: 40, width: 40, height: 40, borderBottom: '2px solid #e11d48', borderRight: '2px solid #e11d48', display: 'flex' }} />
-
-        {/* Diagonal slash */}
-        <div
-          style={{
-            position: 'absolute',
-            top: -80,
-            left: '43%',
-            width: 8,
-            height: 900,
-            background: 'linear-gradient(180deg, transparent 0%, #e11d48 20%, #e11d48 80%, transparent 100%)',
-            transform: 'rotate(15deg)',
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: -80,
-            left: '45%',
-            width: 2,
-            height: 900,
-            background: 'linear-gradient(180deg, transparent 0%, #e11d48 20%, #e11d48 80%, transparent 100%)',
-            transform: 'rotate(15deg)',
-            opacity: 0.35,
-            display: 'flex',
-          }}
-        />
-
-        {/* Red glow behind slash */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '38%',
-            width: 320,
-            height: 700,
-            transform: 'translateY(-50%) rotate(15deg)',
-            background: 'radial-gradient(ellipse, rgba(225,29,72,0.10) 0%, transparent 70%)',
-            display: 'flex',
-          }}
-        />
-
-        {/* LEFT — main branding */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 72,
-            top: 0,
-            bottom: 0,
-            width: 500,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-          }}
-        >
-          <div
+        {/* ── Fighter background ── */}
+        {bgData && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={bgData}
+            alt=""
             style={{
-              fontSize: 158,
-              fontWeight: 900,
-              color: '#f4f4f5',
-              letterSpacing: '-6px',
-              lineHeight: 0.85,
-              textTransform: 'uppercase',
-              display: 'flex',
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover', objectPosition: 'center',
             }}
-          >
+          />
+        )}
+
+        {/* ── Top vignette — pulls top edge to dark ── */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 200, display: 'flex',
+          background: 'linear-gradient(180deg, rgba(3,1,1,0.7) 0%, transparent 100%)',
+        }} />
+
+        {/* ── Bottom vignette — grounds the image ── */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 180, display: 'flex',
+          background: 'linear-gradient(0deg, rgba(3,1,1,0.8) 0%, transparent 100%)',
+        }} />
+
+        {/* ── Left edge fade ── */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, bottom: 0, width: 120, display: 'flex',
+          background: 'linear-gradient(90deg, rgba(3,1,1,0.5) 0%, transparent 100%)',
+        }} />
+
+        {/* ── Right edge fade ── */}
+        <div style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0, width: 120, display: 'flex',
+          background: 'linear-gradient(-90deg, rgba(3,1,1,0.5) 0%, transparent 100%)',
+        }} />
+
+        {/* ════════════════════════════════════════
+            JABSY BRANDING — centered
+        ════════════════════════════════════════ */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          width: 1200, height: 630,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          zIndex: 20,
+        }}>
+          {/* JABSY */}
+          <div style={{
+            fontSize: 200, fontWeight: 900,
+            color: '#ffffff',
+            letterSpacing: '-5px', lineHeight: 0.85,
+            textTransform: 'uppercase',
+            display: 'flex', fontFamily: ff,
+            // Subtle text shadow to lift it off the bg
+            textShadow: '0 2px 40px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.5)',
+          }}>
             JABSY
           </div>
-          <div style={{ width: 100, height: 5, background: '#e11d48', marginTop: 22, marginBottom: 22, display: 'flex' }} />
-          <div
-            style={{
-              fontSize: 21,
-              fontWeight: 700,
-              color: '#71717a',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              display: 'flex',
-            }}
-          >
+
+          {/* Red divider */}
+          <div style={{
+            width: 200, height: 4,
+            background: 'linear-gradient(90deg, transparent, #e11d48, transparent)',
+            marginTop: 20, marginBottom: 18,
+            display: 'flex',
+          }} />
+
+          {/* Tagline */}
+          <div style={{
+            fontSize: 44, fontWeight: 900,
+            color: 'rgba(255,245,245,0.82)',
+            letterSpacing: '0.24em',
+            textTransform: 'uppercase',
+            display: 'flex', fontFamily: ff, lineHeight: 1,
+            textShadow: '0 2px 20px rgba(0,0,0,0.9)',
+          }}>
             FANTASY MMA PICKS
           </div>
         </div>
 
-        {/* RIGHT — feature list */}
-        <div
-          style={{
-            position: 'absolute',
-            right: 72,
-            top: 0,
-            bottom: 0,
-            width: 400,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'flex-end',
-            gap: 28,
-          }}
-        >
-          {[
-            { text: 'Make your picks', dim: false },
-            { text: 'Compete with friends', dim: true },
-            { text: 'Prove you know MMA', dim: true },
-          ].map(({ text, dim }, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div
-                style={{
-                  fontSize: 19,
-                  fontWeight: 700,
-                  color: dim ? '#52525b' : '#a1a1aa',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                }}
-              >
-                {text}
-              </div>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#e11d48', display: 'flex', flexShrink: 0 }} />
-            </div>
-          ))}
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#27272a', letterSpacing: '0.1em', marginTop: 8, display: 'flex' }}>
-            JABSYPICKS.COM
-          </div>
-        </div>
-
-        {/* Bottom red bar */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 4,
-            background: 'linear-gradient(90deg, #e11d48 0%, #be123c 40%, transparent 100%)',
-            display: 'flex',
-          }}
-        />
       </div>
     ),
-    { ...size }
+    { ...size, fonts }
   )
 }
