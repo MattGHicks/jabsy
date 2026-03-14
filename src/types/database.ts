@@ -40,6 +40,7 @@ export interface Database {
           status: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by: string | null
           espn_event_id: string | null
+          ufc_event_fmid: string | null
           auto_sync_enabled: boolean
           last_synced_at: string | null
           created_at: string
@@ -54,6 +55,7 @@ export interface Database {
           status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by?: string | null
           espn_event_id?: string | null
+          ufc_event_fmid?: string | null
           auto_sync_enabled?: boolean
           last_synced_at?: string | null
           created_at?: string
@@ -68,6 +70,7 @@ export interface Database {
           status?: 'upcoming' | 'live' | 'completed' | 'cancelled'
           created_by?: string | null
           espn_event_id?: string | null
+          ufc_event_fmid?: string | null
           auto_sync_enabled?: boolean
           last_synced_at?: string | null
           created_at?: string
@@ -96,6 +99,7 @@ export interface Database {
           result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round: number | null
           espn_competition_id: string | null
+          ufc_fight_id: string | null
           sync_status: 'synced' | 'modified' | 'manual'
           last_synced_at: string | null
           created_at: string
@@ -121,6 +125,7 @@ export interface Database {
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
           espn_competition_id?: string | null
+          ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
           last_synced_at?: string | null
           created_at?: string
@@ -146,6 +151,7 @@ export interface Database {
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
           espn_competition_id?: string | null
+          ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
           last_synced_at?: string | null
           created_at?: string
@@ -319,9 +325,9 @@ export interface Database {
       api_sync_log: {
         Row: {
           id: string
-          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
+          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check' | 'cross_validation'
           event_id: string | null
-          api_source: 'espn' | 'claude'
+          api_source: 'espn' | 'ufc_api' | 'claude'
           status: 'success' | 'error' | 'partial' | 'warning'
           request_count: number
           details: Json | null
@@ -329,9 +335,9 @@ export interface Database {
         }
         Insert: {
           id?: string
-          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
+          sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check' | 'cross_validation'
           event_id?: string | null
-          api_source: 'espn' | 'claude'
+          api_source: 'espn' | 'ufc_api' | 'claude'
           status: 'success' | 'error' | 'partial' | 'warning'
           request_count?: number
           details?: Json | null

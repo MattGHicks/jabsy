@@ -221,6 +221,88 @@ Return ONLY the JSON object, no other text.`,
   return allResults
 }
 
+// ─── Tier 3: Claude fight results fallback ────────────────────────────────────
+
+export interface ClaudeFightResult {
+  fightId: string
+  redName: string
+  blueName: string
+  winner: 'red' | 'blue' | 'draw' | 'nc' | null
+  method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null
+  round: number | null
+  confidence: 'high' | 'low'
+}
+
+/**
+ * Use Claude web_search to find fight results when both ESPN and UFC APIs have failed.
+ * Batches all pending fights into a single call for efficiency.
+ * Rate limiting (max once per event per 3 minutes) is enforced by the caller.
+ * Only results with confidence='high' should be written to the DB.
+ */
+export async function fetchFightResultsWithClaude(
+  eventName: string,
+  pendingFights: { id: string; redName: string; blueName: string }[]
+): Promise<ClaudeFightResult[]> {
+  if (pendingFights.length === 0) return []
+
+  const today = new Date().toISOString().split('T')[0]
+
+  const response = await getClient().messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 2048,
+    tools: [
+      {
+        type: 'web_search_20250305',
+        name: 'web_search',
+        max_uses: Math.min(pendingFights.length + 2, 5),
+      },
+    ],
+    messages: [
+      {
+        role: 'user',
+        content: `Today is ${today}. I need the official results for fights that just happened or are happening now at ${eventName}.
+
+For each fight below, search the web for the result and return it.
+
+Fights to look up:
+${pendingFights.map((f, i) => `${i + 1}. [id:${f.id}] ${f.redName} vs ${f.blueName}`).join('\n')}
+
+For each fight you find a result for, return:
+- fightId: the exact id string shown in brackets above
+- redName / blueName: exactly as given above
+- winner: "red" (${pendingFights[0]?.redName ?? 'red corner'} won), "blue" (${pendingFights[0]?.blueName ?? 'blue corner'} won), "draw", "nc", or null if unknown
+- method: "decision", "ko_tko", "submission", "dq", "nc", or null if unknown
+- round: integer (1-5) for ko_tko or submission finishes only, null for decisions or unknown
+- confidence: "high" if you found a clear reliable source, "low" if uncertain or no result found yet
+
+Only include fights you found results for. If a fight hasn't happened yet or you can't find a result, omit it entirely.
+
+Return ONLY a JSON array, no other text:
+[{ "fightId": "...", "redName": "...", "blueName": "...", "winner": "red", "method": "ko_tko", "round": 2, "confidence": "high" }]`,
+      },
+    ],
+  })
+
+  const textBlock = response.content.find(
+    (block): block is Anthropic.TextBlock => block.type === 'text'
+  )
+  if (!textBlock) return []
+
+  try {
+    let jsonStr = textBlock.text.trim()
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+    }
+    const results: ClaudeFightResult[] = JSON.parse(jsonStr)
+    // Validate fightIds match what we sent — ignore any Claude hallucinated
+    const validIds = new Set(pendingFights.map(f => f.id))
+    return results.filter(r => validIds.has(r.fightId))
+  } catch {
+    console.error('Failed to parse Claude fight results:', textBlock.text)
+    return []
+  }
+}
+
 /**
  * Look up exact Sherdog profile URLs by scraping the Sherdog search page directly.
  * No AI needed — just fetches the fightfinder search results and extracts the first match.
