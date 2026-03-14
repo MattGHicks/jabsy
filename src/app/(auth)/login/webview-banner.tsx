@@ -16,15 +16,35 @@ export function useWebView() {
 
 export function WebViewBanner() {
   const webView = useWebView()
+  const [copied, setCopied] = useState(false)
+
   if (!webView) return null
+
+  function copyUrl() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   return (
     <div className="mb-5 p-3 rounded-md bg-amber-500/10 border border-amber-500/30">
       <p className="text-xs text-amber-400 font-medium mb-1">Google sign-in not available here</p>
-      <p className="text-xs text-amber-400/70">
+      <p className="text-xs text-amber-400/70 mb-2.5">
         Google doesn&apos;t allow sign-in inside Facebook or Messenger.
-        Use email &amp; password below, or tap <span className="font-semibold">⋯ → Open in Browser</span> to use Google.
+        Tap <span className="font-semibold">⋯ → Open in Browser</span>, or copy the link and paste it in Safari/Chrome.
       </p>
+      <button
+        onClick={copyUrl}
+        className="w-full h-8 rounded-md text-xs font-semibold transition-colors"
+        style={{
+          background: copied ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.12)',
+          border: '1px solid rgba(245,158,11,0.35)',
+          color: copied ? '#fbbf24' : '#f59e0b',
+        }}
+      >
+        {copied ? '✓ Copied!' : 'Copy link to open in browser'}
+      </button>
     </div>
   )
 }
