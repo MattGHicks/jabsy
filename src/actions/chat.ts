@@ -472,6 +472,18 @@ export type LinkPreview = {
 
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+}
+
 export async function fetchAndStoreLinkPreview(messageId: string, url: string): Promise<void> {
   try {
     const controller = new AbortController()
@@ -493,10 +505,11 @@ export async function fetchAndStoreLinkPreview(messageId: string, url: string): 
     const getOg = (property: string): string | null => {
       const match = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'))
         ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`, 'i'))
-      return match?.[1] ?? null
+      return match?.[1] ? decodeHtmlEntities(match[1]) : null
     }
 
-    const title = getOg('og:title') ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null
+    const rawTitle = getOg('og:title') ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null
+    const title = rawTitle ? decodeHtmlEntities(rawTitle) : null
     const description = getOg('og:description') ?? getOg('description')
     const imageUrl = getOg('og:image')
 

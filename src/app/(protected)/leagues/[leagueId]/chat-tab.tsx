@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Loader2, ChevronUp, Trash2, MessageCircle, ImagePlus, X, Search, Flame, ThumbsUp, Laugh, Skull, Trophy, Reply, CornerUpRight } from 'lucide-react'
+import { Send, Loader2, ChevronUp, Trash2, MessageCircle, ImagePlus, X, Search, Flame, ThumbsUp, Laugh, Skull, Trophy, Reply, CornerUpRight, Globe, ArrowUpRight, Maximize2 } from 'lucide-react'
 import type { ReactionEmoji, ReactionGroup, ChatMessage, LinkPreview } from '@/actions/chat'
 import { cn, getInitials } from '@/lib/utils'
 import { useLeagueChat } from '@/hooks/use-league-chat'
@@ -193,34 +193,54 @@ function getUserColor(userId: string): string {
 // ── Link Preview Card ──────────────────────────────────────────────
 function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
   if (!preview.title && !preview.description) return null
+  let hostname = ''
+  try { hostname = new URL(preview.url).hostname.replace(/^www\./, '') } catch { hostname = preview.url }
   return (
     <a
       href={preview.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-1.5 block rounded-lg border border-[#1e1e1e] bg-[#111111] hover:border-[#27272a] hover:bg-[#141414] transition-colors overflow-hidden max-w-[360px] group/link"
+      className="mt-1.5 block max-w-[340px] group/link"
+      style={{ textDecoration: 'none' }}
     >
-      {preview.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview.image_url}
-          alt=""
-          className="w-full h-[140px] object-cover"
-          loading="lazy"
-        />
-      )}
-      <div className="px-3 py-2">
-        {preview.title && (
-          <p className="text-[12px] text-[#f4f4f5] font-medium leading-snug group-hover/link:text-white transition-colors line-clamp-2">
-            {preview.title}
-          </p>
-        )}
-        {preview.description && (
-          <p className="text-[11px] text-[#52525b] leading-snug mt-0.5 line-clamp-2">
-            {preview.description}
-          </p>
-        )}
-        <p className="text-[9px] text-[#3f3f46] mt-1 truncate">{new URL(preview.url).hostname}</p>
+      <div className="flex rounded-xl overflow-hidden border border-[#1e1e1e] bg-[#111111] hover:border-[#e11d48]/30 hover:bg-[#141414] transition-all duration-200 shadow-lg shadow-black/20">
+        {/* Red accent bar */}
+        <div className="w-[3px] shrink-0 bg-[#e11d48] opacity-70 group-hover/link:opacity-100 transition-opacity" />
+
+        <div className="flex-1 min-w-0">
+          {/* Image */}
+          {preview.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={preview.image_url}
+              alt=""
+              className="w-full h-[120px] object-cover opacity-90 group-hover/link:opacity-100 transition-opacity"
+              loading="lazy"
+            />
+          )}
+
+          <div className="px-3 py-2.5">
+            {/* Hostname row */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1 min-w-0">
+                <Globe className="w-2.5 h-2.5 text-[#e11d48]/60 shrink-0" />
+                <span className="text-[9px] text-[#e11d48]/70 group-hover/link:text-[#e11d48] uppercase tracking-[0.15em] truncate transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{hostname}</span>
+              </div>
+              <ArrowUpRight className="w-3 h-3 text-[#3f3f46] group-hover/link:text-[#e11d48] transition-colors shrink-0" />
+            </div>
+
+            {preview.title && (
+              <p className="text-[13px] text-[#e4e4e7] leading-snug line-clamp-2 group-hover/link:text-white transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                {preview.title}
+              </p>
+            )}
+            {preview.description && (
+              <p className="text-[10px] text-[#52525b] leading-relaxed mt-1 line-clamp-2">
+                {preview.description}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </a>
   )
@@ -687,21 +707,34 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                           <p className="text-[10px] text-[#52525b] mt-1">Tap to view picks →</p>
                         </a>
                       ) : isMedia ? (
-                        <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex flex-col gap-1.5 mt-1">
                           <button
                             onClick={() => msg.image_url && setLightboxSrc(msg.image_url)}
-                            className="rounded-lg overflow-hidden cursor-pointer max-w-[260px] sm:max-w-[320px] border border-[#1e1e1e] hover:border-[#27272a] transition-colors"
+                            className="group/img relative rounded-xl overflow-hidden cursor-pointer max-w-[260px] sm:max-w-[300px] border border-[#1e1e1e] shadow-lg shadow-black/30 hover:border-[#27272a] transition-all duration-200"
+                            style={{ display: 'block' }}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={msg.image_url ?? ''}
                               alt=""
-                              className="w-full max-h-[240px] object-contain bg-[#111111]"
+                              className="w-full max-h-[220px] object-contain bg-[#0d0d0d] transition-all duration-200 group-hover/img:brightness-110"
                               loading="lazy"
                             />
+                            {/* GIF badge */}
+                            {msg.message_type === 'gif' && (
+                              <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest bg-black/70 text-white backdrop-blur-sm border border-white/10" style={{ fontFamily: 'var(--font-barlow)' }}>
+                                GIF
+                              </span>
+                            )}
+                            {/* Expand icon for images */}
+                            {msg.message_type === 'image' && (
+                              <span className="absolute top-2 right-2 w-6 h-6 rounded-md bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity border border-white/10">
+                                <Maximize2 className="w-3 h-3 text-white" />
+                              </span>
+                            )}
                           </button>
                           {msg.content && (
-                            <p className="text-[13px] text-[#d4d4d8] leading-relaxed break-words">{msg.content ? renderTextWithMentions(msg.content) : null}</p>
+                            <p className="text-[12px] text-[#a1a1aa] leading-relaxed break-words italic">{renderTextWithMentions(msg.content)}</p>
                           )}
                         </div>
                       ) : (
