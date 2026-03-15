@@ -56,8 +56,8 @@ export default async function StatusPage() {
 
   const admin = createAdminClient()
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const last36h = new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString()
 
   // Parallel data fetching
   const [
@@ -72,10 +72,10 @@ export default async function StatusPage() {
   ] = await Promise.all([
     admin.from('espn_health').select('*').order('updated_at', { ascending: false }),
     admin.from('api_sync_log').select('*, events(name)').order('created_at', { ascending: false }).limit(50),
-    admin.from('api_sync_log').select('api_source, status, sync_type').gte('created_at', todayStart),
+    admin.from('api_sync_log').select('api_source, status, sync_type').gte('created_at', last24h),
     admin.from('api_sync_log').select('*').eq('api_source', 'ufc_api').order('created_at', { ascending: false }).limit(1).maybeSingle(),
     admin.from('api_sync_log').select('*').eq('api_source', 'claude').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-    admin.from('events').select('*').in('status', ['live', 'upcoming']).gte('start_time', todayStart).lt('start_time', tomorrowStart).order('start_time'),
+    admin.from('events').select('*').in('status', ['live', 'upcoming']).gte('start_time', last36h).order('start_time'),
     admin.from('api_sync_log').select('*, events(name)').eq('sync_type', 'cross_validation').in('status', ['warning', 'error']).order('created_at', { ascending: false }).limit(5),
     admin.from('events').select('id, name').eq('status', 'completed'),
   ])
