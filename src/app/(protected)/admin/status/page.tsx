@@ -260,7 +260,7 @@ export default async function StatusPage() {
               </div>
               <div>
                 <p className="text-[#3f3f46] mb-0.5 uppercase tracking-wide text-[9px]">Mode</p>
-                <p className="font-mono text-[#71717a]">fallback only</p>
+                <p className="font-mono text-[#71717a]">cross-check + fallback</p>
               </div>
             </div>
           </div>
@@ -293,7 +293,7 @@ export default async function StatusPage() {
               </div>
               <div>
                 <p className="text-[#3f3f46] mb-0.5 uppercase tracking-wide text-[9px]">Mode</p>
-                <p className="font-mono text-[#71717a]">last resort</p>
+                <p className="font-mono text-[#71717a]">validation + fallback</p>
               </div>
             </div>
           </div>
