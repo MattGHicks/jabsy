@@ -395,73 +395,6 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* ═══ Recent Event Recap ═══ */}
-      {recentEvent && recentEventPicks.length > 0 && recentEventLeagueId && (
-        <section className="mb-10">
-          <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3">Last Event</p>
-          <Link
-            href={`/leagues/${recentEventLeagueId}/events/${recentEvent.id}/board`}
-            className="group block rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99] overflow-hidden"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3 border-b border-[#1a1a1a]">
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-sm text-[#f4f4f5] uppercase truncate leading-tight group-hover:text-white transition-colors"
-                  style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                >
-                  {recentEvent.name}
-                </p>
-                <p className="text-[10px] text-[#52525b] mt-0.5">{leagueNameMap[recentEventLeagueId] ?? ''}</p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 pt-0.5">
-                <div className="text-right">
-                  <p className="text-xl leading-none text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                    {recentEventScore}
-                  </p>
-                  <p className="text-[9px] text-[#52525b] uppercase tracking-wider">pts</p>
-                </div>
-                {recentEventRank && recentEventRank.of > 1 && (
-                  <>
-                    <div className="w-px h-6 bg-[#27272a]" />
-                    <div className="text-right">
-                      <p className="text-xl leading-none text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
-                        #{recentEventRank.rank}
-                      </p>
-                      <p className="text-[9px] text-[#3f3f46] uppercase tracking-wider">of {recentEventRank.of}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Pick result chips */}
-            <div className="flex flex-wrap gap-1.5 px-4 py-3">
-              {recentEventPicks.map((p) => {
-                const correct = p.fights?.result_winner != null && p.pick_winner === p.fights.result_winner
-                const wrong = p.fights?.result_winner != null && p.pick_winner !== p.fights.result_winner
-                const fighterName = p.pick_winner === 'red'
-                  ? (p.fights?.red_name?.split(' ').pop() ?? '?')
-                  : (p.fights?.blue_name?.split(' ').pop() ?? '?')
-                return (
-                  <span
-                    key={p.fight_id}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide"
-                    style={{
-                      background: correct ? 'rgba(52,211,153,0.08)' : wrong ? 'rgba(225,29,72,0.08)' : 'rgba(113,113,122,0.08)',
-                      border: `1px solid ${correct ? 'rgba(52,211,153,0.2)' : wrong ? 'rgba(225,29,72,0.2)' : 'rgba(113,113,122,0.15)'}`,
-                      color: correct ? '#34d399' : wrong ? '#e11d48' : '#71717a',
-                    }}
-                  >
-                    {correct ? '✓' : wrong ? '✗' : '·'} {fighterName}
-                  </span>
-                )
-              })}
-            </div>
-          </Link>
-        </section>
-      )}
-
       {/* ═══ Leagues ═══ */}
       {allLeagues.length > 0 && (
         <section className="mb-10">
@@ -960,6 +893,92 @@ export default async function DashboardPage() {
           </Link>
         </section>
       )}
+
+      {/* ═══ Last Event Recap ═══ */}
+      {recentEvent && recentEventPicks.length > 0 && recentEventLeagueId && (() => {
+        const scoredPicks2 = recentEventPicks.filter(p => p.fights?.result_winner != null)
+        const correctCount = scoredPicks2.filter(p => p.pick_winner === p.fights!.result_winner).length
+        const totalScored = scoredPicks2.length
+        const accPct = totalScored > 0 ? Math.round((correctCount / totalScored) * 100) : null
+        const accentColor = accPct === null ? '#3f3f46' : accPct >= 65 ? '#34d399' : accPct >= 45 ? '#f59e0b' : '#e11d48'
+        return (
+          <section className="mb-10">
+            <Link
+              href={`/leagues/${recentEventLeagueId}/events/${recentEvent.id}/board`}
+              className="group flex rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99] overflow-hidden"
+            >
+              {/* Performance accent strip */}
+              <div className="w-[3px] shrink-0" style={{ background: accentColor }} />
+
+              {/* Card body */}
+              <div className="flex-1 px-4 py-3.5 min-w-0">
+                {/* Top row: label + chevron */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold text-[#3f3f46] uppercase tracking-[0.18em] mb-0.5">
+                      Last Event · {leagueNameMap[recentEventLeagueId] ?? ''}
+                    </p>
+                    <p
+                      className="text-sm text-[#d4d4d8] uppercase truncate leading-tight group-hover:text-white transition-colors"
+                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                    >
+                      {recentEvent.name}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#3f3f46] group-hover:text-[#52525b] transition-colors shrink-0 mt-1" />
+                </div>
+
+                {/* Stats row */}
+                <div className="flex items-baseline gap-3 mb-3">
+                  <div>
+                    <span className="text-2xl leading-none text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {recentEventScore}
+                    </span>
+                    <span className="text-[9px] text-[#52525b] uppercase tracking-wider ml-1">pts</span>
+                  </div>
+                  {recentEventRank && recentEventRank.of > 1 && (
+                    <>
+                      <div className="w-px h-3.5 bg-[#27272a] self-center" />
+                      <div>
+                        <span className="text-xl leading-none text-[#71717a]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                          #{recentEventRank.rank}
+                        </span>
+                        <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">of {recentEventRank.of}</span>
+                      </div>
+                    </>
+                  )}
+                  {accPct !== null && (
+                    <>
+                      <div className="w-px h-3.5 bg-[#27272a] self-center" />
+                      <div>
+                        <span className="text-xl leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, color: accentColor }}>
+                          {accPct}%
+                        </span>
+                        <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">acc</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Segmented pick bar */}
+                <div className="flex gap-0.5">
+                  {recentEventPicks.map((p) => {
+                    const isCorrect = p.fights?.result_winner != null && p.pick_winner === p.fights.result_winner
+                    const isWrong = p.fights?.result_winner != null && p.pick_winner !== p.fights.result_winner
+                    return (
+                      <div
+                        key={p.fight_id}
+                        className="flex-1 h-[5px] rounded-sm"
+                        style={{ background: isCorrect ? '#34d399' : isWrong ? '#e11d48' : '#27272a' }}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            </Link>
+          </section>
+        )
+      })()}
 
       {/* ═══ Empty state ═══ */}
       {allLeagues.length === 0 && (
