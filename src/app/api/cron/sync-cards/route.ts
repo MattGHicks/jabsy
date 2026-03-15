@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchEventById } from '@/lib/api/espn'
 import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
-import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI } from '@/lib/api/claude-search'
+import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI, findUfcEventFmidWithClaude } from '@/lib/api/claude-search'
 import { fetchUfcLiveEvent } from '@/lib/api/ufc'
 import type { ValidationWarning } from '@/lib/api/types'
 import type { Json } from '@/types/database'
@@ -269,27 +269,69 @@ export async function GET(request: NextRequest) {
  */
 async function syncUfcIds(
   adminClient: ReturnType<typeof createAdminClient>,
-  event: { id: string; name: string; ufc_event_fmid: string | null }
+  event: { id: string; name: string; ufc_event_fmid: string | null; start_time: string }
 ) {
   // Step 1: Get the fmid if we don't have it yet
   let fmid = event.ufc_event_fmid
 
   if (!fmid) {
     const slug = eventNameToSlug(event.name)
-    const url = `https://www.ufc.com/event/${slug}`
+    // Try scraping UFC.com event page for the fmid first
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`https://www.ufc.com/event/${slug}`, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
       })
-      if (!res.ok) return
-      const html = await res.text()
-      const match = html.match(/"event_fmid"\s*:\s*"(\d+)"/)
-      if (!match?.[1]) return
-      fmid = match[1]
-      await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
-    } catch {
-      return
+      if (res.ok) {
+        const html = await res.text()
+        const match = html.match(/"event_fmid"\s*:\s*"(\d+)"/)
+        if (match?.[1]) {
+          fmid = match[1]
+          await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
+        }
+      }
+    } catch { /* fall through to Claude */ }
+
+    // If scraping failed, try sequential ID guessing from the last known fmid
+    if (!fmid) {
+      const { data: lastEvent } = await adminClient
+        .from('events')
+        .select('ufc_event_fmid')
+        .not('ufc_event_fmid', 'is', null)
+        .lt('start_time', event.start_time)
+        .order('start_time', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (lastEvent?.ufc_event_fmid) {
+        const lastId = parseInt(lastEvent.ufc_event_fmid, 10)
+        for (let candidate = lastId + 1; candidate <= lastId + 5; candidate++) {
+          try {
+            const ufcFights = await fetchUfcLiveEvent(String(candidate))
+            if (!ufcFights) continue
+            // Verify by checking if main event fighters match
+            const mainEventFighters = ufcFights[0]
+            const eventNameLower = event.name.toLowerCase()
+            const redMatch = mainEventFighters?.redName && eventNameLower.includes(mainEventFighters.redName.split(' ').pop()!.toLowerCase())
+            const blueMatch = mainEventFighters?.blueName && eventNameLower.includes(mainEventFighters.blueName.split(' ').pop()!.toLowerCase())
+            if (redMatch || blueMatch) {
+              fmid = String(candidate)
+              await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
+              break
+            }
+          } catch { continue }
+        }
+      }
     }
+
+    // If sequential guessing failed, ask Claude Haiku with web search as last resort
+    if (!fmid) {
+      fmid = await findUfcEventFmidWithClaude(event.name, slug)
+      if (fmid) {
+        await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
+      }
+    }
+
+    if (!fmid) return
   }
 
   // Step 2: Get UFC fight IDs and match to DB fights by name

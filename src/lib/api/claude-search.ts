@@ -304,6 +304,48 @@ Return ONLY a JSON array, no other text:
 }
 
 /**
+ * Use Claude Haiku with web search to find the UFC CloudFront event fmid
+ * for an event. Falls back to this when direct UFC.com page scraping fails
+ * (e.g. page not yet published or fmid not yet embedded in HTML).
+ * Returns the numeric fmid string, or null if not found.
+ */
+export async function findUfcEventFmidWithClaude(eventName: string, eventSlug: string): Promise<string | null> {
+  try {
+    const response = await getClient().messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+      messages: [{
+        role: 'user',
+        content: `I need the UFC CloudFront API event ID (called "event_fmid") for "${eventName}".
+
+Fetch this page and look for "event_fmid" in the HTML source:
+https://www.ufc.com/event/${eventSlug}
+
+The fmid is a numeric string embedded in the page like: "event_fmid":"600057365"
+
+If you can't find it there, search for: UFC "${eventName}" event_fmid
+
+Return ONLY the numeric fmid (e.g. 600057365), or the word null if you cannot find it. No other text.`,
+      }],
+    })
+
+    const textBlock = response.content.find(
+      (block): block is Anthropic.TextBlock => block.type === 'text'
+    )
+    if (!textBlock) return null
+
+    const text = textBlock.text.trim()
+    if (text === 'null' || !text) return null
+    // Extract numeric ID — fmids are positive integers (e.g. 1301)
+    const match = text.match(/\b(\d+)\b/)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Look up exact Sherdog profile URLs by scraping the Sherdog search page directly.
  * No AI needed — just fetches the fightfinder search results and extracts the first match.
  * Returns a map of fighter name → Sherdog profile URL.
