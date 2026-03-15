@@ -541,3 +541,32 @@ export async function runClaudeCheck(): Promise<ClaudeCheckResult> {
     ranAt: new Date().toISOString(),
   }
 }
+
+export interface SyncCardsResult {
+  eventsProcessed: number
+  warnings: number
+  ranAt: string
+}
+
+export async function runSyncCards(): Promise<SyncCardsResult> {
+  await requireAdmin()
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const res = await fetch(`${baseUrl}/api/cron/sync-cards`, {
+    method: 'GET',
+    headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? `Sync failed: HTTP ${res.status}`)
+  }
+
+  const data = await res.json()
+  const results: { warnings: number }[] = data.results ?? []
+  return {
+    eventsProcessed: results.length,
+    warnings: results.reduce((sum, r) => sum + (r.warnings ?? 0), 0),
+    ranAt: new Date().toISOString(),
+  }
+}

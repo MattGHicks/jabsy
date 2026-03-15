@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, FlaskConical, CheckCircle2, XCircle, Bot } from 'lucide-react'
-import { runSystemTest, runClaudeCheck } from '@/actions/admin'
-import type { SystemTestResult, ClaudeCheckResult } from '@/actions/admin'
+import { Loader2, FlaskConical, CheckCircle2, XCircle, Bot, RefreshCw } from 'lucide-react'
+import { runSystemTest, runClaudeCheck, runSyncCards } from '@/actions/admin'
+import type { SystemTestResult, ClaudeCheckResult, SyncCardsResult } from '@/actions/admin'
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
@@ -383,6 +383,67 @@ export function ClaudeCheckButton() {
 
       {status === 'error' && (
         <p className="text-xs text-red-400 font-mono">{errorMsg || 'Check failed'}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Manual Sync Cards Button ─────────────────────────────────────────────────
+
+export function SyncCardsButton() {
+  const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [result, setResult] = useState<SyncCardsResult | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  async function handleRun() {
+    setStatus('running')
+    setResult(null)
+    setErrorMsg('')
+    try {
+      const res = await runSyncCards()
+      setResult(res)
+      setStatus('done')
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Unknown error')
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={handleRun}
+        disabled={status === 'running'}
+        className="inline-flex items-center gap-2 h-8 px-3 rounded-lg bg-[#111111] border border-[#1e1e1e] text-[#71717a] text-xs font-semibold hover:text-[#a1a1aa] hover:border-[#27272a] transition-all disabled:opacity-50 cursor-pointer"
+      >
+        {status === 'running'
+          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          : <RefreshCw className="w-3.5 h-3.5" />
+        }
+        {status === 'running' ? 'Syncing cards...' : 'Run Card Sync'}
+      </button>
+
+      {status === 'done' && result && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+            <span className="text-xs text-[#a1a1aa]">
+              {result.eventsProcessed === 0
+                ? 'No upcoming events to sync'
+                : `${result.eventsProcessed} event${result.eventsProcessed !== 1 ? 's' : ''} synced`}
+              {result.warnings > 0 && (
+                <span className="text-amber-400 ml-1">· {result.warnings} warning{result.warnings !== 1 ? 's' : ''}</span>
+              )}
+            </span>
+          </div>
+          <p className="text-[9px] text-[#3f3f46] font-mono pt-1 border-t border-[#1a1a1a]">
+            Ran at {new Date(result.ranAt).toLocaleTimeString()}
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <p className="text-xs text-red-400 font-mono">{errorMsg || 'Sync failed'}</p>
       )}
     </div>
   )

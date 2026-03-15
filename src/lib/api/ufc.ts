@@ -15,15 +15,17 @@ const UFC_BASE = 'https://d29dxerjsp82wz.cloudfront.net/api/v3'
 // ─── Raw API shapes (only fields we use) ─────────────────────────────────────
 
 interface UfcApiFighter {
-  Name: string
+  Name: { FirstName: string; LastName: string; NickName: string | null } | string
   Corner: 'Red' | 'Blue'
-  Winner: boolean
+  Winner?: boolean // old format
+  Outcome?: { OutcomeId: number | null; Outcome: string | null } // new format
 }
 
 interface UfcApiResult {
   Method: string | null
-  Round: number | null
-  IsComplete: boolean
+  Round?: number | null      // old format
+  EndingRound?: number | null // new format
+  IsComplete?: boolean       // old format
 }
 
 interface UfcApiFight {
@@ -78,20 +80,33 @@ export function mapUfcMethod(
 
 // ─── Normalizer ───────────────────────────────────────────────────────────────
 
+function getFighterName(fighter: UfcApiFighter): string | null {
+  if (!fighter.Name) return null
+  if (typeof fighter.Name === 'string') return fighter.Name
+  const { FirstName, LastName } = fighter.Name
+  return [FirstName, LastName].filter(Boolean).join(' ') || null
+}
+
+function getFighterWinner(fighter: UfcApiFighter): boolean {
+  // New format: Outcome.Outcome === 'Win'
+  if (fighter.Outcome) return fighter.Outcome.Outcome === 'Win'
+  // Old format: Winner boolean
+  return fighter.Winner ?? false
+}
+
 function normalizeFight(raw: UfcApiFight): UfcLiveFight {
   const red = raw.Fighters?.find(f => f.Corner === 'Red') ?? null
   const blue = raw.Fighters?.find(f => f.Corner === 'Blue') ?? null
+  const method = raw.Result?.Method ?? null
+  const round = raw.Result?.EndingRound ?? raw.Result?.Round ?? null
+  const isComplete = raw.Result?.IsComplete ?? (method != null)
   return {
     fightId: String(raw.FightId),
-    redName: red?.Name ?? null,
-    blueName: blue?.Name ?? null,
-    redWinner: red?.Winner ?? false,
-    blueWinner: blue?.Winner ?? false,
-    result: {
-      method: raw.Result?.Method ?? null,
-      round: raw.Result?.Round ?? null,
-      isComplete: raw.Result?.IsComplete ?? false,
-    },
+    redName: red ? getFighterName(red) : null,
+    blueName: blue ? getFighterName(blue) : null,
+    redWinner: red ? getFighterWinner(red) : false,
+    blueWinner: blue ? getFighterWinner(blue) : false,
+    result: { method, round, isComplete },
   }
 }
 

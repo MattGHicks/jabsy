@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Activity, Wifi, Bot, Zap, AlertTriangle, CheckCircle2, ShieldCheck, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton, ClaudeCheckButton } from './status-client'
+import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton, ClaudeCheckButton, SyncCardsButton } from './status-client'
 import type { LogEntry } from './status-client'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -330,6 +330,7 @@ export default async function StatusPage() {
         <div className="flex flex-col gap-3">
           <SystemTestButton />
           <ClaudeCheckButton />
+          <SyncCardsButton />
         </div>
       </section>
 
