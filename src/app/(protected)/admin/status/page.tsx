@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Activity, Wifi, Bot, Zap, AlertTriangle, CheckCircle2, ShieldCheck, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton } from './status-client'
+import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton, ClaudeCheckButton } from './status-client'
 import type { LogEntry } from './status-client'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -327,7 +327,10 @@ export default async function StatusPage() {
       {/* ─── System Test ─────────────────────────────────────────────────────── */}
       <section className="mb-6">
         <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3">Tools</p>
-        <SystemTestButton />
+        <div className="flex flex-col gap-3">
+          <SystemTestButton />
+          <ClaudeCheckButton />
+        </div>
       </section>
 
       {/* ─── Main 2-col ──────────────────────────────────────────────────────── */}
