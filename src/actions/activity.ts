@@ -68,7 +68,7 @@ export async function getLeagueActivity(leagueId: string): Promise<ActivityItem[
     // 3. Pick submissions — group by user + event
     const { data: picks } = await supabase
       .from('picks')
-      .select('user_id, event_id, updated_at')
+      .select('user_id, event_id, created_at')
       .eq('league_id', leagueId)
       .in('event_id', eventIds)
 
@@ -79,13 +79,13 @@ export async function getLeagueActivity(leagueId: string): Promise<ActivityItem[
         grouped[key] = {
           userId: p.user_id,
           eventId: p.event_id,
-          latestAt: p.updated_at,
+          latestAt: p.created_at,
           count: 0,
         }
       }
       grouped[key].count++
-      if (p.updated_at > grouped[key].latestAt) {
-        grouped[key].latestAt = p.updated_at
+      if (p.created_at > grouped[key].latestAt) {
+        grouped[key].latestAt = p.created_at
       }
     }
 

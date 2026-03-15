@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Crosshair, Clock, Lock, ChevronRight, MessageCircle } from 'lucide-react'
+import { Plus, Users, Crown, Shield, Zap, Target, TrendingUp, Trophy, Award, Crosshair, Clock, Lock, ChevronRight, MessageCircle, Radio } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getInitials } from '@/lib/utils'
 import { JoinWithCode } from './join-with-code'
@@ -50,6 +50,7 @@ export default async function DashboardPage() {
   let memberCounts: Record<string, number> = {}
   let eventCounts: Record<string, number> = {}
   let nextEvents: Record<string, { id: string; name: string; start_time: string }> = {}
+  let liveEventsByLeague: Record<string, { id: string; name: string }> = {}
 
   if (leagueIds.length > 0) {
     const [membersRes, leagueEventsRes, upcomingEventsRes] = await Promise.all([
@@ -72,11 +73,14 @@ export default async function DashboardPage() {
       return acc
     }, {})
 
-    // Find next upcoming event per league
+    // Find next upcoming + live events per league
     for (const le of upcomingEventsRes.data ?? []) {
       const ev = le.events as { id: string; name: string; start_time: string; status: string } | null
       if (ev && ev.status === 'upcoming' && !nextEvents[le.league_id]) {
         nextEvents[le.league_id] = { id: ev.id, name: ev.name, start_time: ev.start_time }
+      }
+      if (ev && ev.status === 'live' && !liveEventsByLeague[le.league_id]) {
+        liveEventsByLeague[le.league_id] = { id: ev.id, name: ev.name }
       }
     }
   }
@@ -161,6 +165,13 @@ export default async function DashboardPage() {
     if (!globalNextEvent || new Date(ev.start_time) < new Date(globalNextEvent.start_time)) {
       globalNextEvent = { ...ev, league_name: leagueNameMap[lid] ?? '', league_id: lid }
     }
+  }
+
+  // Pick first live event found across all leagues
+  let globalLiveEvent: { id: string; name: string; league_name: string; league_id: string } | null = null
+  for (const [lid, ev] of Object.entries(liveEventsByLeague)) {
+    globalLiveEvent = { ...ev, league_name: leagueNameMap[lid] ?? '', league_id: lid }
+    break
   }
 
   // Per-league accuracy from already-fetched picks
@@ -575,6 +586,46 @@ export default async function DashboardPage() {
               )
             })}
           </div>
+        </section>
+      )}
+
+      {/* ═══ Live Event ═══ */}
+      {globalLiveEvent && (
+        <section className="mb-10">
+          <Link
+            href={`/leagues/${globalLiveEvent.league_id}/events/${globalLiveEvent.id}/board`}
+            className="group relative flex items-center gap-4 p-5 rounded-xl border border-[#e11d48]/25 hover:border-[#e11d48]/45 transition-all active:scale-[0.99] overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, rgba(225,29,72,0.07) 0%, rgba(15,4,5,0.95) 60%)' }}
+          >
+            {/* Subtle pulse ring behind icon */}
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-xl bg-[#e11d48]/20 animate-ping" style={{ animationDuration: '2s' }} />
+              <div className="relative w-11 h-11 rounded-xl bg-[#e11d48]/12 border border-[#e11d48]/25 flex items-center justify-center">
+                <Radio className="w-5 h-5 text-[#e11d48]" />
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse" />
+                <span className="text-[10px] font-bold text-[#e11d48] uppercase tracking-[0.2em]">Live Now</span>
+              </div>
+              <p
+                className="text-base sm:text-lg text-[#f4f4f5] uppercase truncate leading-tight group-hover:text-white transition-colors"
+                style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+              >
+                {globalLiveEvent.name}
+              </p>
+              <p className="text-[11px] text-[#71717a] mt-0.5">{globalLiveEvent.league_name}</p>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-1.5 pl-4">
+              <span className="text-[11px] font-semibold text-[#e11d48]/60 uppercase tracking-wider group-hover:text-[#e11d48] transition-colors">
+                View Board
+              </span>
+              <ChevronRight className="w-4 h-4 text-[#e11d48]/40 group-hover:text-[#e11d48] transition-colors" />
+            </div>
+          </Link>
         </section>
       )}
 
