@@ -903,79 +903,154 @@ export default async function DashboardPage() {
         const accentColor = accPct === null ? '#3f3f46' : accPct >= 65 ? '#34d399' : accPct >= 45 ? '#f59e0b' : '#e11d48'
         return (
           <section className="mb-10">
-            <Link
-              href={`/leagues/${recentEventLeagueId}/events/${recentEvent.id}/board`}
-              className="group flex rounded-xl bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-all active:scale-[0.99] overflow-hidden"
-            >
-              {/* Performance accent strip */}
-              <div className="w-[3px] shrink-0" style={{ background: accentColor }} />
+            <details className="group/recap">
+              <summary className="flex rounded-xl bg-[#111111] border border-[#1e1e1e] [details[open]>&]:rounded-b-none [details[open]>&]:border-b-[#1a1a1a] cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden overflow-hidden transition-colors hover:border-[#27272a]">
+                {/* Performance accent strip */}
+                <div className="w-[3px] shrink-0" style={{ background: accentColor }} />
 
-              {/* Card body */}
-              <div className="flex-1 px-4 py-3.5 min-w-0">
-                {/* Top row: label + chevron */}
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-bold text-[#3f3f46] uppercase tracking-[0.18em] mb-0.5">
-                      Last Event · {leagueNameMap[recentEventLeagueId] ?? ''}
-                    </p>
-                    <p
-                      className="text-sm text-[#d4d4d8] uppercase truncate leading-tight group-hover:text-white transition-colors"
-                      style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
-                    >
-                      {recentEvent.name}
-                    </p>
+                {/* Card body */}
+                <div className="flex-1 px-4 py-3.5 min-w-0">
+                  {/* Top row: label + chevron */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-bold text-[#3f3f46] uppercase tracking-[0.18em] mb-0.5">
+                        Last Event · {leagueNameMap[recentEventLeagueId] ?? ''}
+                      </p>
+                      <p
+                        className="text-sm text-[#d4d4d8] uppercase truncate leading-tight"
+                        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
+                      >
+                        {recentEvent.name}
+                      </p>
+                    </div>
+                    {/* Chevron rotates when open */}
+                    <ChevronRight className="w-3.5 h-3.5 text-[#3f3f46] shrink-0 mt-1 transition-transform duration-200 group-open/recap:rotate-90" />
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-[#3f3f46] group-hover:text-[#52525b] transition-colors shrink-0 mt-1" />
-                </div>
 
-                {/* Stats row */}
-                <div className="flex items-baseline gap-3 mb-3">
-                  <div>
-                    <span className="text-2xl leading-none text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {recentEventScore}
-                    </span>
-                    <span className="text-[9px] text-[#52525b] uppercase tracking-wider ml-1">pts</span>
+                  {/* Stats row */}
+                  <div className="flex items-baseline gap-3 mb-3">
+                    <div>
+                      <span className="text-2xl leading-none text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                        {recentEventScore}
+                      </span>
+                      <span className="text-[9px] text-[#52525b] uppercase tracking-wider ml-1">pts</span>
+                    </div>
+                    {recentEventRank && recentEventRank.of > 1 && (
+                      <>
+                        <div className="w-px h-3.5 bg-[#27272a] self-center" />
+                        <div>
+                          <span className="text-xl leading-none text-[#71717a]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                            #{recentEventRank.rank}
+                          </span>
+                          <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">of {recentEventRank.of}</span>
+                        </div>
+                      </>
+                    )}
+                    {accPct !== null && (
+                      <>
+                        <div className="w-px h-3.5 bg-[#27272a] self-center" />
+                        <div>
+                          <span className="text-xl leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, color: accentColor }}>
+                            {accPct}%
+                          </span>
+                          <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">acc</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  {recentEventRank && recentEventRank.of > 1 && (
-                    <>
-                      <div className="w-px h-3.5 bg-[#27272a] self-center" />
-                      <div>
-                        <span className="text-xl leading-none text-[#71717a]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
-                          #{recentEventRank.rank}
-                        </span>
-                        <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">of {recentEventRank.of}</span>
-                      </div>
-                    </>
-                  )}
-                  {accPct !== null && (
-                    <>
-                      <div className="w-px h-3.5 bg-[#27272a] self-center" />
-                      <div>
-                        <span className="text-xl leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, color: accentColor }}>
-                          {accPct}%
-                        </span>
-                        <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider ml-1">acc</span>
-                      </div>
-                    </>
-                  )}
-                </div>
 
-                {/* Segmented pick bar */}
-                <div className="flex gap-0.5">
-                  {recentEventPicks.map((p) => {
-                    const isCorrect = p.fights?.result_winner != null && p.pick_winner === p.fights.result_winner
-                    const isWrong = p.fights?.result_winner != null && p.pick_winner !== p.fights.result_winner
-                    return (
-                      <div
-                        key={p.fight_id}
-                        className="flex-1 h-[5px] rounded-sm"
-                        style={{ background: isCorrect ? '#34d399' : isWrong ? '#e11d48' : '#27272a' }}
-                      />
-                    )
-                  })}
+                  {/* Segmented pick bar */}
+                  <div className="flex gap-0.5">
+                    {recentEventPicks.map((p) => {
+                      const isCorrect = p.fights?.result_winner != null && p.pick_winner === p.fights.result_winner
+                      const isWrong = p.fights?.result_winner != null && p.pick_winner !== p.fights.result_winner
+                      return (
+                        <div
+                          key={p.fight_id}
+                          className="flex-1 h-[5px] rounded-sm"
+                          style={{ background: isCorrect ? '#34d399' : isWrong ? '#e11d48' : '#27272a' }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              </summary>
+
+              {/* ── Expanded fight breakdown ── */}
+              <div className="rounded-b-xl bg-[#111111] border border-t-0 border-[#1e1e1e] overflow-hidden">
+                {/* Left accent continues */}
+                <div className="flex">
+                  <div className="w-[3px] shrink-0" style={{ background: accentColor }} />
+                  <div className="flex-1 min-w-0">
+                    {/* Fight rows */}
+                    {recentEventPicks.map((p, i) => {
+                      const isCorrect = p.fights?.result_winner != null && p.pick_winner === p.fights.result_winner
+                      const isWrong = p.fights?.result_winner != null && p.pick_winner !== p.fights.result_winner
+                      const pickedName = p.pick_winner === 'red' ? (p.fights?.red_name ?? '—') : (p.fights?.blue_name ?? '—')
+                      const oppName = p.pick_winner === 'red' ? (p.fights?.blue_name ?? '—') : (p.fights?.red_name ?? '—')
+                      const pts = p.points_earned ?? 0
+                      return (
+                        <div
+                          key={p.fight_id}
+                          className="flex items-center gap-3 px-4 py-2.5"
+                          style={{ borderTop: i === 0 ? 'none' : '1px solid #1a1a1a' }}
+                        >
+                          {/* Result indicator */}
+                          <div
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: isCorrect ? '#34d399' : isWrong ? '#e11d48' : '#27272a' }}
+                          />
+                          {/* Fighter picked */}
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className="text-xs uppercase leading-none"
+                              style={{
+                                fontFamily: 'var(--font-barlow)',
+                                fontWeight: 800,
+                                color: isCorrect ? '#d1fae5' : isWrong ? '#fecdd3' : '#a1a1aa',
+                              }}
+                            >
+                              {pickedName.split(' ').pop()}
+                            </span>
+                            <span className="text-[10px] text-[#3f3f46] ml-1.5 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 600 }}>
+                              vs {oppName.split(' ').pop()}
+                            </span>
+                          </div>
+                          {/* Points */}
+                          <div className="shrink-0 text-right">
+                            {isCorrect || isWrong ? (
+                              <span
+                                className="text-xs font-bold"
+                                style={{
+                                  fontFamily: 'var(--font-barlow)',
+                                  fontWeight: 800,
+                                  color: pts > 0 ? '#34d399' : '#e11d48',
+                                }}
+                              >
+                                {pts > 0 ? `+${pts}` : '0'} pts
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-[#3f3f46]">pending</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {/* View Board button */}
+                    <div className="px-4 py-3 border-t border-[#1a1a1a]">
+                      <Link
+                        href={`/leagues/${recentEventLeagueId}/events/${recentEvent.id}/board`}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#e11d48] hover:text-[#f43f5e] transition-colors"
+                      >
+                        View Full Board
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </Link>
+            </details>
           </section>
         )
       })()}
