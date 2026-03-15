@@ -131,6 +131,29 @@ async function processLiveEvent(
             .map(f => [f.espn_competition_id!, f])
         )
 
+        // Pre-fetch UFC fight results once per event for spot-checking ambiguous ESPN results
+        const ufcSpotCheckMap = new Map<string, { winner: 'red' | 'blue' | 'draw' | 'nc'; method: string | null; round: number | null }>()
+        if (event.ufc_event_fmid) {
+          try {
+            const ufcFights = await fetchUfcLiveEvent(event.ufc_event_fmid)
+            if (ufcFights) {
+              for (const f of ufcFights) {
+                if (f.result.isComplete && f.fightId) {
+                  const w = getUfcWinner(f)
+                  const m = mapUfcMethod(f.result.method)
+                  ufcSpotCheckMap.set(f.fightId, {
+                    winner: w,
+                    method: m,
+                    round: (m === 'ko_tko' || m === 'submission') ? (f.result.round ?? null) : null,
+                  })
+                }
+              }
+            }
+          } catch {
+            // UFC pre-fetch is best-effort — missing it won't block ESPN results
+          }
+        }
+
         for (const comp of espnEvent.competitions) {
           const dbFight = fightsByEspnId.get(comp.id)
           if (!dbFight) continue
@@ -178,6 +201,33 @@ async function processLiveEvent(
           let winner: 'red' | 'blue' | 'draw' | 'nc' = 'draw'
           if (corners.red.winner) winner = 'red'
           else if (corners.blue.winner) winner = 'blue'
+
+          // ESPN completed the fight but neither corner is marked as winner (possible placeholder draw)
+          // Spot-check against UFC API before writing — draws are rare in MMA
+          if (winner === 'draw' && dbFight.ufc_fight_id) {
+            const ufcSpot = ufcSpotCheckMap.get(dbFight.ufc_fight_id)
+            if (ufcSpot) {
+              if (ufcSpot.winner !== 'draw' && ufcSpot.method) {
+                // UFC has a definitive winner — use it instead of ESPN's ambiguous draw
+                const { error } = await adminClient.from('fights').update({
+                  result_winner: ufcSpot.winner,
+                  result_method: ufcSpot.method,
+                  result_round: ufcSpot.round,
+                  status: 'final',
+                }).eq('id', dbFight.id)
+                if (!error) {
+                  updates.push({ eventId: event.id, fightId: dbFight.id, winner: ufcSpot.winner, method: ufcSpot.method, round: ufcSpot.round, tier: 'ufc_spot_check' })
+                } else {
+                  errors.push({ eventId: event.id, type: 'update_failed', detail: error.message })
+                }
+                continue
+              }
+              // ufcSpot.winner === 'draw' too — confirmed draw, fall through and write it
+            } else {
+              // UFC has no result for this fight yet — skip writing until next cycle
+              continue
+            }
+          }
 
           const round = (methodResult.data === 'ko_tko' || methodResult.data === 'submission')
             ? comp.status.period
@@ -380,20 +430,21 @@ async function runCrossValidation(
 
   if (recent && recent.length > 0) return
 
-  const discrepancies: { eventId: string; fightId: string; espnResult: string; ufcResult: string; claudeResolution?: string }[] = []
+  const discrepancies: { eventId: string; fightId: string; espnResult: string; ufcResult: string; claudeResolution?: string; corrected?: boolean }[] = []
+  const correctedEventIds = new Set<string>()
 
   for (const event of liveEvents) {
     if (!event.ufc_event_fmid) continue
 
     try {
-      // Get recently completed fights (finalized in last 10 mins)
-      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      // Check fights finalized in last 30 mins — wide enough to catch delayed/corrected results
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
       const { data: recentFights } = await adminClient
         .from('fights')
         .select('id, red_name, blue_name, ufc_fight_id, result_winner, result_method, result_round')
         .eq('event_id', event.id)
         .eq('status', 'final')
-        .gte('updated_at', tenMinsAgo)
+        .gte('updated_at', thirtyMinsAgo)
 
       if (!recentFights || recentFights.length === 0) continue
 
@@ -419,6 +470,7 @@ async function runCrossValidation(
 
           // Ask Claude to resolve the discrepancy
           let claudeResolution: string | undefined
+          let corrected = false
           try {
             const claudeResults = await fetchFightResultsWithClaude(event.name, [{
               id: dbFight.id,
@@ -426,8 +478,24 @@ async function runCrossValidation(
               blueName: dbFight.blue_name,
             }])
             const match = claudeResults.find(r => r.fightId === dbFight.id && r.confidence === 'high')
-            if (match) {
+            if (match && match.winner && match.method) {
               claudeResolution = `${match.winner}/${match.method} (confidence: ${match.confidence})`
+
+              // Write the correction if Claude disagrees with current DB value
+              if (match.winner !== dbFight.result_winner) {
+                const correctedRound = (match.method === 'ko_tko' || match.method === 'submission')
+                  ? (match.round ?? null)
+                  : null
+                const { error } = await adminClient.from('fights').update({
+                  result_winner: match.winner,
+                  result_method: match.method,
+                  result_round: correctedRound,
+                }).eq('id', dbFight.id)
+                if (!error) {
+                  corrected = true
+                  correctedEventIds.add(event.id)
+                }
+              }
             }
           } catch {
             // Claude resolution is best-effort
@@ -439,6 +507,7 @@ async function runCrossValidation(
             espnResult,
             ufcResult,
             claudeResolution,
+            corrected,
           })
         }
       }
@@ -447,14 +516,24 @@ async function runCrossValidation(
     }
   }
 
+  // Recalculate picks for any events where results were corrected
+  for (const eventId of correctedEventIds) {
+    try {
+      await adminClient.rpc('recalculate_event_picks', { p_event_id: eventId })
+    } catch {
+      // Best-effort
+    }
+  }
+
   await adminClient.from('api_sync_log').insert({
     sync_type: 'cross_validation',
-    api_source: 'espn',
+    api_source: 'ufc_api',
     status: discrepancies.length > 0 ? 'warning' : 'success',
     request_count: liveEvents.length,
     details: {
       discrepancies: discrepancies.length > 0 ? discrepancies : undefined,
       eventsChecked: liveEvents.length,
+      correctionsApplied: correctedEventIds.size,
     } as unknown as Json,
   })
 }
