@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, FlaskConical, CheckCircle2, XCircle } from 'lucide-react'
 import { runSystemTest } from '@/actions/admin'
@@ -8,20 +8,36 @@ import type { SystemTestResult } from '@/actions/admin'
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
-export function StatusRefresher({ intervalMs = 60000 }: { intervalMs?: number }) {
+// Drives auto-refresh AND renders a live countdown
+export function RefreshCountdown({ intervalMs = 60000 }: { intervalMs?: number }) {
   const router = useRouter()
+  const total = Math.round(intervalMs / 1000)
+  const [secondsLeft, setSecondsLeft] = useState(total)
+  const hasMounted = useRef(false)
+
+  // Tick down every second
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), intervalMs)
-    return () => clearInterval(id)
-  }, [router, intervalMs])
-  return null
+    const tick = setInterval(() => {
+      setSecondsLeft(s => (s <= 1 ? total : s - 1))
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [total])
+
+  // Trigger router.refresh() when countdown resets — but not on initial mount
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true
+      return
+    }
+    if (secondsLeft === total) {
+      router.refresh()
+    }
+  }, [secondsLeft, total, router])
+
+  return <>{secondsLeft}s</>
 }
 
-export function RefreshTimestamp() {
-  const [time, setTime] = useState('')
-  useEffect(() => {
-    setTime(new Date().toLocaleTimeString())
-  }, [])
+export function RefreshTimestamp({ time }: { time: string }) {
   return <>{time}</>
 }
 

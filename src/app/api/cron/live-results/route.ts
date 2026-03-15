@@ -430,8 +430,10 @@ async function runCrossValidation(
 
   if (recent && recent.length > 0) return
 
-  const discrepancies: { eventId: string; fightId: string; espnResult: string; ufcResult: string; claudeResolution?: string; corrected?: boolean }[] = []
+  const discrepancies: { fightId: string; espnResult: string; ufcResult: string }[] = []
+  const claudeCorrections: { fightId: string; from: string; to: string }[] = []
   const correctedEventIds = new Set<string>()
+  let claudeCalled = 0
 
   for (const event of liveEvents) {
     if (!event.ufc_event_fmid) continue
@@ -453,62 +455,60 @@ async function runCrossValidation(
 
       const ufcById = new Map(ufcFights.map(f => [f.fightId, f]))
 
+      // Collect fights for Claude — all fights with complete UFC data, not just discrepancies
+      const fightsForClaude: { id: string; redName: string; blueName: string }[] = []
+
       for (const dbFight of recentFights) {
         if (!dbFight.ufc_fight_id) continue
         const ufcFight = ufcById.get(dbFight.ufc_fight_id)
         if (!ufcFight?.result.isComplete) continue
 
+        fightsForClaude.push({ id: dbFight.id, redName: dbFight.red_name, blueName: dbFight.blue_name })
+
+        // Still log ESPN vs UFC discrepancies for visibility
         const ufcWinner = getUfcWinner(ufcFight)
         const ufcMethod = mapUfcMethod(ufcFight.result.method)
+        if (dbFight.result_winner !== ufcWinner || dbFight.result_method !== ufcMethod) {
+          discrepancies.push({
+            fightId: dbFight.id,
+            espnResult: `${dbFight.result_winner}/${dbFight.result_method}`,
+            ufcResult: `${ufcWinner}/${ufcMethod}`,
+          })
+        }
+      }
 
-        const winnerMismatch = dbFight.result_winner !== ufcWinner
-        const methodMismatch = dbFight.result_method !== ufcMethod
+      // Claude triple-checks all recent fights regardless of ESPN/UFC agreement
+      if (fightsForClaude.length > 0) {
+        try {
+          claudeCalled++
+          const claudeResults = await fetchFightResultsWithClaude(event.name, fightsForClaude)
 
-        if (winnerMismatch || methodMismatch) {
-          const espnResult = `${dbFight.result_winner}/${dbFight.result_method}`
-          const ufcResult = `${ufcWinner}/${ufcMethod}`
+          for (const match of claudeResults) {
+            if (match.confidence !== 'high' || !match.winner || !match.method) continue
+            const dbFight = recentFights.find(f => f.id === match.fightId)
+            if (!dbFight) continue
 
-          // Ask Claude to resolve the discrepancy
-          let claudeResolution: string | undefined
-          let corrected = false
-          try {
-            const claudeResults = await fetchFightResultsWithClaude(event.name, [{
-              id: dbFight.id,
-              redName: dbFight.red_name,
-              blueName: dbFight.blue_name,
-            }])
-            const match = claudeResults.find(r => r.fightId === dbFight.id && r.confidence === 'high')
-            if (match && match.winner && match.method) {
-              claudeResolution = `${match.winner}/${match.method} (confidence: ${match.confidence})`
-
-              // Write the correction if Claude disagrees with current DB value
-              if (match.winner !== dbFight.result_winner) {
-                const correctedRound = (match.method === 'ko_tko' || match.method === 'submission')
-                  ? (match.round ?? null)
-                  : null
-                const { error } = await adminClient.from('fights').update({
-                  result_winner: match.winner,
-                  result_method: match.method,
-                  result_round: correctedRound,
-                }).eq('id', dbFight.id)
-                if (!error) {
-                  corrected = true
-                  correctedEventIds.add(event.id)
-                }
+            if (match.winner !== dbFight.result_winner || match.method !== dbFight.result_method) {
+              const correctedRound = (match.method === 'ko_tko' || match.method === 'submission')
+                ? (match.round ?? null)
+                : null
+              const { error } = await adminClient.from('fights').update({
+                result_winner: match.winner,
+                result_method: match.method,
+                result_round: correctedRound,
+              }).eq('id', match.fightId)
+              if (!error) {
+                correctedEventIds.add(event.id)
+                claudeCorrections.push({
+                  fightId: match.fightId,
+                  from: `${dbFight.result_winner}/${dbFight.result_method}`,
+                  to: `${match.winner}/${match.method}`,
+                })
               }
             }
-          } catch {
-            // Claude resolution is best-effort
           }
-
-          discrepancies.push({
-            eventId: event.id,
-            fightId: dbFight.id,
-            espnResult,
-            ufcResult,
-            claudeResolution,
-            corrected,
-          })
+        } catch {
+          // Claude is best-effort
         }
       }
     } catch {
@@ -516,7 +516,7 @@ async function runCrossValidation(
     }
   }
 
-  // Recalculate picks for any events where results were corrected
+  // Recalculate picks for any events where Claude made corrections
   for (const eventId of correctedEventIds) {
     try {
       await adminClient.rpc('recalculate_event_picks', { p_event_id: eventId })
@@ -525,6 +525,7 @@ async function runCrossValidation(
     }
   }
 
+  // Log UFC cross-check
   await adminClient.from('api_sync_log').insert({
     sync_type: 'cross_validation',
     api_source: 'ufc_api',
@@ -533,9 +534,23 @@ async function runCrossValidation(
     details: {
       discrepancies: discrepancies.length > 0 ? discrepancies : undefined,
       eventsChecked: liveEvents.length,
-      correctionsApplied: correctedEventIds.size,
     } as unknown as Json,
   })
+
+  // Log Claude triple-check separately so it shows on status page
+  if (claudeCalled > 0) {
+    await adminClient.from('api_sync_log').insert({
+      sync_type: 'cross_validation',
+      api_source: 'claude',
+      status: claudeCorrections.length > 0 ? 'warning' : 'success',
+      request_count: claudeCalled,
+      details: {
+        fightsChecked: liveEvents.reduce((n, _) => n, 0),
+        corrections: claudeCorrections.length > 0 ? claudeCorrections : undefined,
+        correctionsApplied: correctedEventIds.size,
+      } as unknown as Json,
+    })
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
