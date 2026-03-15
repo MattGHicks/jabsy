@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchFightResultsWithClaude } from '@/lib/api/claude-search'
 
 export interface SystemTestResult {
   espn: { ok: boolean; latencyMs: number; error?: string }
@@ -442,5 +443,101 @@ export async function backfillSherdogUrls(): Promise<{ success: boolean; updated
     updated: totalUpdated,
     remaining: count ?? 0,
     error: errors.length > 0 ? errors.join('; ') : undefined,
+  }
+}
+
+// ─── Manual Claude check ───────────────────────────────────────────────────────
+
+export interface ClaudeCheckResult {
+  eventName: string
+  fightsChecked: number
+  corrections: { fightId: string; fighterNames: string; from: string; to: string }[]
+  ranAt: string
+}
+
+export async function runClaudeCheck(): Promise<ClaudeCheckResult> {
+  await requireAdmin()
+  const adminClient = createAdminClient()
+
+  // Find the live event, or fall back to most recently updated completed event
+  const { data: liveEvents } = await adminClient
+    .from('events')
+    .select('id, name')
+    .eq('status', 'live')
+    .order('start_time', { ascending: false })
+    .limit(1)
+
+  let targetEvent = liveEvents?.[0] ?? null
+
+  if (!targetEvent) {
+    const { data: recent } = await adminClient
+      .from('events')
+      .select('id, name')
+      .eq('status', 'completed')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+    targetEvent = recent?.[0] ?? null
+  }
+
+  if (!targetEvent) throw new Error('No live or recent event found')
+
+  const { data: fights } = await adminClient
+    .from('fights')
+    .select('id, red_name, blue_name, result_winner, result_method, status')
+    .eq('event_id', targetEvent.id)
+    .in('status', ['final', 'scheduled'])
+
+  if (!fights || fights.length === 0) throw new Error('No fights found for event')
+
+  const claudeResults = await fetchFightResultsWithClaude(
+    targetEvent.name,
+    fights.map(f => ({ id: f.id, redName: f.red_name, blueName: f.blue_name }))
+  )
+
+  const corrections: ClaudeCheckResult['corrections'] = []
+
+  for (const match of claudeResults) {
+    if (match.confidence !== 'high' || !match.winner || !match.method) continue
+    const dbFight = fights.find(f => f.id === match.fightId)
+    if (!dbFight) continue
+
+    if (match.winner !== dbFight.result_winner || match.method !== dbFight.result_method) {
+      const correctedRound = (match.method === 'ko_tko' || match.method === 'submission')
+        ? (match.round ?? null) : null
+      const { error } = await adminClient.from('fights').update({
+        result_winner: match.winner,
+        result_method: match.method,
+        result_round: correctedRound,
+        status: 'final',
+      }).eq('id', match.fightId)
+      if (!error) {
+        corrections.push({
+          fightId: match.fightId,
+          fighterNames: `${dbFight.red_name} vs ${dbFight.blue_name}`,
+          from: `${dbFight.result_winner ?? 'none'}/${dbFight.result_method ?? 'none'}`,
+          to: `${match.winner}/${match.method}`,
+        })
+      }
+    }
+  }
+
+  if (corrections.length > 0) {
+    await adminClient.rpc('recalculate_event_picks', { p_event_id: targetEvent.id })
+  }
+
+  await adminClient.from('api_sync_log').insert({
+    sync_type: 'validation',
+    event_id: targetEvent.id,
+    api_source: 'claude',
+    status: corrections.length > 0 ? 'warning' : 'success',
+    request_count: 1,
+    details: { manual: true, fightsChecked: fights.length, corrections },
+  })
+
+  return {
+    eventName: targetEvent.name,
+    fightsChecked: fights.length,
+    corrections,
+    ranAt: new Date().toISOString(),
   }
 }

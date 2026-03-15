@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, FlaskConical, CheckCircle2, XCircle } from 'lucide-react'
-import { runSystemTest } from '@/actions/admin'
-import type { SystemTestResult } from '@/actions/admin'
+import { Loader2, FlaskConical, CheckCircle2, XCircle, Bot } from 'lucide-react'
+import { runSystemTest, runClaudeCheck } from '@/actions/admin'
+import type { SystemTestResult, ClaudeCheckResult } from '@/actions/admin'
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
@@ -307,6 +307,82 @@ export function SystemTestButton() {
 
       {status === 'error' && (
         <p className="text-xs text-red-400">Test failed — check console</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Manual Claude Check Button ───────────────────────────────────────────────
+
+export function ClaudeCheckButton() {
+  const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [result, setResult] = useState<ClaudeCheckResult | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  async function handleRun() {
+    setStatus('running')
+    setResult(null)
+    setErrorMsg('')
+    try {
+      const res = await runClaudeCheck()
+      setResult(res)
+      setStatus('done')
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Unknown error')
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={handleRun}
+        disabled={status === 'running'}
+        className="inline-flex items-center gap-2 h-8 px-3 rounded-lg bg-[#111111] border border-[#c084fc]/20 text-[#c084fc]/70 text-xs font-semibold hover:text-[#c084fc] hover:border-[#c084fc]/40 transition-all disabled:opacity-50 cursor-pointer"
+      >
+        {status === 'running'
+          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          : <Bot className="w-3.5 h-3.5" />
+        }
+        {status === 'running' ? 'Claude is checking...' : 'Run Claude Fight Check'}
+      </button>
+
+      {status === 'done' && result && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-[#a1a1aa] truncate">{result.eventName}</p>
+            <span className="text-[9px] text-[#3f3f46] font-mono shrink-0 ml-2">{result.fightsChecked} fights checked</span>
+          </div>
+          {result.corrections.length === 0 ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+              <span className="text-xs text-[#a1a1aa]">All results confirmed — no corrections needed</span>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <XCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-xs text-amber-400 font-semibold">{result.corrections.length} correction{result.corrections.length !== 1 ? 's' : ''} applied</span>
+              </div>
+              {result.corrections.map(c => (
+                <div key={c.fightId} className="ml-5 text-[10px] text-[#71717a] font-mono">
+                  <span className="text-[#a1a1aa]">{c.fighterNames}</span>
+                  <span className="text-[#52525b]"> · </span>
+                  <span className="line-through text-red-400/60">{c.from}</span>
+                  <span className="text-[#52525b]"> → </span>
+                  <span className="text-green-400/80">{c.to}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[9px] text-[#3f3f46] font-mono pt-1 border-t border-[#1a1a1a]">
+            Ran at {new Date(result.ranAt).toLocaleTimeString()}
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <p className="text-xs text-red-400 font-mono">{errorMsg || 'Check failed'}</p>
       )}
     </div>
   )
