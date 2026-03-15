@@ -132,7 +132,7 @@ async function processLiveEvent(
         )
 
         // Pre-fetch UFC fight results once per event for spot-checking ambiguous ESPN results
-        const ufcSpotCheckMap = new Map<string, { winner: 'red' | 'blue' | 'draw' | 'nc'; method: string | null; round: number | null }>()
+        const ufcSpotCheckMap = new Map<string, { winner: 'red' | 'blue' | 'draw' | 'nc'; method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null; round: number | null }>()
         if (event.ufc_event_fmid) {
           try {
             const ufcFights = await fetchUfcLiveEvent(event.ufc_event_fmid)
