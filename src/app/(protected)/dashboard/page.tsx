@@ -76,8 +76,10 @@ export default async function DashboardPage() {
     // Find next upcoming + live events per league
     for (const le of upcomingEventsRes.data ?? []) {
       const ev = le.events as { id: string; name: string; start_time: string; status: string } | null
-      if (ev && ev.status === 'upcoming' && !nextEvents[le.league_id]) {
-        nextEvents[le.league_id] = { id: ev.id, name: ev.name, start_time: ev.start_time }
+      if (ev && ev.status === 'upcoming') {
+        if (!nextEvents[le.league_id] || new Date(ev.start_time) < new Date(nextEvents[le.league_id].start_time)) {
+          nextEvents[le.league_id] = { id: ev.id, name: ev.name, start_time: ev.start_time }
+        }
       }
       if (ev && ev.status === 'live' && !liveEventsByLeague[le.league_id]) {
         liveEventsByLeague[le.league_id] = { id: ev.id, name: ev.name }
