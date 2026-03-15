@@ -216,12 +216,14 @@ export default async function DashboardPage() {
       : Promise.resolve({ count: 0 }),
     leagueIds.length > 0
       ? supabase
-          .from('league_events')
-          .select('league_id, events!inner(id, name, start_time, status)')
-          .in('league_id', leagueIds)
-          .order('events.start_time', { ascending: false })
-          .limit(10)
-      : Promise.resolve({ data: [] as { league_id: string; events: { id: string; name: string; start_time: string; status: string } | null }[] }),
+          .from('events')
+          .select('id, name, start_time, status, league_events!inner(league_id)')
+          .eq('status', 'completed')
+          .in('league_events.league_id', leagueIds)
+          .order('start_time', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   type NextEventFight = { id: string; is_main_event: boolean; red_name: string; blue_name: string; weight_class: string | null; bout_order: number }
@@ -231,13 +233,10 @@ export default async function DashboardPage() {
   const nextPicksCount = (nextPicksCountRes as { count: number | null }).count ?? 0
 
   // Find most recently completed event
-  type RecentLookupRow = { league_id: string; events: { id: string; name: string; start_time: string; status: string } | null }
-  const recentLookupRows = (recentEventLookupRes.data ?? []) as RecentLookupRow[]
-  const recentCompletedRow = recentLookupRows
-    .filter(r => r.events && r.events.status === 'completed')
-    .sort((a, b) => new Date(b.events!.start_time).getTime() - new Date(a.events!.start_time).getTime())[0] ?? null
-  const recentEvent = recentCompletedRow?.events ?? null
-  const recentEventLeagueId = recentCompletedRow?.league_id ?? null
+  type RecentEventRow = { id: string; name: string; start_time: string; status: string; league_events: { league_id: string }[] }
+  const recentEventData = (recentEventLookupRes.data) as RecentEventRow | null
+  const recentEvent = recentEventData ? { id: recentEventData.id, name: recentEventData.name, start_time: recentEventData.start_time } : null
+  const recentEventLeagueId = recentEventData?.league_events?.[0]?.league_id ?? null
 
   // Fetch recap data for recent event
   type RecapPick = { fight_id: string; pick_winner: string; points_earned: number | null; fights: { red_name: string; blue_name: string; result_winner: string | null } | null }
