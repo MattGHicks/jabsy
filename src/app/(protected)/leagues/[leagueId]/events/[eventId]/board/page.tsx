@@ -86,9 +86,9 @@ export default async function BoardPage({ params }: PageProps) {
     }
   }
 
-  const fights: Fight[] = [...((event.fights ?? []) as Fight[])].sort(
-    (a, b) => a.bout_order - b.bout_order
-  )
+  const fights: Fight[] = [...((event.fights ?? []) as Fight[])]
+    .filter((f) => f.status !== 'cancelled')
+    .sort((a, b) => a.bout_order - b.bout_order)
 
   const { data: members } = await supabase
     .from('league_members')

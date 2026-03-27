@@ -150,7 +150,7 @@ export default async function PicksPage({ params }: PageProps) {
 
       {/* Fight cards + sticky picks bar (client component) */}
       <PicksPageClient
-        fights={fights}
+        fights={activeFights}
         leagueId={leagueId}
         eventId={eventId}
         picksMap={picksMap}
