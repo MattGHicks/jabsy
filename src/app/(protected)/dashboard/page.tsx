@@ -91,7 +91,7 @@ export default async function DashboardPage() {
   const [myPicksRes, ...leagueDataRes] = await Promise.all([
     supabase
       .from('picks')
-      .select('points_earned, event_id, league_id, pick_winner, fights!inner(result_method, result_winner), events!inner(start_time)')
+      .select('points_earned, event_id, league_id, pick_winner, fights!inner(bout_order, result_method, result_winner), events!inner(start_time)')
       .eq('user_id', user.id),
     ...(leagueIds.length > 0
       ? [
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
   const allLeaguePicksData = leagueIds.length > 0 ? (leagueDataRes[0] as { data: { league_id: string; event_id: string; user_id: string; points_earned: number | null }[] | null }).data : null
   const unreadCounts: Record<string, number> = leagueIds.length > 0 ? (leagueDataRes[1] as Record<string, number>) : {}
 
-  type FightJoin = { result_method: string; result_winner: string | null }
+  type FightJoin = { bout_order: number; result_method: string; result_winner: string | null }
   type EventJoin = { start_time: string }
   const scoredPicks = (myPicks ?? []).filter((p) => p.points_earned !== null)
   const totalPts = scoredPicks.reduce((sum, p) => sum + (p.points_earned ?? 0), 0)
@@ -172,16 +172,23 @@ export default async function DashboardPage() {
     }
   }
 
-  // Hot/cold streak — consecutive correct/incorrect winner picks, most recent first
+  // Hot/cold streak — consecutive correct/incorrect winner picks, most recent first.
+  // Sort: event start_time DESC (newest event first), then bout_order ASC within an
+  // event (bout 1 = main event, fought last chronologically, so it's the most recent
+  // outcome). Without the secondary sort the order within an event is undefined and
+  // the streak calculation is non-deterministic.
   let streak = 0
   let streakType: 'hot' | 'cold' | null = null
   {
     const orderedScored = scoredPicks
-      .filter(p => (p as unknown as { events: EventJoin | null }).events?.start_time)
+      .filter((p) => (p as unknown as { events: EventJoin | null }).events?.start_time)
       .sort((a, b) => {
         const ta = new Date((a as unknown as { events: EventJoin }).events.start_time).getTime()
         const tb = new Date((b as unknown as { events: EventJoin }).events.start_time).getTime()
-        return tb - ta
+        if (ta !== tb) return tb - ta
+        const ba = (a as unknown as { fights: FightJoin }).fights.bout_order
+        const bb = (b as unknown as { fights: FightJoin }).fights.bout_order
+        return ba - bb
       })
     for (const p of orderedScored) {
       const correct = (p.points_earned ?? 0) >= 5
