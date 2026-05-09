@@ -4,6 +4,7 @@ import { fetchEventById } from '@/lib/api/espn'
 import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
 import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI, findUfcEventFmidWithClaude } from '@/lib/api/claude-search'
 import { fetchUfcLiveEvent } from '@/lib/api/ufc'
+import { prewarmMatchupPreviews } from '@/lib/api/matchup-preview'
 import type { ValidationWarning } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -199,6 +200,29 @@ export async function GET(request: NextRequest) {
           await syncUfcIds(adminClient, event)
         } catch {
           // UFC ID sync is best-effort — doesn't block the main sync
+        }
+
+        // Pre-warm matchup previews so the picks page never has to wait on
+        // first-click Claude generation. Only fills in fights that don't
+        // already have a preview cached. Best-effort; failures don't block.
+        try {
+          const prewarm = await prewarmMatchupPreviews(adminClient, event.id)
+          if (prewarm.generated > 0 || prewarm.failed > 0) {
+            await adminClient.from('api_sync_log').insert({
+              sync_type: 'card_update',
+              event_id: event.id,
+              api_source: 'claude',
+              status: prewarm.failed > 0 ? 'partial' : 'success',
+              request_count: prewarm.generated + prewarm.failed,
+              details: {
+                kind: 'matchup_preview_prewarm',
+                generated: prewarm.generated,
+                failed: prewarm.failed,
+              },
+            })
+          }
+        } catch (err) {
+          console.error(`Matchup preview prewarm failed for event ${event.id}:`, err)
         }
 
         results.push({ eventId: event.id, name: event.name, ...changes, warnings: eventWarnings.length })

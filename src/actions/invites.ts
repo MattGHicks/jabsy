@@ -64,54 +64,78 @@ export async function deleteInvite(inviteId: string, leagueId: string) {
 export async function joinViaInvite(code: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect(`/login?next=/invite/${code}`)
+  if (!user) redirect(`/login?pending_invite=${code}`)
 
-  // Look up the invite
+  // First try the throwaway invites table (settings-page-generated codes have
+  // expiry / max_uses / use_count tracking).
   const { data: invite } = await supabase
     .from('invites')
     .select('*, leagues(id, name)')
     .eq('code', code)
     .single()
 
-  if (!invite) return { error: 'Invalid invite code' }
+  if (invite) {
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      return { error: 'This invite has expired' }
+    }
+    if (invite.use_count >= invite.max_uses) {
+      return { error: 'This invite has reached its maximum uses' }
+    }
 
-  // Check expiry
-  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-    return { error: 'This invite has expired' }
+    const { data: existing } = await supabase
+      .from('league_members')
+      .select('id')
+      .eq('league_id', invite.league_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (existing) {
+      return { leagueId: invite.league_id, alreadyMember: true }
+    }
+
+    const { error } = await supabase.from('league_members').insert({
+      league_id: invite.league_id,
+      user_id: user.id,
+      role: 'member',
+    })
+    if (error) return { error: error.message }
+
+    await supabase
+      .from('invites')
+      .update({ use_count: invite.use_count + 1 })
+      .eq('id', invite.id)
+
+    revalidatePath('/dashboard')
+    return { leagueId: invite.league_id }
   }
 
-  // Check max uses
-  if (invite.use_count >= invite.max_uses) {
-    return { error: 'This invite has reached its maximum uses' }
-  }
+  // Fall back to the persistent per-league share code. No expiry, no use cap.
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id')
+    .eq('share_code', code)
+    .single()
 
-  // Check if already a member
+  if (!league) return { error: 'Invalid invite code' }
+
   const { data: existing } = await supabase
     .from('league_members')
     .select('id')
-    .eq('league_id', invite.league_id)
+    .eq('league_id', league.id)
     .eq('user_id', user.id)
     .single()
 
   if (existing) {
-    return { leagueId: invite.league_id, alreadyMember: true }
+    return { leagueId: league.id, alreadyMember: true }
   }
 
-  // Add as member
   const { error } = await supabase.from('league_members').insert({
-    league_id: invite.league_id,
+    league_id: league.id,
     user_id: user.id,
     role: 'member',
   })
-
   if (error) return { error: error.message }
 
-  // Increment use count
-  await supabase
-    .from('invites')
-    .update({ use_count: invite.use_count + 1 })
-    .eq('id', invite.id)
-
   revalidatePath('/dashboard')
-  return { leagueId: invite.league_id }
+  return { leagueId: league.id }
 }

@@ -8,30 +8,76 @@ import { WebViewWarning } from './webview-warning'
 
 interface PageProps {
   params: Promise<{ code: string }>
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; event?: string }>
 }
 
 const IN_APP_BROWSER_RE = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Twitter|LinkedInApp/i
 
-export default async function InvitePage({ params, searchParams }: PageProps) {
-  const { code } = await params
-  const { error: joinError } = await searchParams
-  const supabase = await createClient()
+type InviteContext = {
+  leagueId: string
+  leagueName: string
+  leagueDescription: string | null
+  isExpired: boolean
+  isFull: boolean
+}
 
-  // Detect in-app browsers (Facebook Messenger, Instagram, etc.) server-side
-  const headersList = await headers()
-  const ua = headersList.get('user-agent') ?? ''
-  const isWebView = IN_APP_BROWSER_RE.test(ua)
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://jabsy.app'}/invite/${code}`
-
-  // Look up the invite info (public read — no RLS restriction on invites for anon)
+async function lookupInviteContext(supabase: Awaited<ReturnType<typeof createClient>>, code: string): Promise<InviteContext | null> {
+  // Try the throwaway invite table first (settings-page-generated codes).
   const { data: invite } = await supabase
     .from('invites')
-    .select('id, code, use_count, max_uses, expires_at, leagues(id, name, description)')
+    .select('use_count, max_uses, expires_at, leagues(id, name, description)')
     .eq('code', code)
     .single()
 
-  if (!invite) {
+  if (invite) {
+    const league = invite.leagues as { id: string; name: string; description: string | null } | null
+    if (!league) return null
+    return {
+      leagueId: league.id,
+      leagueName: league.name,
+      leagueDescription: league.description,
+      isExpired: !!invite.expires_at && new Date(invite.expires_at) < new Date(),
+      isFull: invite.use_count >= invite.max_uses,
+    }
+  }
+
+  // Fall through to the persistent per-league share code (never expires, no use cap).
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, name, description')
+    .eq('share_code', code)
+    .single()
+
+  if (league) {
+    return {
+      leagueId: league.id,
+      leagueName: league.name,
+      leagueDescription: league.description,
+      isExpired: false,
+      isFull: false,
+    }
+  }
+
+  return null
+}
+
+function buildPostJoinUrl(leagueId: string, eventId: string | null | undefined): string {
+  return eventId ? `/leagues/${leagueId}/events/${eventId}` : `/leagues/${leagueId}`
+}
+
+export default async function InvitePage({ params, searchParams }: PageProps) {
+  const { code } = await params
+  const { error: joinError, event: eventParam } = await searchParams
+  const supabase = await createClient()
+
+  const headersList = await headers()
+  const ua = headersList.get('user-agent') ?? ''
+  const isWebView = IN_APP_BROWSER_RE.test(ua)
+  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://jabsypicks.com'}/invite/${code}${eventParam ? `?event=${eventParam}` : ''}`
+
+  const ctx = await lookupInviteContext(supabase, code)
+
+  if (!ctx) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
@@ -48,20 +94,16 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
     )
   }
 
-  const isExpired = invite.expires_at && new Date(invite.expires_at) < new Date()
-  const isFull = invite.use_count >= invite.max_uses
-  const league = invite.leagues as { id: string; name: string; description: string | null } | null
-
-  if (isExpired || isFull) {
+  if (ctx.isExpired || ctx.isFull) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <p className="text-4xl mb-4">⛔</p>
           <h1 className="text-[#f4f4f5] mb-2" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '2rem' }}>
-            {isExpired ? 'INVITE EXPIRED' : 'INVITE FULL'}
+            {ctx.isExpired ? 'INVITE EXPIRED' : 'INVITE FULL'}
           </h1>
           <p className="text-sm text-[#71717a] mb-6">
-            {isExpired ? 'This invite link has expired.' : 'This invite has reached its maximum number of uses.'}
+            {ctx.isExpired ? 'This invite link has expired.' : 'This invite has reached its maximum number of uses.'}
           </p>
           <Link href="/dashboard" className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] transition-colors">
             Go to Dashboard
@@ -73,9 +115,9 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Not logged in — show a landing page with login/signup CTAs.
-  // The pending_invite code is passed as a query param on the links below.
-  // The Google OAuth route handler sets the cookie when needed.
+  // Build the auth links so the event deep-link survives the round trip through signup/login.
+  const eventQs = eventParam ? `&event=${encodeURIComponent(eventParam)}` : ''
+
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
@@ -86,7 +128,6 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
         <div className="w-full max-w-sm">
           {isWebView && <WebViewWarning inviteUrl={inviteUrl} />}
           <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-8">
-            {/* League info */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-[#1e1e1e]">
               <div className="w-12 h-12 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/20 flex items-center justify-center shrink-0">
                 <Users className="w-5 h-5 text-[#e11d48]" />
@@ -94,10 +135,10 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
                 <h1 className="text-xl text-[#f4f4f5] uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
-                  {league?.name}
+                  {ctx.leagueName}
                 </h1>
-                {league?.description && (
-                  <p className="text-xs text-[#71717a] mt-1 leading-snug">{league.description}</p>
+                {ctx.leagueDescription && (
+                  <p className="text-xs text-[#71717a] mt-1 leading-snug">{ctx.leagueDescription}</p>
                 )}
               </div>
             </div>
@@ -106,14 +147,14 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
 
             <div className="flex flex-col gap-3">
               <Link
-                href={`/signup?pending_invite=${code}`}
+                href={`/signup?pending_invite=${code}${eventQs}`}
                 className="inline-flex items-center justify-center gap-2 h-11 w-full rounded-lg bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
                 Create Account &amp; Join
               </Link>
               <Link
-                href={`/login?pending_invite=${code}`}
+                href={`/login?pending_invite=${code}${eventQs}`}
                 className="inline-flex items-center justify-center gap-2 h-11 w-full rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
               >
                 <LogIn className="w-4 h-4" />
@@ -126,41 +167,41 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
     )
   }
 
-  // Logged in — check if already a member
+  // Logged in — short-circuit if they're already a member or the owner.
   const { data: existing } = await supabase
     .from('league_members')
     .select('id')
-    .eq('league_id', league?.id ?? '')
+    .eq('league_id', ctx.leagueId)
     .eq('user_id', user.id)
     .single()
 
   if (existing) {
-    redirect(`/leagues/${league?.id}`)
+    redirect(buildPostJoinUrl(ctx.leagueId, eventParam))
   }
 
-  // Check if user is the owner
   const { data: ownedLeague } = await supabase
     .from('leagues')
     .select('id')
-    .eq('id', league?.id ?? '')
+    .eq('id', ctx.leagueId)
     .eq('owner_id', user.id)
     .single()
 
   if (ownedLeague) {
-    redirect(`/leagues/${league?.id}`)
+    redirect(buildPostJoinUrl(ctx.leagueId, eventParam))
   }
 
-  // Show confirmation — user must click to join
   async function handleJoin() {
     'use server'
     const result = await joinViaInvite(code)
     if ('error' in result) {
-      redirect(`/invite/${code}?error=${encodeURIComponent(result.error ?? 'Something went wrong')}`)
+      const errQs = `error=${encodeURIComponent(result.error ?? 'Something went wrong')}`
+      const evtQs = eventParam ? `&event=${encodeURIComponent(eventParam)}` : ''
+      redirect(`/invite/${code}?${errQs}${evtQs}`)
     }
     if (result.leagueId) {
       const cookieStore = await cookies()
       cookieStore.delete('pending_invite')
-      redirect(`/leagues/${result.leagueId}`)
+      redirect(buildPostJoinUrl(result.leagueId, eventParam))
     }
   }
 
@@ -173,7 +214,6 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
       <div className="w-full max-w-sm">
         {isWebView && <WebViewWarning inviteUrl={inviteUrl} />}
         <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-8">
-          {/* League info */}
           <div className="flex items-center gap-3 mb-6 pb-6 border-b border-[#1e1e1e]">
             <div className="w-12 h-12 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/20 flex items-center justify-center shrink-0">
               <Users className="w-5 h-5 text-[#e11d48]" />
@@ -181,10 +221,10 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
               <h1 className="text-xl text-[#f4f4f5] uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
-                {league?.name}
+                {ctx.leagueName}
               </h1>
-              {league?.description && (
-                <p className="text-xs text-[#71717a] mt-1 leading-snug">{league.description}</p>
+              {ctx.leagueDescription && (
+                <p className="text-xs text-[#71717a] mt-1 leading-snug">{ctx.leagueDescription}</p>
               )}
             </div>
           </div>

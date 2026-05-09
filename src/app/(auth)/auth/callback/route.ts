@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
 
       if (user) {
         const cookieStore = await cookies()
-        // Check URL params first (email confirmation flow embeds it in emailRedirectTo)
-        // Fall back to cookie (Google OAuth flow sets it before redirecting)
         const pendingInviteFromUrl = url.searchParams.get('pending_invite')
         const pendingInvite = pendingInviteFromUrl || cookieStore.get('pending_invite')?.value
+        const eventFromUrl = url.searchParams.get('event')
+        const pendingEvent = eventFromUrl || cookieStore.get('pending_invite_event')?.value
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -29,18 +29,23 @@ export async function GET(request: NextRequest) {
 
         const needsOnboarding = !profile?.username
 
-        // Always clear the cookie once we've read it
         if (pendingInvite) cookieStore.delete('pending_invite')
+        if (pendingEvent) cookieStore.delete('pending_invite_event')
+
+        const eventQs = pendingEvent ? `&event=${encodeURIComponent(pendingEvent)}` : ''
 
         if (needsOnboarding) {
           const onboardingUrl = pendingInvite
-            ? `/onboarding?pending_invite=${pendingInvite}`
+            ? `/onboarding?pending_invite=${pendingInvite}${eventQs}`
             : '/onboarding'
           return NextResponse.redirect(new URL(onboardingUrl, url.origin))
         }
 
         if (pendingInvite) {
-          return NextResponse.redirect(new URL(`/invite/${pendingInvite}`, url.origin))
+          const inviteUrl = pendingEvent
+            ? `/invite/${pendingInvite}?event=${encodeURIComponent(pendingEvent)}`
+            : `/invite/${pendingInvite}`
+          return NextResponse.redirect(new URL(inviteUrl, url.origin))
         }
 
         return NextResponse.redirect(new URL(next, url.origin))

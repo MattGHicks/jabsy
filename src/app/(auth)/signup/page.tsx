@@ -3,11 +3,12 @@ import { signUp } from '@/actions/auth'
 import { WebViewBanner, GoogleSignInSection } from '../login/webview-banner'
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; pending_invite?: string }>
+  searchParams: Promise<{ error?: string; pending_invite?: string; event?: string }>
 }
 
 export default async function SignupPage({ searchParams }: PageProps) {
-  const { error, pending_invite } = await searchParams
+  const { error, pending_invite, event } = await searchParams
+  const inviteQs = pending_invite ? `pending_invite=${pending_invite}${event ? `&event=${event}` : ''}` : ''
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
@@ -35,11 +36,12 @@ export default async function SignupPage({ searchParams }: PageProps) {
           )}
 
           <GoogleSignInSection
-            href={pending_invite ? `/api/auth/google?pending_invite=${pending_invite}` : '/api/auth/google'}
+            href={pending_invite ? `/api/auth/google?${inviteQs}` : '/api/auth/google'}
           />
 
           <form action={signUp} className="flex flex-col gap-4">
             {pending_invite && <input type="hidden" name="pending_invite" value={pending_invite} />}
+            {event && <input type="hidden" name="event" value={event} />}
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="text-xs font-medium text-[#a1a1aa]">Email</label>
@@ -67,7 +69,7 @@ export default async function SignupPage({ searchParams }: PageProps) {
 
         <p className="text-center text-sm text-[#71717a] mt-5">
           Already have an account?{' '}
-          <Link href={pending_invite ? `/login?pending_invite=${pending_invite}` : '/login'} className="text-[#f4f4f5] hover:text-[#e11d48] transition-colors font-medium">
+          <Link href={pending_invite ? `/login?${inviteQs}` : '/login'} className="text-[#f4f4f5] hover:text-[#e11d48] transition-colors font-medium">
             Sign in
           </Link>
         </p>

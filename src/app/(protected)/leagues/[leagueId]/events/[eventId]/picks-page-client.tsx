@@ -12,6 +12,7 @@ interface Fight {
   bout_order: number
   is_main_event: boolean
   scheduled_rounds: number
+  weight_class: string | null
   red_name: string
   red_record: string | null
   red_sherdog_url: string | null
@@ -19,6 +20,7 @@ interface Fight {
   blue_record: string | null
   blue_sherdog_url: string | null
   status: string
+  matchup_preview: string | null
 }
 
 interface ExistingPick {
