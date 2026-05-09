@@ -95,14 +95,14 @@ export default async function DashboardPage() {
       .eq('user_id', user.id),
     ...(leagueIds.length > 0
       ? [
-          supabase.from('picks').select('league_id, user_id, points_earned').in('league_id', leagueIds),
+          supabase.from('picks').select('league_id, event_id, user_id, points_earned').in('league_id', leagueIds),
           getUnreadCounts(leagueIds),
         ]
       : []),
   ])
 
   const myPicks = myPicksRes.data
-  const allLeaguePicksData = leagueIds.length > 0 ? (leagueDataRes[0] as { data: { league_id: string; user_id: string; points_earned: number | null }[] | null }).data : null
+  const allLeaguePicksData = leagueIds.length > 0 ? (leagueDataRes[0] as { data: { league_id: string; event_id: string; user_id: string; points_earned: number | null }[] | null }).data : null
   const unreadCounts: Record<string, number> = leagueIds.length > 0 ? (leagueDataRes[1] as Record<string, number>) : {}
 
   type FightJoin = { result_method: string; result_winner: string | null }
@@ -153,9 +153,24 @@ export default async function DashboardPage() {
     }
   }
 
-  // Total wins — leagues where user is #1
-  const rankedLeagues = Object.values(userRanks).filter((r) => r.of > 1)
-  const winCount = rankedLeagues.filter((r) => r.rank === 1 && r.total > 0).length
+  // Event wins — count of distinct (league, event) pairs where the user
+  // scored at least as high as every other member who picked. Ties count
+  // as wins for everyone tied (matches the league-page Winners callout).
+  let winCount = 0
+  if (allLeaguePicksData) {
+    const totalsByEvent: Record<string, Record<string, number>> = {}
+    for (const p of allLeaguePicksData) {
+      const k = `${p.league_id}::${p.event_id}`
+      if (!totalsByEvent[k]) totalsByEvent[k] = {}
+      totalsByEvent[k][p.user_id] = (totalsByEvent[k][p.user_id] ?? 0) + (p.points_earned ?? 0)
+    }
+    for (const totals of Object.values(totalsByEvent)) {
+      const userTotal = totals[user.id] ?? 0
+      if (userTotal <= 0) continue
+      const max = Math.max(...Object.values(totals))
+      if (userTotal === max) winCount++
+    }
+  }
 
   // Hot/cold streak — consecutive correct/incorrect winner picks, most recent first
   let streak = 0
