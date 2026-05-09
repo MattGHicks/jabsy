@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, Crosshair, MessageCircle, Activity } from 'lucide-react'
-import { cn, formatDateTime, getInitials } from '@/lib/utils'
+import { Calendar, ChevronRight, BarChart2, Lock, Trophy, Crown, Info, X, TrendingUp, Zap, Target, Award, Crosshair, Activity } from 'lucide-react'
+import { cn, formatDateTime, getInitials, formatDate } from '@/lib/utils'
 import { LockCountdown } from '@/components/admin/lock-countdown'
 import { isPicksOpen } from '@/lib/utils'
 import { RemoveMemberButton } from './remove-member-button'
-import { ChatTab } from './chat-tab'
 import { ActivityTab } from './activity-tab'
-import { getUnreadCount, markChatRead } from '@/actions/chat'
+import { ShareButton } from '@/components/share-button'
 
 const STATUS_STYLES: Record<string, { badge: string; label: string }> = {
   upcoming: { badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', label: 'Upcoming' },
@@ -62,6 +61,8 @@ export interface LeagueStats {
 
 interface LeagueTabsProps {
   leagueId: string
+  leagueName: string
+  shareCode: string
   events: Event[]
   isOwner: boolean
   pickCounts: Record<string, number>
@@ -76,6 +77,8 @@ interface LeagueTabsProps {
   leagueStats: LeagueStats
   currentUserProfile: { username: string | null; avatar_url: string | null }
   initialTab?: TabKey
+  /** Map of memberId → number of fights they've picked across all upcoming/live events (used as a per-event "submitted" indicator near the standings rows). Optional. */
+  joinedAt?: Record<string, string>
 }
 
 const RANK_STYLES = [
@@ -84,32 +87,15 @@ const RANK_STYLES = [
   { color: 'text-amber-600', bg: 'bg-amber-700/10 border-amber-700/20' },
 ]
 
-type TabKey = 'events' | 'completed' | 'standings' | 'stats' | 'chat' | 'activity'
+type TabKey = 'events' | 'completed' | 'standings' | 'stats' | 'activity'
 
-export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals, leagueStats, currentUserProfile, initialTab }: LeagueTabsProps) {
+export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, pickCounts, eventWinners, standings, profilesMap, currentUserId, members, ownerProfile, leagueOwnerId, standingsTotals, leagueStats, currentUserProfile, initialTab, joinedAt }: LeagueTabsProps) {
   const [tab, setTab] = useState<TabKey>(initialTab ?? 'events')
   const [showAccuracyInfo, setShowAccuracyInfo] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
   const tabBarRef = useRef<HTMLDivElement>(null)
 
-  // Fetch unread count on mount (or mark read immediately if opening on chat tab)
-  useEffect(() => {
-    if (initialTab === 'chat') {
-      markChatRead(leagueId)
-      setUnreadCount(0)
-    } else {
-      getUnreadCount(leagueId).then(setUnreadCount)
-    }
-  }, [leagueId, initialTab])
-
-  // When switching to chat tab, mark as read and clear badge
   function handleTabChange(key: TabKey) {
     setTab(key)
-    if (key === 'chat') {
-      markChatRead(leagueId)
-      setUnreadCount(0)
-    }
-    // Scroll tab bar into view so content stays visible after switch
     requestAnimationFrame(() => {
       tabBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
@@ -124,7 +110,6 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
     { key: 'completed', label: 'Completed', icon: Trophy, count: completedEvents.length, accent: '#fbbf24', accentBg: 'rgba(251,191,36,0.08)', accentBorder: 'rgba(251,191,36,0.15)' },
     { key: 'standings', label: 'Standings', icon: BarChart2, count: memberCount, accent: '#e11d48', accentBg: 'rgba(225,29,72,0.08)', accentBorder: 'rgba(225,29,72,0.15)' },
     { key: 'stats', label: 'League Stats', icon: Zap, count: 'VIEW', accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.15)' },
-    { key: 'chat', label: 'Chat', icon: MessageCircle, count: 'OPEN', accent: '#22c55e', accentBg: 'rgba(34,197,94,0.08)', accentBorder: 'rgba(34,197,94,0.15)', badge: unreadCount },
     { key: 'activity', label: 'Activity', icon: Activity, count: 'FEED', accent: '#f97316', accentBg: 'rgba(249,115,22,0.08)', accentBorder: 'rgba(249,115,22,0.15)' },
   ]
 
@@ -216,7 +201,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
             </div>
           ) : (
             <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
-              {activeEvents.map((event) => renderEventCard(event, leagueId, pickCounts, eventWinners))}
+              {activeEvents.map((event) => renderEventCard(event, leagueId, leagueName, shareCode, pickCounts, eventWinners))}
             </div>
           )}
         </div>
@@ -232,7 +217,7 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
             </div>
           ) : (
             <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
-              {completedEvents.map((event) => renderEventCard(event, leagueId, pickCounts, eventWinners))}
+              {completedEvents.map((event) => renderEventCard(event, leagueId, leagueName, shareCode, pickCounts, eventWinners))}
             </div>
           )}
         </div>
@@ -286,9 +271,77 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
           )}
 
           {standings.length === 0 ? (
-            <div className="flex flex-col items-center py-20 text-center">
-              <BarChart2 className="w-8 h-8 text-[#52525b] mb-3" />
-              <p className="text-sm text-[#71717a]">No standings yet. Make picks to get on the board.</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col items-center py-8 text-center rounded-xl border border-dashed border-[#1e1e1e]">
+                <BarChart2 className="w-7 h-7 text-[#52525b] mb-2.5" />
+                <p className="text-sm text-[#71717a]">No standings yet</p>
+                <p className="text-xs text-[#52525b] mt-0.5">Make picks to get on the board</p>
+              </div>
+              {(() => {
+                const seen = new Set<string>()
+                const all = [
+                  ...(ownerProfile ? [ownerProfile] : []),
+                  ...members.filter((m) => m.id !== ownerProfile?.id),
+                ].filter((m) => {
+                  if (seen.has(m.id)) return false
+                  seen.add(m.id)
+                  return true
+                })
+                if (all.length === 0) return null
+                return (
+                  <div>
+                    <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-[0.15em] mb-2 mt-2">
+                      Members · {all.length}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {all.map((m) => {
+                        const isMe = m.id === currentUserId
+                        const isLeagueOwner = m.id === leagueOwnerId
+                        const profileUrl = isMe ? '/profile' : `/profile/${m.username ?? ''}?from=${leagueId}`
+                        return (
+                          <Link
+                            key={m.id}
+                            href={profileUrl}
+                            className={cn(
+                              'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group',
+                              isMe
+                                ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
+                                : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
+                            )}
+                          >
+                            <div className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
+                              {m.avatar_url
+                                // eslint-disable-next-line @next/next/no-img-element
+                                ? <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                                : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(m.username ?? 'U')}</span>
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={cn('text-sm font-semibold truncate', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                                  {m.username ?? 'Unknown'}
+                                </p>
+                                {isMe && <span className="text-xs text-[#e11d48] shrink-0">you</span>}
+                                {isLeagueOwner && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                                    <Crown className="w-2.5 h-2.5" />
+                                  </span>
+                                )}
+                              </div>
+                              {joinedAt?.[m.id] && (
+                                <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
+                                  Joined {formatDate(joinedAt[m.id])}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -425,7 +478,13 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
+                          {joinedAt?.[s.userId] ? (
+                            <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
+                              Joined {formatDate(joinedAt[s.userId])}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
+                          )}
                         </div>
 
                         {/* Remove button */}
@@ -468,20 +527,6 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
       {/* Activity tab */}
       {tab === 'activity' && (
         <ActivityTab leagueId={leagueId} currentUserId={currentUserId} />
-      )}
-
-      {/* Chat tab */}
-      {tab === 'chat' && (
-        <ChatTab
-          leagueId={leagueId}
-          currentUserId={currentUserId}
-          currentUserProfile={currentUserProfile}
-          members={[
-            ...(ownerProfile ? [ownerProfile] : []),
-            ...members.filter(m => m.id !== ownerProfile?.id),
-          ]}
-          leagueEvents={events.map(e => ({ id: e.id, name: e.name, status: e.status }))}
-        />
       )}
 
       {/* League Stats tab */}
@@ -662,6 +707,8 @@ export function LeagueTabs({ leagueId, events, isOwner, pickCounts, eventWinners
 function renderEventCard(
   event: Event,
   leagueId: string,
+  leagueName: string,
+  shareCode: string,
   pickCounts: Record<string, number>,
   eventWinners: Record<string, WinnerInfo[]>
 ) {
@@ -812,6 +859,17 @@ function renderEventCard(
             {btnLabel}
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
+        )}
+        <span className="ml-auto" />
+        {!isLocked && (
+          <ShareButton
+            code={shareCode}
+            eventId={event.id}
+            shareTitle={`${leagueName} · ${event.name}`}
+            shareText={`Join ${leagueName} on Jabsy and pick ${event.name}.`}
+            variant="inline"
+            label="Share"
+          />
         )}
       </div>
     </div>

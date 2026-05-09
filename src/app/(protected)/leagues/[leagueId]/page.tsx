@@ -6,6 +6,7 @@ import { getInitials } from '@/lib/utils'
 import { calcWeightedAccuracy } from '@/lib/accuracy'
 import { LeagueTabs } from './league-tabs'
 import type { LeagueStats } from './league-tabs'
+import { ShareButton } from '@/components/share-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -269,6 +270,13 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
     .map((m) => m.profiles as { id: string; username: string | null; avatar_url: string | null } | null)
     .filter((p): p is { id: string; username: string | null; avatar_url: string | null } => p !== null)
 
+  // Member joined-at lookup (for the Standings rows)
+  const joinedAt: Record<string, string> = {}
+  for (const m of members ?? []) {
+    if (m.user_id && m.joined_at) joinedAt[m.user_id] = m.joined_at
+  }
+  if (ownerProfile && league.created_at) joinedAt[ownerProfile.id] = league.created_at
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       {/* Back */}
@@ -361,21 +369,32 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
               </span>
             </div>
 
-            {isOwner && (
-              <Link
-                href={`/leagues/${leagueId}/settings`}
-                className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/[0.10] transition-all"
-              >
-                <Settings className="w-3 h-3" />
-                <span className="text-[10px] uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.06em' }}>Settings</span>
-              </Link>
-            )}
+            <div className="flex items-center gap-2">
+              <ShareButton
+                code={league.share_code}
+                shareTitle={`Join ${league.name} on Jabsy`}
+                shareText={`Join my fantasy MMA league "${league.name}" on Jabsy.`}
+                variant="pill"
+                label="Invite"
+              />
+              {isOwner && (
+                <Link
+                  href={`/leagues/${leagueId}/settings`}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-white/[0.06] hover:text-[#f4f4f5] transition-all"
+                  aria-label="League settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <LeagueTabs
         leagueId={leagueId}
+        leagueName={league.name}
+        shareCode={league.share_code}
         events={events}
         isOwner={isOwner}
         pickCounts={pickCounts}
@@ -389,7 +408,8 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
         standingsTotals={standingsTotals}
         leagueStats={leagueStats}
         currentUserProfile={profilesMap[user.id] ?? { username: null, avatar_url: null }}
-        initialTab={tab === 'chat' || tab === 'events' || tab === 'completed' || tab === 'standings' || tab === 'stats' || tab === 'activity' ? tab : undefined}
+        joinedAt={joinedAt}
+        initialTab={tab === 'events' || tab === 'completed' || tab === 'standings' || tab === 'stats' || tab === 'activity' ? tab : undefined}
       />
     </div>
   )

@@ -7,9 +7,10 @@ import { updateProfile } from '@/actions/auth'
 interface OnboardingFormProps {
   googleAvatarUrl: string | null
   pendingInvite?: string
+  pendingEvent?: string
 }
 
-export function OnboardingForm({ googleAvatarUrl, pendingInvite }: OnboardingFormProps) {
+export function OnboardingForm({ googleAvatarUrl, pendingInvite, pendingEvent }: OnboardingFormProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(googleAvatarUrl)
   const [hasCustomFile, setHasCustomFile] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -27,6 +28,9 @@ export function OnboardingForm({ googleAvatarUrl, pendingInvite }: OnboardingFor
     <form action={updateProfile} className="flex flex-col gap-6">
       {pendingInvite && (
         <input type="hidden" name="pending_invite" value={pendingInvite} />
+      )}
+      {pendingEvent && (
+        <input type="hidden" name="event" value={pendingEvent} />
       )}
 
       {/* Avatar */}

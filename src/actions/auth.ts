@@ -11,16 +11,21 @@ export async function loginWithEmail(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const pendingInvite = formData.get('pending_invite') as string | null
+  const event = formData.get('event') as string | null
 
+  const eventQs = event ? `&event=${encodeURIComponent(event)}` : ''
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    const base = pendingInvite ? `/login?pending_invite=${pendingInvite}&error=` : '/login?error='
+    const base = pendingInvite
+      ? `/login?pending_invite=${pendingInvite}${eventQs}&error=`
+      : '/login?error='
     redirect(`${base}${encodeURIComponent(error.message)}`)
   }
 
   if (pendingInvite) {
-    redirect(`/invite/${pendingInvite}`)
+    const dest = event ? `/invite/${pendingInvite}?event=${encodeURIComponent(event)}` : `/invite/${pendingInvite}`
+    redirect(dest)
   }
 
   redirect('/dashboard')
@@ -50,8 +55,12 @@ export async function signUp(formData: FormData) {
   const password = formData.get('password') as string
   const confirm = formData.get('confirm_password') as string
   const pendingInvite = formData.get('pending_invite') as string | null
+  const event = formData.get('event') as string | null
 
-  const baseSignupUrl = pendingInvite ? `/signup?pending_invite=${pendingInvite}` : '/signup'
+  const inviteQs = pendingInvite
+    ? `pending_invite=${pendingInvite}${event ? `&event=${encodeURIComponent(event)}` : ''}`
+    : ''
+  const baseSignupUrl = pendingInvite ? `/signup?${inviteQs}` : '/signup'
   const sep = pendingInvite ? '&' : '?'
 
   if (password !== confirm) {
@@ -62,10 +71,12 @@ export async function signUp(formData: FormData) {
     redirect(`${baseSignupUrl}${sep}error=Password+must+be+at+least+8+characters`)
   }
 
-  // After email confirmation, send users to the right destination.
-  // The /auth/confirm page reads `next` from the email template and redirects
-  // there once the user clicks the verify button.
-  const postConfirmPath = pendingInvite ? `/invite/${pendingInvite}` : '/onboarding'
+  // After email confirmation, send users back to the invite page (which auto-joins
+  // and then redirects to the league or specific event). Without an invite, send
+  // to onboarding directly.
+  const postConfirmPath = pendingInvite
+    ? `/invite/${pendingInvite}${event ? `?event=${encodeURIComponent(event)}` : ''}`
+    : '/onboarding'
   const emailRedirectTo = `${process.env.NEXT_PUBLIC_APP_URL}${postConfirmPath}`
 
   const { error } = await supabase.auth.signUp({
@@ -82,7 +93,7 @@ export async function signUp(formData: FormData) {
 
   // Email not confirmed yet — send to check-email page
   const checkEmailUrl = pendingInvite
-    ? `/check-email?email=${encodeURIComponent(email)}&pending_invite=${pendingInvite}`
+    ? `/check-email?email=${encodeURIComponent(email)}&${inviteQs}`
     : `/check-email?email=${encodeURIComponent(email)}`
 
   redirect(checkEmailUrl)
@@ -149,14 +160,22 @@ export async function updateProfile(formData: FormData) {
   }
 
   // Handle pending league invite — auto-join and go straight to the league
+  // (or to the event picks page if a deep-link target was carried through).
   const pendingInvite = formData.get('pending_invite') as string | null
+  const pendingEvent = formData.get('event') as string | null
   if (pendingInvite) {
     const result = await joinViaInvite(pendingInvite)
     if ('leagueId' in result && result.leagueId) {
-      redirect(`/leagues/${result.leagueId}`)
+      const dest = pendingEvent
+        ? `/leagues/${result.leagueId}/events/${pendingEvent}`
+        : `/leagues/${result.leagueId}`
+      redirect(dest)
     }
-    // If join failed for any reason, fall back to the invite page
-    redirect(`/invite/${pendingInvite}`)
+    // If join failed for any reason, fall back to the invite page (preserve event)
+    const fallback = pendingEvent
+      ? `/invite/${pendingInvite}?event=${encodeURIComponent(pendingEvent)}`
+      : `/invite/${pendingInvite}`
+    redirect(fallback)
   }
 
   redirect('/dashboard')

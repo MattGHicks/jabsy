@@ -169,6 +169,7 @@ export interface Database {
           description: string | null
           avatar_url: string | null
           hide_picks_until_lock: boolean
+          share_code: string
           created_at: string
           updated_at: string
         }
@@ -179,6 +180,7 @@ export interface Database {
           description?: string | null
           avatar_url?: string | null
           hide_picks_until_lock?: boolean
+          share_code?: string
           created_at?: string
           updated_at?: string
         }
@@ -189,6 +191,7 @@ export interface Database {
           description?: string | null
           avatar_url?: string | null
           hide_picks_until_lock?: boolean
+          share_code?: string
           created_at?: string
           updated_at?: string
         }

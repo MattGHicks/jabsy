@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const pendingInvite = url.searchParams.get('pending_invite')
+  const event = url.searchParams.get('event')
 
-  // If an invite code was passed via URL, store it in a cookie so it
-  // survives the round-trip through Google OAuth and back to /auth/callback
+  // If an invite code (or event deep-link) was passed via URL, store in cookies
+  // so they survive the Google OAuth round-trip back to /auth/callback.
   if (pendingInvite) {
     const cookieStore = await cookies()
     cookieStore.set('pending_invite', pendingInvite, {
@@ -16,6 +17,14 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       sameSite: 'lax',
     })
+    if (event) {
+      cookieStore.set('pending_invite_event', event, {
+        path: '/',
+        maxAge: 60 * 60,
+        httpOnly: true,
+        sameSite: 'lax',
+      })
+    }
   }
 
   const supabase = await createClient()

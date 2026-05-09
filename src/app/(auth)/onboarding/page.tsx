@@ -4,11 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { OnboardingForm } from './onboarding-form'
 
 interface PageProps {
-  searchParams: Promise<{ error?: string; pending_invite?: string }>
+  searchParams: Promise<{ error?: string; pending_invite?: string; event?: string }>
 }
 
 export default async function OnboardingPage({ searchParams }: PageProps) {
-  const { error, pending_invite } = await searchParams
+  const { error, pending_invite, event } = await searchParams
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -58,6 +58,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
           <OnboardingForm
             googleAvatarUrl={googleAvatarUrl}
             pendingInvite={pending_invite}
+            pendingEvent={event}
           />
         </div>
       </div>

@@ -4,10 +4,8 @@ import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock, EyeOff } from 'luc
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate } from '@/lib/utils'
-import { getUnreadCount } from '@/actions/chat'
 import { StickyStandings } from './sticky-standings'
 import { BoardLiveUpdater } from './board-live-updater'
-import { BoardChatBadge } from './board-chat-badge'
 
 export const dynamic = 'force-dynamic'
 
@@ -159,8 +157,6 @@ export default async function BoardPage({ params }: PageProps) {
   const isCompleted = event.status === 'completed'
   const picksOpen = event.status === 'upcoming' && isPicksOpen(event.start_time, event.lock_time)
 
-  // Fetch unread chat count for the league
-  const unreadChatCount = await getUnreadCount(leagueId)
   const maxPts = leaderboard[0]?.totalPts ?? 1
 
   // Winner(s): players tied at the top when event is completed
@@ -171,9 +167,6 @@ export default async function BoardPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Floating chat badge — sticky at bottom-right */}
-      <BoardChatBadge leagueId={leagueId} initialCount={unreadChatCount} currentUserId={user.id} />
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
 
         {/* Top bar */}
