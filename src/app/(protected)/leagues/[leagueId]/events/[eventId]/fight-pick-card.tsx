@@ -434,20 +434,18 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
 
       {/* Matchup info button + collapsible panel */}
       {!isCancelled && (
-        <div className="border-t border-[#1a1a1a]/60 pt-2.5">
-          <MatchupInfoButton
-            fightId={fight.id}
-            redName={fight.red_name}
-            redRecord={fight.red_record}
-            redSherdogUrl={fight.red_sherdog_url}
-            blueName={fight.blue_name}
-            blueRecord={fight.blue_record}
-            blueSherdogUrl={fight.blue_sherdog_url}
-            weightClass={fight.weight_class}
-            scheduledRounds={fight.scheduled_rounds}
-            initialPreview={fight.matchup_preview}
-          />
-        </div>
+        <MatchupInfoButton
+          fightId={fight.id}
+          redName={fight.red_name}
+          redRecord={fight.red_record}
+          redSherdogUrl={fight.red_sherdog_url}
+          blueName={fight.blue_name}
+          blueRecord={fight.blue_record}
+          blueSherdogUrl={fight.blue_sherdog_url}
+          weightClass={fight.weight_class}
+          scheduledRounds={fight.scheduled_rounds}
+          initialPreview={fight.matchup_preview}
+        />
       )}
 
       {/* Pick completeness indicator — bottom edge */}
