@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { Settings, Crown, Users, ChevronLeft } from 'lucide-react'
+import { Settings, ChevronLeft, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getInitials } from '@/lib/utils'
 import { calcWeightedAccuracy } from '@/lib/accuracy'
@@ -330,46 +330,22 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
             </div>
           </div>
 
-          {/* Bottom bar: member avatars + settings */}
+          {/* Bottom bar: meta + actions */}
           <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
-            <div className="flex items-center gap-3">
-              {/* Stacked member avatars */}
-              <div className="flex -space-x-2">
-                {(() => {
-                  const seen = new Set<string>()
-                  const all = [ownerProfile, ...((members ?? []).map((m) => m.profiles as { id: string; username: string | null; avatar_url: string | null } | null).filter(Boolean))].filter((m): m is { id: string; username: string | null; avatar_url: string | null } => {
-                    if (!m || seen.has(m.id)) return false
-                    seen.add(m.id)
-                    return true
-                  })
-                  const overflow = all.length - 8
-                  return (<>
-                    {all.slice(0, 8).map((m, i) => (
-                      <div key={m.id} className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#1e1e1e] overflow-hidden shrink-0" style={{ zIndex: 8 - i }}>
-                        {m.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[8px] font-bold text-[#52525b] flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                            {getInitials(m.username ?? 'U')}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    {overflow > 0 && (
-                      <div className="w-7 h-7 rounded-full border-2 border-[#0a0a0a] bg-[#1e1e1e] shrink-0 flex items-center justify-center" style={{ zIndex: 0 }}>
-                        <span className="text-[8px] font-bold text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+{overflow}</span>
-                      </div>
-                    )}
-                  </>)
-                })()}
-              </div>
-              <span className="text-[11px] text-[#71717a]">
-                {uniqueMemberIds.length} {uniqueMemberIds.length === 1 ? 'member' : 'members'} · {events.length} {events.length === 1 ? 'event' : 'events'}
-              </span>
-            </div>
+            <p className="text-[11px] text-[#71717a]">
+              {events.length} {events.length === 1 ? 'event' : 'events'}
+            </p>
 
             <div className="flex items-center gap-2">
+              <Link
+                href={`/leagues/${leagueId}/members`}
+                className="inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-xs font-semibold bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-white/[0.06] hover:text-[#f4f4f5] transition-all cursor-pointer shrink-0"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Members
+                <span className="text-[#52525b]">·</span>
+                <span className="tabular-nums">{uniqueMemberIds.length}</span>
+              </Link>
               <ShareButton
                 code={league.share_code}
                 shareTitle={`Join ${league.name} on Jabsy`}

@@ -116,15 +116,22 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
   return (
     <div>
       {/* Tab cards — matching dashboard stat-card style */}
-      <div ref={tabBarRef} className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-8 scroll-mt-16">
-        {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder, badge }) => {
+      <div ref={tabBarRef} className="grid grid-cols-6 sm:grid-cols-5 gap-2.5 mb-8 scroll-mt-16">
+        {tabs.map(({ key, label, icon: Icon, count, accent, accentBg, accentBorder, badge }, i) => {
           const isActive = tab === key
+          // Mobile balances 5 tabs across two rows: first 3 take 2 cols each (row 1 fills), last 2 take 3 cols each (row 2 fills).
+          // Desktop is always a single row of equal columns.
+          const mobileSpan = tabs.length === 5
+            ? (i < 3 ? 'col-span-2' : 'col-span-3')
+            : 'col-span-2'
           return (
             <button
               key={key}
               onClick={() => handleTabChange(key)}
               className={cn(
                 'relative flex flex-col items-center gap-2 py-4 sm:py-5 px-3 rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden active:scale-[0.97]',
+                mobileSpan,
+                'sm:col-span-1',
                 isActive
                   ? 'bg-[#141414] border-[#27272a] shadow-[0_0_12px_rgba(0,0,0,0.3)]'
                   : 'bg-[#111111] border-[#1e1e1e] hover:bg-[#141414] hover:border-[#27272a] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
@@ -344,181 +351,93 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
               })()}
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {/* Top 3 — compact 3-col on mobile, spacious podium on desktop */}
-              {standings.length >= 1 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {standings.slice(0, 3).map((s, i) => {
-                    const profile = profilesMap[s.userId]
-                    const isMe = s.userId === currentUserId
-                    const isLeagueOwner = s.userId === leagueOwnerId
-                    const rankStyle = RANK_STYLES[i] ?? null
-                    const rank = i + 1
-                    const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
+            <div className="flex flex-col gap-2">
+              {standings.map((s, i) => {
+                const profile = profilesMap[s.userId]
+                const isMe = s.userId === currentUserId
+                const isLeagueOwner = s.userId === leagueOwnerId
+                const rank = i + 1
+                const rankStyle = RANK_STYLES[i] ?? null
+                const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
 
-                    return (
-                      <Link
-                        key={s.userId}
-                        href={profileUrl}
-                        className={cn(
-                          'flex flex-col items-center gap-2 md:gap-3 px-2 py-3 md:px-5 md:py-5 rounded-xl border transition-all duration-200 group',
-                          isMe
-                            ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
-                            : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
-                        )}
-                      >
-                        {/* Rank badge */}
-                        <div className={cn(
-                          'w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center text-xs md:text-sm font-bold border self-start',
-                          rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
-                          rankStyle ? rankStyle.color : 'text-[#52525b]'
-                        )}>
-                          {rank}
-                        </div>
+                return (
+                  <Link
+                    key={s.userId}
+                    href={profileUrl}
+                    className={cn(
+                      'flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 rounded-xl border transition-all duration-200 group',
+                      isMe
+                        ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
+                        : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
+                    )}
+                  >
+                    {/* Rank — colored for top 3 */}
+                    <div className={cn(
+                      'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border tabular-nums',
+                      rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
+                      rankStyle ? rankStyle.color : 'text-[#52525b]'
+                    )}>
+                      {rank}
+                    </div>
 
-                        {/* Avatar */}
-                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-[#1e1e1e] border-2 overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors"
-                          style={{ borderColor: rankStyle ? undefined : '#27272a' }}
-                        >
-                          {profile?.avatar_url
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                            : <span className="text-xs md:text-base font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
-                          }
-                        </div>
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors">
+                      {profile?.avatar_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        : <span className="text-sm font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
+                      }
+                    </div>
 
-                        {/* Name */}
-                        <div className="text-center min-w-0 w-full">
-                          <div className="flex items-center justify-center gap-1 flex-wrap">
-                            <p className={cn('text-[11px] md:text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
-                              {profile?.username ?? 'Unknown'}
-                            </p>
-                            {isMe && <span className="text-[10px] md:text-xs text-[#e11d48] font-normal shrink-0">you</span>}
-                            {isLeagueOwner && (
-                              <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
-                                <Crown className="w-2 h-2" />
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Accuracy */}
-                        <p
-                          className={cn('text-lg md:text-2xl font-bold leading-none', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
-                          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-                        >
-                          {s.accuracy !== null ? `${s.accuracy}%` : '—'}
+                    {/* Name */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#f4f4f5]')}>
+                          {profile?.username ?? 'Unknown'}
                         </p>
-                        <p className="text-[9px] md:text-[10px] text-[#52525b] uppercase tracking-wide -mt-1">
-                          {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
+                        {isMe && <span className="text-[11px] text-[#e11d48] shrink-0">you</span>}
+                        {isLeagueOwner && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                            <Crown className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                      </div>
+                      {joinedAt?.[s.userId] && (
+                        <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
+                          Joined {formatDate(joinedAt[s.userId])}
                         </p>
+                      )}
+                    </div>
 
-                        {/* Remove button */}
-                        {isOwner && !isMe && !isLeagueOwner && (
-                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                          <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
-                            <RemoveMemberButton
-                              leagueId={leagueId}
-                              memberId={s.userId}
-                              username={profile?.username ?? null}
-                            />
-                          </div>
-                        )}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
+                    {/* Remove button (owner only) */}
+                    {isOwner && !isMe && !isLeagueOwner && (
+                      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                      <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
+                        <RemoveMemberButton
+                          leagueId={leagueId}
+                          memberId={s.userId}
+                          username={profile?.username ?? null}
+                        />
+                      </div>
+                    )}
 
-              {/* Rank 4+ — horizontal rows in 2-col grid */}
-              {standings.length > 3 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {standings.slice(3).map((s, i) => {
-                    const profile = profilesMap[s.userId]
-                    const isMe = s.userId === currentUserId
-                    const isLeagueOwner = s.userId === leagueOwnerId
-                    const rank = i + 4
-                    const profileUrl = isMe ? '/profile' : `/profile/${profile?.username ?? ''}?from=${leagueId}`
-
-                    return (
-                      <Link
-                        key={s.userId}
-                        href={profileUrl}
-                        className={cn(
-                          'flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-200 group',
-                          isMe
-                            ? 'bg-[#e11d48]/5 border-[#e11d48]/25 hover:bg-[#e11d48]/8'
-                            : 'bg-[#111111] border-[#1e1e1e] hover:border-[#27272a] hover:bg-[#141414]'
-                        )}
+                    {/* Accuracy + Points */}
+                    <div className="text-right shrink-0">
+                      <p
+                        className={cn('text-lg sm:text-xl font-bold leading-none tabular-nums', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
+                        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
                       >
-                        {/* Rank */}
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border bg-[#0a0a0a] border-[#1e1e1e] text-[#52525b]">
-                          {rank}
-                        </div>
+                        {s.accuracy !== null ? `${s.accuracy}%` : '—'}
+                      </p>
+                      <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide tabular-nums">
+                        {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
+                      </p>
+                    </div>
 
-                        {/* Avatar */}
-                        <div className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0 group-hover:border-[#3f3f46] transition-colors">
-                          {profile?.avatar_url
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                            : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
-                          }
-                        </div>
-
-                        {/* Name */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
-                              {profile?.username ?? 'Unknown'}
-                            </p>
-                            {isMe && <span className="text-xs text-[#e11d48] font-normal shrink-0">you</span>}
-                            {isLeagueOwner && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
-                                <Crown className="w-2.5 h-2.5" />
-                              </span>
-                            )}
-                          </div>
-                          {joinedAt?.[s.userId] ? (
-                            <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
-                              Joined {formatDate(joinedAt[s.userId])}
-                            </p>
-                          ) : (
-                            <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">View profile</p>
-                          )}
-                        </div>
-
-                        {/* Remove button */}
-                        {isOwner && !isMe && !isLeagueOwner && (
-                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                          <div onClick={(e) => { e.preventDefault(); e.stopPropagation() }} className="shrink-0">
-                            <RemoveMemberButton
-                              leagueId={leagueId}
-                              memberId={s.userId}
-                              username={profile?.username ?? null}
-                            />
-                          </div>
-                        )}
-
-                        {/* Accuracy + Points */}
-                        <div className="text-right shrink-0">
-                          <p
-                            className="text-xl font-bold leading-none text-[#f4f4f5]"
-                            style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-                          >
-                            {s.accuracy !== null ? `${s.accuracy}%` : '—'}
-                          </p>
-                          <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide">
-                            {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
-                          </p>
-                        </div>
-
-                        {/* Chevron hint */}
-                        <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
+                    <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>
