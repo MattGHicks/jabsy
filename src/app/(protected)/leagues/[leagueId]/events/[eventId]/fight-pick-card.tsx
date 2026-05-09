@@ -4,12 +4,14 @@ import { useState, useTransition, useRef, useEffect } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { savePick } from '@/actions/picks'
+import { MatchupInfoButton } from './matchup-info-button'
 
 interface Fight {
   id: string
   bout_order: number
   is_main_event: boolean
   scheduled_rounds: number
+  weight_class: string | null
   red_name: string
   red_record: string | null
   red_sherdog_url: string | null
@@ -17,6 +19,7 @@ interface Fight {
   blue_record: string | null
   blue_sherdog_url: string | null
   status: string
+  matchup_preview: string | null
 }
 
 interface ExistingPick {
@@ -426,6 +429,24 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
               <span className="text-[10px] text-[#3f3f46] uppercase tracking-wide">No pick made</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Matchup info button + collapsible panel */}
+      {!isCancelled && (
+        <div className="border-t border-[#1a1a1a]/60 pt-2.5">
+          <MatchupInfoButton
+            fightId={fight.id}
+            redName={fight.red_name}
+            redRecord={fight.red_record}
+            redSherdogUrl={fight.red_sherdog_url}
+            blueName={fight.blue_name}
+            blueRecord={fight.blue_record}
+            blueSherdogUrl={fight.blue_sherdog_url}
+            weightClass={fight.weight_class}
+            scheduledRounds={fight.scheduled_rounds}
+            initialPreview={fight.matchup_preview}
+          />
         </div>
       )}
 

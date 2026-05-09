@@ -102,6 +102,8 @@ export interface Database {
           ufc_fight_id: string | null
           sync_status: 'synced' | 'modified' | 'manual'
           last_synced_at: string | null
+          matchup_preview: string | null
+          matchup_preview_generated_at: string | null
           created_at: string
           updated_at: string
         }
@@ -128,6 +130,8 @@ export interface Database {
           ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
           last_synced_at?: string | null
+          matchup_preview?: string | null
+          matchup_preview_generated_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -154,6 +158,8 @@ export interface Database {
           ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
           last_synced_at?: string | null
+          matchup_preview?: string | null
+          matchup_preview_generated_at?: string | null
           created_at?: string
           updated_at?: string
         }
