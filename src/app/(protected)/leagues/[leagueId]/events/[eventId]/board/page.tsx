@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock } from 'lucide-react'
+import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate } from '@/lib/utils'
@@ -47,7 +47,7 @@ export default async function BoardPage({ params }: PageProps) {
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, owner_id')
+    .select('id, name, owner_id, hide_picks_until_lock')
     .eq('id', leagueId)
     .single()
   if (!league) notFound()
@@ -110,15 +110,31 @@ export default async function BoardPage({ params }: PageProps) {
     .eq('league_id', leagueId)
     .eq('event_id', eventId)
 
+  // Hide other players' picks until lock_time when the league setting is on.
+  // Users always see their own picks. After lock_time everything becomes visible.
+  const lockMoment = new Date(event.lock_time ?? event.start_time)
+  const beforeLock = new Date() < lockMoment
+  const hidePicksUntilLock = Boolean(league.hide_picks_until_lock) && beforeLock
+  const visiblePicks = hidePicksUntilLock
+    ? (allPicks ?? []).filter((p) => p.user_id === user.id)
+    : (allPicks ?? [])
+
   const picksIndex: Record<string, {
     pick_winner: string
     pick_method: string
     pick_round: number | null
     points_earned: number | null
   }> = {}
-  for (const p of allPicks ?? []) {
+  for (const p of visiblePicks) {
     picksIndex[`${p.user_id}:${p.fight_id}`] = p
   }
+
+  // Submission count is based on ALL picks (server-trusted) so members can see
+  // how many people have entered their picks even when the picks themselves are hidden.
+  const submittedUserIds = new Set((allPicks ?? []).map((p) => p.user_id))
+  const totalMembers = (members ?? []).length
+  const submittedCount = submittedUserIds.size
+  const userHasSubmitted = submittedUserIds.has(user.id)
 
   const memberIds = (members ?? []).map((m) => m.user_id)
   const allMemberRows = memberIds.map((uid) => {
@@ -249,6 +265,27 @@ export default async function BoardPage({ params }: PageProps) {
                   </Link>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Hidden picks indicator ─────────────────────────────── */}
+        {hidePicksUntilLock && (
+          <div className="mb-6 rounded-xl border border-[#27272a] bg-[#111111] px-4 py-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#27272a] flex items-center justify-center shrink-0">
+              <EyeOff className="w-4 h-4 text-[#a1a1aa]" />
+            </div>
+            <div className="flex-1 min-w-0 leading-snug">
+              <p className="text-sm text-[#f4f4f5]">
+                <span className="font-semibold">{submittedCount}</span>
+                <span className="text-[#71717a]"> of </span>
+                <span className="font-semibold">{totalMembers}</span>
+                <span className="text-[#71717a]"> {totalMembers === 1 ? 'member has' : 'members have'} submitted picks</span>
+              </p>
+              <p className="text-[11px] text-[#52525b] mt-0.5">
+                Other players&rsquo; picks are hidden until lock
+                {userHasSubmitted ? ' · You can still see your own picks' : ''}
+              </p>
             </div>
           </div>
         )}

@@ -51,6 +51,7 @@ export async function updateLeague(formData: FormData): Promise<{ error?: string
   const id = formData.get('id') as string
   const name = (formData.get('name') as string)?.trim()
   const description = (formData.get('description') as string)?.trim() || null
+  const hidePicksUntilLock = formData.get('hidePicksUntilLock') === 'true'
 
   if (!name) return { error: 'League name is required' }
 
@@ -79,7 +80,11 @@ export async function updateLeague(formData: FormData): Promise<{ error?: string
     avatarUrl = urlData.publicUrl
   }
 
-  const updateData: { name: string; description: string | null; avatar_url?: string } = { name, description }
+  const updateData: { name: string; description: string | null; hide_picks_until_lock: boolean; avatar_url?: string } = {
+    name,
+    description,
+    hide_picks_until_lock: hidePicksUntilLock,
+  }
   if (avatarUrl) updateData.avatar_url = avatarUrl
 
   const { error } = await supabase
@@ -89,7 +94,7 @@ export async function updateLeague(formData: FormData): Promise<{ error?: string
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/leagues/${id}`)
+  revalidatePath(`/leagues/${id}`, 'layout')
   revalidatePath(`/leagues/${id}/settings`)
   revalidatePath('/dashboard')
   return {}

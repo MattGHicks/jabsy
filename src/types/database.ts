@@ -168,6 +168,7 @@ export interface Database {
           owner_id: string
           description: string | null
           avatar_url: string | null
+          hide_picks_until_lock: boolean
           created_at: string
           updated_at: string
         }
@@ -177,6 +178,7 @@ export interface Database {
           owner_id: string
           description?: string | null
           avatar_url?: string | null
+          hide_picks_until_lock?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -186,6 +188,7 @@ export interface Database {
           owner_id?: string
           description?: string | null
           avatar_url?: string | null
+          hide_picks_until_lock?: boolean
           created_at?: string
           updated_at?: string
         }

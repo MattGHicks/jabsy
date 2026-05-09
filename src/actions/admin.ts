@@ -342,6 +342,7 @@ export async function setFightStatus(fightId: string, status: 'scheduled' | 'liv
   const { supabase } = await requireAdmin()
   await supabase.from('fights').update({ status }).eq('id', fightId)
   revalidatePath(`/admin/events/${eventId}`)
+  revalidatePath('/leagues', 'layout')
 }
 
 export async function setEventStatus(eventId: string, status: 'upcoming' | 'live' | 'completed' | 'cancelled') {
@@ -349,6 +350,7 @@ export async function setEventStatus(eventId: string, status: 'upcoming' | 'live
   await supabase.from('events').update({ status }).eq('id', eventId)
   revalidatePath('/admin')
   revalidatePath(`/admin/events/${eventId}`)
+  revalidatePath('/leagues', 'layout')
 }
 
 /**

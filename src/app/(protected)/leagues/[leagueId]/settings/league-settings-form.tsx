@@ -11,12 +11,20 @@ interface LeagueSettingsFormProps {
   initialName: string
   initialDescription: string | null
   initialAvatarUrl: string | null
+  initialHidePicksUntilLock: boolean
 }
 
-export function LeagueSettingsForm({ leagueId, initialName, initialDescription, initialAvatarUrl }: LeagueSettingsFormProps) {
+export function LeagueSettingsForm({
+  leagueId,
+  initialName,
+  initialDescription,
+  initialAvatarUrl,
+  initialHidePicksUntilLock,
+}: LeagueSettingsFormProps) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
   const [description, setDescription] = useState(initialDescription ?? '')
+  const [hidePicksUntilLock, setHidePicksUntilLock] = useState(initialHidePicksUntilLock)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialAvatarUrl)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -38,6 +46,7 @@ export function LeagueSettingsForm({ leagueId, initialName, initialDescription, 
     fd.set('id', leagueId)
     fd.set('name', name)
     fd.set('description', description)
+    fd.set('hidePicksUntilLock', hidePicksUntilLock ? 'true' : 'false')
     if (avatarFile) fd.set('avatar', avatarFile)
     startTransition(async () => {
       try {
@@ -111,6 +120,37 @@ export function LeagueSettingsForm({ leagueId, initialName, initialDescription, 
           className="px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#f4f4f5] text-sm placeholder:text-[#52525b] focus:outline-none focus:border-[#e11d48] transition-colors resize-none"
           placeholder="What's this league about?"
         />
+      </div>
+
+      {/* Hide picks until lock */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[#a1a1aa] uppercase tracking-wider mb-1">
+              Hide picks until lock
+            </p>
+            <p className="text-[11px] text-[#52525b] leading-snug">
+              Members can&rsquo;t see other players&rsquo; picks until the event lock time. They always see their own.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hidePicksUntilLock}
+            onClick={() => setHidePicksUntilLock((v) => !v)}
+            className={cn(
+              'relative shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors mt-0.5 cursor-pointer',
+              hidePicksUntilLock ? 'bg-[#e11d48]' : 'bg-[#27272a]'
+            )}
+          >
+            <span
+              className={cn(
+                'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                hidePicksUntilLock ? 'translate-x-6' : 'translate-x-1'
+              )}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Error */}
