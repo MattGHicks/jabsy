@@ -52,13 +52,14 @@ export async function signUp(formData: FormData) {
   const pendingInvite = formData.get('pending_invite') as string | null
 
   const baseSignupUrl = pendingInvite ? `/signup?pending_invite=${pendingInvite}` : '/signup'
+  const sep = pendingInvite ? '&' : '?'
 
   if (password !== confirm) {
-    redirect(`${baseSignupUrl}&error=Passwords+do+not+match`)
+    redirect(`${baseSignupUrl}${sep}error=Passwords+do+not+match`)
   }
 
   if (password.length < 8) {
-    redirect(`${baseSignupUrl}&error=Password+must+be+at+least+8+characters`)
+    redirect(`${baseSignupUrl}${sep}error=Password+must+be+at+least+8+characters`)
   }
 
   // Embed pending_invite in the confirmation link so it survives the email click
@@ -75,7 +76,7 @@ export async function signUp(formData: FormData) {
   })
 
   if (error) {
-    redirect(`${baseSignupUrl}&error=${encodeURIComponent(error.message)}`)
+    redirect(`${baseSignupUrl}${sep}error=${encodeURIComponent(error.message)}`)
   }
 
   // Email not confirmed yet — send to check-email page
