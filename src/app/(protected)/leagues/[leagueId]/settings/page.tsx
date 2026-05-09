@@ -117,6 +117,7 @@ export default async function LeagueSettingsPage({ params, searchParams }: PageP
               initialName={league.name}
               initialDescription={league.description}
               initialAvatarUrl={league.avatar_url}
+              initialHidePicksUntilLock={league.hide_picks_until_lock ?? false}
             />
           </div>
         </section>

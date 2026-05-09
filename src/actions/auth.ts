@@ -52,30 +52,32 @@ export async function signUp(formData: FormData) {
   const pendingInvite = formData.get('pending_invite') as string | null
 
   const baseSignupUrl = pendingInvite ? `/signup?pending_invite=${pendingInvite}` : '/signup'
+  const sep = pendingInvite ? '&' : '?'
 
   if (password !== confirm) {
-    redirect(`${baseSignupUrl}&error=Passwords+do+not+match`)
+    redirect(`${baseSignupUrl}${sep}error=Passwords+do+not+match`)
   }
 
   if (password.length < 8) {
-    redirect(`${baseSignupUrl}&error=Password+must+be+at+least+8+characters`)
+    redirect(`${baseSignupUrl}${sep}error=Password+must+be+at+least+8+characters`)
   }
 
-  // Embed pending_invite in the confirmation link so it survives the email click
-  const callbackUrl = pendingInvite
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?pending_invite=${pendingInvite}`
-    : `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+  // After email confirmation, send users to the right destination.
+  // The /auth/confirm page reads `next` from the email template and redirects
+  // there once the user clicks the verify button.
+  const postConfirmPath = pendingInvite ? `/invite/${pendingInvite}` : '/onboarding'
+  const emailRedirectTo = `${process.env.NEXT_PUBLIC_APP_URL}${postConfirmPath}`
 
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: callbackUrl,
+      emailRedirectTo,
     },
   })
 
   if (error) {
-    redirect(`${baseSignupUrl}&error=${encodeURIComponent(error.message)}`)
+    redirect(`${baseSignupUrl}${sep}error=${encodeURIComponent(error.message)}`)
   }
 
   // Email not confirmed yet — send to check-email page
