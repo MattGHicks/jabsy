@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Info, ChevronDown, ExternalLink, Sparkles, Loader2 } from 'lucide-react'
+import { Sparkles, ChevronDown, ExternalLink, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getMatchupPreview, type MatchupInfo } from '@/actions/fights'
 
@@ -68,30 +68,28 @@ export function MatchupInfoButton({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-end px-3 pb-2">
-        <button
-          type="button"
-          onClick={handleToggle}
-          aria-expanded={open}
-          aria-controls={`matchup-info-${fightId}`}
-          className={cn(
-            'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shrink-0',
-            open
-              ? 'bg-[#1a1a1a] border border-[#3f3f46] text-[#f4f4f5]'
-              : 'bg-[#0a0a0a] border border-[#1e1e1e] text-[#52525b] hover:text-[#a1a1aa] hover:border-[#27272a]'
-          )}
-          style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
-        >
-          <Info className="w-3 h-3" />
-          Matchup
-          <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleToggle}
+        aria-expanded={open}
+        aria-controls={`matchup-info-${fightId}`}
+        className={cn(
+          'flex items-center justify-center gap-2 w-full h-9 px-4 text-[11px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer border-t',
+          open
+            ? 'bg-[#a78bfa]/10 border-[#a78bfa]/30 text-[#a78bfa]'
+            : 'bg-[#0e0e0e] border-[#1a1a1a]/60 text-[#71717a] hover:bg-[#a78bfa]/8 hover:text-[#a78bfa] hover:border-[#a78bfa]/25'
+        )}
+        style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
+      >
+        <Sparkles className="w-3.5 h-3.5" />
+        {open ? 'Hide Matchup Info' : 'View Matchup Info'}
+        <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
+      </button>
 
       {open && (
         <div
           id={`matchup-info-${fightId}`}
-          className="mx-3 mb-3 rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] overflow-hidden animate-fade-in"
+          className="rounded-b-lg border-t border-[#a78bfa]/15 bg-[#0a0a0a] overflow-hidden animate-fade-in"
           style={{ animationDuration: '0.2s' }}
         >
           {/* Tale of the tape */}
