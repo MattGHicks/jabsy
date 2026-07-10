@@ -1,8 +1,25 @@
 import Link from 'next/link'
 import { Trophy, Users, Target, ChevronRight, Zap, Shield, Clock } from 'lucide-react'
 import { StaleAuthCleaner } from '@/components/stale-auth-cleaner'
+import { LockCountdown } from '@/components/lock-countdown'
+import { getNextUpcomingEvent } from '@/lib/next-event'
 
-export default function LandingPage() {
+// Landing page is ISR'd so the hero always shows the real next fight card
+// without a DB hit per visit. Countdown ticks client-side regardless.
+export const revalidate = 300
+
+export default async function LandingPage() {
+  const nextEvent = await getNextUpcomingEvent()
+  const mainEvent = nextEvent?.mainEvent ?? null
+  const isLive = nextEvent?.status === 'live'
+  const lastName = (n: string) => (n.split(' ').pop() ?? n).toUpperCase()
+  const firstNames = (n: string) => n.split(' ').slice(0, -1).join(' ')
+  const eventDate = nextEvent
+    ? new Date(nextEvent.start_time).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York',
+      })
+    : ''
+
   return (
     <>
       <StaleAuthCleaner />
@@ -166,14 +183,127 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Next event strip — mobile/tablet, where the fight card is hidden */}
+                {nextEvent && mainEvent && (
+                  <Link
+                    href="/signup"
+                    className="hero-stats lg:hidden mt-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#111111] border border-[#e11d48]/20 active:scale-[0.98] transition-transform"
+                  >
+                    <span className={`pulse-dot w-1.5 h-1.5 rounded-full shrink-0 ${isLive ? 'bg-[#e11d48]' : 'bg-blue-400'}`} />
+                    <span className="flex-1 min-w-0 flex flex-col">
+                      <span className={`text-[9px] font-semibold uppercase tracking-[0.18em] ${isLive ? 'text-[#e11d48]' : 'text-blue-400'}`}>
+                        {isLive ? 'Live now' : 'Up next'}
+                      </span>
+                      <span className="truncate text-sm uppercase text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                        {nextEvent.name}
+                      </span>
+                    </span>
+                    {!isLive && (
+                      <span className="shrink-0 flex flex-col items-end">
+                        <span className="text-base leading-none text-blue-400" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                          <LockCountdown lockTime={nextEvent.start_time} variant="inline" />
+                        </span>
+                        <span className="text-[8px] text-[#52525b] uppercase tracking-wider mt-0.5">until lock</span>
+                      </span>
+                    )}
+                  </Link>
+                )}
               </div>
 
-              {/* Right: Fight Card Mockup */}
+              {/* Right: Fight Card — real next event when available, static mockup fallback */}
               <div className="hidden lg:flex items-center justify-center">
                 <div className="fight-card-float relative w-full max-w-[380px]">
                   {/* Card glow */}
                   <div className="absolute inset-0 rounded-2xl bg-[#e11d48]/8 blur-2xl scale-110" />
 
+                  {nextEvent && mainEvent ? (
+                  <div className="relative rounded-2xl bg-[#111111] border border-[#1e1e1e] overflow-hidden shadow-2xl">
+                    {/* Card header */}
+                    <div className="px-5 pt-5 pb-3 border-b border-[#1e1e1e]">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest">
+                          Main Event{mainEvent.weight_class ? ` · ${mainEvent.weight_class}` : ''}
+                        </span>
+                        {isLive ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e11d48]/10 border border-[#e11d48]/25 text-[10px] font-semibold text-[#e11d48]">
+                            <span className="pulse-dot w-1 h-1 rounded-full bg-[#e11d48]" />
+                            LIVE
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[10px] font-semibold text-blue-400">
+                            <span className="pulse-dot w-1 h-1 rounded-full bg-blue-400" />
+                            UP NEXT
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#71717a] truncate">{nextEvent.name} · {eventDate}</p>
+                    </div>
+
+                    {/* Fighters */}
+                    <div className="px-5 py-5">
+                      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-6">
+                        {/* Red corner */}
+                        <div className="text-center">
+                          <div className="w-16 h-16 mx-auto rounded-full bg-[#e11d48]/15 border-2 border-[#e11d48]/40 mb-2 flex items-center justify-center">
+                            <span className="text-xs font-black text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)' }}>RED</span>
+                          </div>
+                          <p className="text-[10px] text-[#71717a] leading-none mb-0.5">{firstNames(mainEvent.red_name)}</p>
+                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>{lastName(mainEvent.red_name)}</p>
+                          {mainEvent.red_record && <p className="text-[10px] text-[#71717a]">{mainEvent.red_record}</p>}
+                        </div>
+
+                        {/* VS */}
+                        <div className="text-center flex flex-col items-center gap-1.5">
+                          <span className="text-lg font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>VS</span>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#141414] border border-[#27272a] text-[#71717a]">{mainEvent.scheduled_rounds} RDS</span>
+                        </div>
+
+                        {/* Blue corner */}
+                        <div className="text-center">
+                          <div className="w-16 h-16 mx-auto rounded-full bg-blue-500/10 border-2 border-blue-500/30 mb-2 flex items-center justify-center">
+                            <span className="text-xs font-black text-blue-400" style={{ fontFamily: 'var(--font-barlow)' }}>BLUE</span>
+                          </div>
+                          <p className="text-[10px] text-[#71717a] leading-none mb-0.5">{firstNames(mainEvent.blue_name)}</p>
+                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>{lastName(mainEvent.blue_name)}</p>
+                          {mainEvent.blue_record && <p className="text-[10px] text-[#71717a]">{mainEvent.blue_record}</p>}
+                        </div>
+                      </div>
+
+                      {/* Pick UI preview */}
+                      <div className="rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-3 mb-3">
+                        <p className="text-[10px] text-[#52525b] uppercase tracking-widest mb-2">Your Pick</p>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <span className="flex items-center justify-center h-8 rounded-md bg-[#e11d48] text-white text-xs font-bold" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{lastName(mainEvent.red_name)}</span>
+                          <span className="flex items-center justify-center h-8 rounded-md bg-[#141414] border border-[#27272a] text-[#71717a] text-xs font-semibold">{lastName(mainEvent.blue_name)}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {['KO/TKO', 'SUB', 'DEC'].map((m, i) => (
+                            <span key={m} className={`flex items-center justify-center h-7 rounded text-[10px] font-semibold ${i === 0 ? 'bg-[#e11d48]/15 border border-[#e11d48]/40 text-[#e11d48]' : 'bg-[#141414] border border-[#1e1e1e] text-[#52525b]'}`}>{m}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Lock clock */}
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-[#e11d48]/8 border border-[#e11d48]/20">
+                        {isLive ? (
+                          <>
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#e11d48] uppercase tracking-wider">
+                              <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[#e11d48]" />
+                              Live now
+                            </span>
+                            <span className="text-xs text-[#71717a]">Results updating</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-semibold text-[#e11d48]/80 uppercase tracking-widest">Locks in</span>
+                            <LockCountdown lockTime={nextEvent.start_time} variant="clock" />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  ) : (
                   <div className="relative rounded-2xl bg-[#111111] border border-[#1e1e1e] overflow-hidden shadow-2xl">
                     {/* Card header */}
                     <div className="px-5 pt-5 pb-3 border-b border-[#1e1e1e]">
@@ -237,6 +367,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
             </div>
