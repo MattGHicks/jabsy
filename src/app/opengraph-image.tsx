@@ -1,9 +1,6 @@
 import { ImageResponse } from 'next/og'
-import fs from 'node:fs'
-import path from 'node:path'
 
-// Node.js runtime for fs access
-export const alt = 'UFC Freedom 250 — Make your picks on Jabsy'
+export const alt = 'UFC 329: McGregor vs. Holloway 2 — Make your picks on Jabsy'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -29,48 +26,37 @@ export default async function Image() {
       ]
     : []
 
-  // ── Background photo (Freedom 250) ────────────────────────────
-  let bgData: string | null = null
-  try {
-    const buf = fs.readFileSync(path.join(process.cwd(), 'public/og/freedom-250.jpg'))
-    bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
-  } catch { /* fallback to dark bg */ }
-
   return new ImageResponse(
     (
       <div style={{
         width: 1200, height: 630,
         display: 'flex', position: 'relative', overflow: 'hidden',
-        background: '#04070f', fontFamily: ff,
+        background: '#06070c', fontFamily: ff,
       }}>
 
-        {/* ── Background ── */}
-        {bgData && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={bgData}
-            alt=""
-            width={1200}
-            height={630}
-            style={{
-              position: 'absolute', top: 0, left: 0,
-              width: 1200, height: 630,
-              objectFit: 'cover', objectPosition: '50% 30%',
-            }}
-          />
-        )}
-
-        {/* ── Top scrim — keeps the brand legible ── */}
+        {/* ── Red corner light (left) ── */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 180, display: 'flex',
-          background: 'linear-gradient(180deg, rgba(4,7,15,0.85) 0%, rgba(4,7,15,0) 100%)',
+          position: 'absolute', top: 0, left: 0, width: 700, height: 630, display: 'flex',
+          background: 'radial-gradient(ellipse 85% 120% at 0% 55%, rgba(225,29,72,0.34) 0%, rgba(225,29,72,0.10) 45%, rgba(225,29,72,0) 72%)',
         }} />
 
-        {/* ── Bottom scrim — grounds the title over the busy lower third ── */}
+        {/* ── Blue corner light (right) ── */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 360, display: 'flex',
-          background: 'linear-gradient(0deg, rgba(4,7,15,0.96) 0%, rgba(4,7,15,0.72) 45%, rgba(4,7,15,0) 100%)',
+          position: 'absolute', top: 0, right: 0, width: 700, height: 630, display: 'flex',
+          background: 'radial-gradient(ellipse 85% 120% at 100% 55%, rgba(59,130,246,0.30) 0%, rgba(59,130,246,0.09) 45%, rgba(59,130,246,0) 72%)',
         }} />
+
+        {/* ── Floor scrim — grounds the footer ── */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 220, display: 'flex',
+          background: 'linear-gradient(0deg, rgba(6,7,12,0.92) 0%, rgba(6,7,12,0) 100%)',
+        }} />
+
+        {/* ── Ghost "2" — the rematch mark ── */}
+        <div style={{
+          position: 'absolute', right: 40, bottom: -120, display: 'flex',
+          fontSize: 640, fontWeight: 900, lineHeight: 1, color: 'rgba(148,163,184,0.07)',
+        }}>2</div>
 
         {/* ════ Brand — top left ════ */}
         <div style={{ position: 'absolute', top: 44, left: 60, display: 'flex', alignItems: 'center' }}>
@@ -82,23 +68,49 @@ export default async function Image() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 34, fontWeight: 900, color: '#ffffff', letterSpacing: 1, lineHeight: 1, display: 'flex' }}>JABSY</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#C9A227', letterSpacing: 4, display: 'flex', marginTop: 4 }}>FANTASY MMA PICKS</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#a1a1aa', letterSpacing: 4, display: 'flex', marginTop: 4 }}>FANTASY MMA PICKS</div>
           </div>
         </div>
 
-        {/* ════ Event title — bottom left ════ */}
+        {/* ════ Rematch badge — top right ════ */}
+        <div style={{
+          position: 'absolute', top: 50, right: 60, display: 'flex', alignItems: 'center',
+          padding: '10px 18px', borderRadius: 10,
+          border: '2px solid rgba(225,29,72,0.45)', background: 'rgba(225,29,72,0.10)',
+        }}>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#fb7185', letterSpacing: 5, display: 'flex' }}>THE REMATCH</div>
+        </div>
+
+        {/* ════ Main block — bottom left ════ */}
         <div style={{ position: 'absolute', left: 60, bottom: 40, width: 1080, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 21, fontWeight: 700, color: '#C9A227', letterSpacing: 5, display: 'flex', marginBottom: 6 }}>
-            {"AMERICA'S 250TH · FLAG DAY SHOWDOWN"}
+
+          {/* Eyebrow */}
+          <div style={{ fontSize: 21, fontWeight: 700, color: '#a1a1aa', letterSpacing: 5, display: 'flex', marginBottom: 14 }}>
+            UFC 329 · T-MOBILE ARENA · LAS VEGAS
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <div style={{ fontSize: 104, fontWeight: 900, color: '#ffffff', letterSpacing: -1, lineHeight: 1, display: 'flex' }}>FREEDOM</div>
-            <div style={{ fontSize: 104, fontWeight: 900, color: '#C9A227', letterSpacing: -1, lineHeight: 1, display: 'flex', marginLeft: 20 }}>250</div>
+
+          {/* Red corner name */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: 12, height: 96, background: '#e11d48', display: 'flex', marginRight: 22 }} />
+            <div style={{ fontSize: 124, fontWeight: 900, color: '#ffffff', letterSpacing: 0, lineHeight: 0.92, display: 'flex' }}>MCGREGOR</div>
           </div>
-          <div style={{ width: 360, height: 6, background: '#B22234', display: 'flex', marginTop: 12, marginBottom: 16 }} />
+
+          {/* VS divider */}
+          <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0 10px 34px' }}>
+            <div style={{ fontSize: 25, fontWeight: 900, color: '#e11d48', letterSpacing: 8, display: 'flex' }}>VS</div>
+            <div style={{ width: 110, height: 2, background: '#3f3f46', display: 'flex', marginLeft: 18 }} />
+          </div>
+
+          {/* Blue corner name */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{ width: 12, height: 96, background: '#3b82f6', display: 'flex', marginRight: 22 }} />
+            <div style={{ fontSize: 124, fontWeight: 900, color: '#ffffff', letterSpacing: 0, lineHeight: 0.92, display: 'flex' }}>HOLLOWAY</div>
+          </div>
+
+          {/* Footer row */}
           <div style={{ display: 'flex', width: 1080, justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 25, fontWeight: 700, color: '#ffffff', letterSpacing: 1, display: 'flex' }}>PICKS LOCK · JUN 14 · 8PM ET</div>
-            <div style={{ fontSize: 27, fontWeight: 900, color: '#C9A227', display: 'flex' }}>JABSYPICKS.COM</div>
+            <div style={{ fontSize: 25, fontWeight: 700, color: '#ffffff', letterSpacing: 1, display: 'flex' }}>PICKS LOCK · SAT JUL 11 · 5:00 PM ET</div>
+            <div style={{ fontSize: 27, fontWeight: 900, color: '#fb7185', display: 'flex' }}>JABSYPICKS.COM</div>
           </div>
         </div>
 

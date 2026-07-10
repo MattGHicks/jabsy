@@ -6,19 +6,9 @@ import { getInitials } from '@/lib/utils'
 import { JoinWithCode } from './join-with-code'
 import { calcWeightedAccuracy } from '@/lib/accuracy'
 import { getUnreadCounts } from '@/actions/chat'
+import { LockCountdown } from '@/components/lock-countdown'
 
 export const dynamic = 'force-dynamic'
-
-function getTimeUntil(dateStr: string): string {
-  const diff = new Date(dateStr).getTime() - Date.now()
-  if (diff <= 0) return 'Now'
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h ${mins}m`
-  return `${mins}m`
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -813,7 +803,7 @@ export default async function DashboardPage() {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xl text-blue-400 leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
-                  {getTimeUntil(globalNextEvent.start_time)}
+                  <LockCountdown lockTime={globalNextEvent.start_time} variant="inline" />
                 </p>
                 <p className="text-[9px] text-[#52525b] uppercase tracking-wider">until lock</p>
               </div>
