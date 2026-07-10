@@ -1,5 +1,8 @@
 import { ImageResponse } from 'next/og'
+import fs from 'node:fs'
+import path from 'node:path'
 
+// Node.js runtime for fs access
 export const alt = 'UFC 329: McGregor vs. Holloway 2 — Make your picks on Jabsy'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -26,6 +29,13 @@ export default async function Image() {
       ]
     : []
 
+  // ── Background photo (McGregor–Holloway faceoff) ──────────────
+  let bgData: string | null = null
+  try {
+    const buf = fs.readFileSync(path.join(process.cwd(), 'public/og/ufc-329-faceoff.jpg'))
+    bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
+  } catch { /* fallback to dark bg */ }
+
   return new ImageResponse(
     (
       <div style={{
@@ -34,29 +44,33 @@ export default async function Image() {
         background: '#06070c', fontFamily: ff,
       }}>
 
-        {/* ── Red corner light (left) ── */}
+        {/* ── Background ── */}
+        {bgData && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={bgData}
+            alt=""
+            width={1200}
+            height={630}
+            style={{
+              position: 'absolute', top: 0, left: 0,
+              width: 1200, height: 630,
+              objectFit: 'cover', objectPosition: '50% 30%',
+            }}
+          />
+        )}
+
+        {/* ── Top scrim — keeps the brand legible ── */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, width: 700, height: 630, display: 'flex',
-          background: 'radial-gradient(ellipse 85% 120% at 0% 55%, rgba(225,29,72,0.34) 0%, rgba(225,29,72,0.10) 45%, rgba(225,29,72,0) 72%)',
+          position: 'absolute', top: 0, left: 0, right: 0, height: 180, display: 'flex',
+          background: 'linear-gradient(180deg, rgba(6,7,12,0.85) 0%, rgba(6,7,12,0) 100%)',
         }} />
 
-        {/* ── Blue corner light (right) ── */}
+        {/* ── Bottom scrim — grounds the title over the fighters ── */}
         <div style={{
-          position: 'absolute', top: 0, right: 0, width: 700, height: 630, display: 'flex',
-          background: 'radial-gradient(ellipse 85% 120% at 100% 55%, rgba(59,130,246,0.30) 0%, rgba(59,130,246,0.09) 45%, rgba(59,130,246,0) 72%)',
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 340, display: 'flex',
+          background: 'linear-gradient(0deg, rgba(6,7,12,0.96) 0%, rgba(6,7,12,0.74) 45%, rgba(6,7,12,0) 100%)',
         }} />
-
-        {/* ── Floor scrim — grounds the footer ── */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 220, display: 'flex',
-          background: 'linear-gradient(0deg, rgba(6,7,12,0.92) 0%, rgba(6,7,12,0) 100%)',
-        }} />
-
-        {/* ── Ghost "2" — the rematch mark ── */}
-        <div style={{
-          position: 'absolute', right: 40, bottom: -120, display: 'flex',
-          fontSize: 640, fontWeight: 900, lineHeight: 1, color: 'rgba(148,163,184,0.07)',
-        }}>2</div>
 
         {/* ════ Brand — top left ════ */}
         <div style={{ position: 'absolute', top: 44, left: 60, display: 'flex', alignItems: 'center' }}>
@@ -76,36 +90,31 @@ export default async function Image() {
         <div style={{
           position: 'absolute', top: 50, right: 60, display: 'flex', alignItems: 'center',
           padding: '10px 18px', borderRadius: 10,
-          border: '2px solid rgba(225,29,72,0.45)', background: 'rgba(225,29,72,0.10)',
+          border: '2px solid rgba(225,29,72,0.55)', background: 'rgba(6,7,12,0.62)',
         }}>
           <div style={{ fontSize: 21, fontWeight: 900, color: '#fb7185', letterSpacing: 5, display: 'flex' }}>THE REMATCH</div>
         </div>
 
-        {/* ════ Main block — bottom left ════ */}
+        {/* ════ Title block — bottom left ════ */}
         <div style={{ position: 'absolute', left: 60, bottom: 40, width: 1080, display: 'flex', flexDirection: 'column' }}>
 
           {/* Eyebrow */}
-          <div style={{ fontSize: 21, fontWeight: 700, color: '#a1a1aa', letterSpacing: 5, display: 'flex', marginBottom: 14 }}>
+          <div style={{ fontSize: 21, fontWeight: 700, color: '#d4d4d8', letterSpacing: 5, display: 'flex', marginBottom: 10 }}>
             UFC 329 · T-MOBILE ARENA · LAS VEGAS
           </div>
 
-          {/* Red corner name */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ width: 12, height: 96, background: '#e11d48', display: 'flex', marginRight: 22 }} />
-            <div style={{ fontSize: 124, fontWeight: 900, color: '#ffffff', letterSpacing: 0, lineHeight: 0.92, display: 'flex' }}>MCGREGOR</div>
+          {/* Names — one line, corners implied by the bar below */}
+          <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            <div style={{ fontSize: 102, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>MCGREGOR</div>
+            <div style={{ fontSize: 40, fontWeight: 900, color: '#e11d48', letterSpacing: 2, display: 'flex', margin: '0 22px' }}>VS</div>
+            <div style={{ fontSize: 102, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>HOLLOWAY</div>
           </div>
 
-          {/* VS divider */}
-          <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0 10px 34px' }}>
-            <div style={{ fontSize: 25, fontWeight: 900, color: '#e11d48', letterSpacing: 8, display: 'flex' }}>VS</div>
-            <div style={{ width: 110, height: 2, background: '#3f3f46', display: 'flex', marginLeft: 18 }} />
-          </div>
-
-          {/* Blue corner name */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-            <div style={{ width: 12, height: 96, background: '#3b82f6', display: 'flex', marginRight: 22 }} />
-            <div style={{ fontSize: 124, fontWeight: 900, color: '#ffffff', letterSpacing: 0, lineHeight: 0.92, display: 'flex' }}>HOLLOWAY</div>
-          </div>
+          {/* Red corner → blue corner bar */}
+          <div style={{
+            width: 850, height: 6, display: 'flex', marginTop: 14, marginBottom: 16,
+            background: 'linear-gradient(90deg, #e11d48 0%, #e11d48 38%, #3b82f6 62%, #3b82f6 100%)',
+          }} />
 
           {/* Footer row */}
           <div style={{ display: 'flex', width: 1080, justifyContent: 'space-between', alignItems: 'center' }}>
