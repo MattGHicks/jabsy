@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Node.js runtime for fs access
-export const alt = 'UFC 329: McGregor vs. Holloway 2 — Make your picks on Jabsy'
+export const alt = 'UFC Fight Night: Du Plessis vs. Usman — Make your picks on Jabsy'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -29,10 +29,10 @@ export default async function Image() {
       ]
     : []
 
-  // ── Background photo (McGregor–Holloway faceoff) ──────────────
+  // ── Background photo (Du Plessis–Usman dual headshot) ─────────
   let bgData: string | null = null
   try {
-    const buf = fs.readFileSync(path.join(process.cwd(), 'public/og/ufc-329-faceoff.jpg'))
+    const buf = fs.readFileSync(path.join(process.cwd(), 'public/og/ufc-fn-duplessis-usman-faceoff.jpg'))
     bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
   } catch { /* fallback to dark bg */ }
 
@@ -55,7 +55,7 @@ export default async function Image() {
             style={{
               position: 'absolute', top: 0, left: 0,
               width: 1200, height: 630,
-              objectFit: 'cover', objectPosition: '50% 30%',
+              objectFit: 'cover', objectPosition: '50% 20%',
             }}
           />
         )}
@@ -86,13 +86,13 @@ export default async function Image() {
           </div>
         </div>
 
-        {/* ════ Rematch badge — top right ════ */}
+        {/* ════ Fight Night badge — top right ════ */}
         <div style={{
           position: 'absolute', top: 50, right: 60, display: 'flex', alignItems: 'center',
           padding: '10px 18px', borderRadius: 10,
           border: '2px solid rgba(225,29,72,0.55)', background: 'rgba(6,7,12,0.62)',
         }}>
-          <div style={{ fontSize: 21, fontWeight: 900, color: '#fb7185', letterSpacing: 5, display: 'flex' }}>THE REMATCH</div>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#fb7185', letterSpacing: 5, display: 'flex' }}>FIGHT NIGHT</div>
         </div>
 
         {/* ════ Title block — bottom left ════ */}
@@ -100,14 +100,14 @@ export default async function Image() {
 
           {/* Eyebrow */}
           <div style={{ fontSize: 21, fontWeight: 700, color: '#d4d4d8', letterSpacing: 5, display: 'flex', marginBottom: 10 }}>
-            UFC 329 · T-MOBILE ARENA · LAS VEGAS
+            UFC FIGHT NIGHT · PAYCOM CENTER · OKC
           </div>
 
           {/* Names — one line, corners implied by the bar below */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <div style={{ fontSize: 102, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>MCGREGOR</div>
-            <div style={{ fontSize: 40, fontWeight: 900, color: '#e11d48', letterSpacing: 2, display: 'flex', margin: '0 22px' }}>VS</div>
-            <div style={{ fontSize: 102, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>HOLLOWAY</div>
+            <div style={{ fontSize: 86, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>DU PLESSIS</div>
+            <div style={{ fontSize: 40, fontWeight: 900, color: '#e11d48', letterSpacing: 2, display: 'flex', margin: '0 20px' }}>VS</div>
+            <div style={{ fontSize: 86, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>USMAN</div>
           </div>
 
           {/* Red corner → blue corner bar */}
@@ -118,7 +118,7 @@ export default async function Image() {
 
           {/* Footer row */}
           <div style={{ display: 'flex', width: 1080, justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 25, fontWeight: 700, color: '#ffffff', letterSpacing: 1, display: 'flex' }}>PICKS LOCK · SAT JUL 11 · 5:00 PM ET</div>
+            <div style={{ fontSize: 25, fontWeight: 700, color: '#ffffff', letterSpacing: 1, display: 'flex' }}>PICKS LOCK · SAT JUL 18 · 5:00 PM ET</div>
             <div style={{ fontSize: 27, fontWeight: 900, color: '#fb7185', display: 'flex' }}>JABSYPICKS.COM</div>
           </div>
         </div>
