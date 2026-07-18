@@ -345,10 +345,52 @@ Return ONLY the numeric fmid (e.g. 600057365), or the word null if you cannot fi
   }
 }
 
+interface SherdogSearchHit {
+  firstname?: string
+  lastname?: string
+  url?: string
+}
+
 /**
- * Look up exact Sherdog profile URLs by scraping the Sherdog search page directly.
- * No AI needed — just fetches the fightfinder search results and extracts the first match.
- * Returns a map of fighter name → Sherdog profile URL.
+ * Query Sherdog's fighter search JSON endpoint — the same one their own search
+ * box uses. The HTML page at /stats/fightfinder?SearchTxt=... stopped
+ * server-rendering results, so scraping it always came back empty.
+ */
+async function querySherdogSearch(term: string): Promise<SherdogSearchHit[]> {
+  const response = await fetch(`https://www.sherdog.com/search/fightfinder/?q=${encodeURIComponent(term)}`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'application/json,text/javascript,*/*;q=0.01',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  })
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+  const json = await response.json()
+  return Array.isArray(json?.collection) ? json.collection : []
+}
+
+/**
+ * Build the search terms to try for a fighter, loosest last. Sherdog's search is
+ * fairly literal, so suffixes and run-together initials need a second attempt.
+ */
+function sherdogSearchTerms(name: string): string[] {
+  const terms = [name]
+
+  const withoutSuffix = name.replace(/\s+(jr\.?|sr\.?|i{2,3}|iv)$/i, '').trim()
+  if (withoutSuffix && withoutSuffix !== name) terms.push(withoutSuffix)
+
+  // "RJ Harris" → "R.J. Harris"
+  const initials = name.match(/^([A-Z])([A-Z])\s+(.+)$/)
+  if (initials) terms.push(`${initials[1]}.${initials[2]}. ${initials[3]}`)
+
+  return terms
+}
+
+/**
+ * Look up exact Sherdog profile URLs via Sherdog's own search API.
+ * No AI needed. Returns a map of fighter name → Sherdog profile URL.
  */
 export async function lookupSherdogUrls(fighterNames: string[]): Promise<{ results: Record<string, string>; errors: string[] }> {
   if (fighterNames.length === 0) return { results: {}, errors: [] }
@@ -358,30 +400,14 @@ export async function lookupSherdogUrls(fighterNames: string[]): Promise<{ resul
 
   for (const name of fighterNames) {
     try {
-      const searchUrl = `https://www.sherdog.com/stats/fightfinder?SearchTxt=${encodeURIComponent(name)}`
-      const response = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
-      })
-
-      if (!response.ok) {
-        errors.push(`${name}: HTTP ${response.status}`)
-        continue
+      let hits: SherdogSearchHit[] = []
+      for (const term of sherdogSearchTerms(name)) {
+        hits = await querySherdogSearch(term)
+        if (hits.length > 0) break
+        // Small delay to be respectful to Sherdog's servers
+        await new Promise(resolve => setTimeout(resolve, 300))
       }
 
-      const html = await response.text()
-
-      // Check for Cloudflare challenge or empty response
-      if (html.length < 500 || html.includes('cf-challenge') || html.includes('Just a moment')) {
-        errors.push(`${name}: blocked by Cloudflare`)
-        continue
-      }
-
-      // Match links: <a href="/fighter/Elijah-Smith-385324">Elijah Smith</a>
-      const linkPattern = /<a\s+href="(\/fighter\/[^"]+)"[^>]*>([^<]+)<\/a>/g
       const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[.\-']/g, '').replace(/\s+/g, ' ')
       const targetName = normalize(name)
       const targetParts = targetName.split(' ')
@@ -389,17 +415,18 @@ export async function lookupSherdogUrls(fighterNames: string[]): Promise<{ resul
 
       let exactMatch: string | null = null
       let fuzzyMatch: string | null = null
-      for (const m of html.matchAll(linkPattern)) {
-        const linkText = normalize(m[2])
+      for (const hit of hits) {
+        if (!hit.url) continue
+        const hitName = normalize(`${hit.firstname ?? ''} ${hit.lastname ?? ''}`)
         // Exact match — best case
-        if (linkText === targetName) { exactMatch = m[1]; break }
+        if (hitName === targetName) { exactMatch = hit.url; break }
         // Fuzzy: Sherdog name starts with ESPN name (e.g. "Jose Delano" → "Jose Delano Viana Rodrigues")
         // or ESPN name's last name matches Sherdog's last name and first part overlaps
         if (!fuzzyMatch) {
-          const linkParts = linkText.split(' ')
-          const linkLast = linkParts[linkParts.length - 1]
-          if (linkText.startsWith(targetName + ' ') || (targetLast === linkLast && linkText.includes(targetParts[0]))) {
-            fuzzyMatch = m[1]
+          const hitParts = hitName.split(' ')
+          const hitLast = hitParts[hitParts.length - 1]
+          if (hitName.startsWith(targetName + ' ') || (targetLast === hitLast && hitName.includes(targetParts[0]))) {
+            fuzzyMatch = hit.url
           }
         }
       }
