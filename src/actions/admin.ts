@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchFightResultsWithClaude } from '@/lib/api/claude-search'
+import { auditSherdogLinks as runSherdogAudit, type SherdogAuditResult } from '@/lib/api/sherdog-audit'
 
 export interface SystemTestResult {
   espn: { ok: boolean; latencyMs: number; error?: string }
@@ -571,4 +572,13 @@ export async function runSyncCards(): Promise<SyncCardsResult> {
     warnings: results.reduce((sum, r) => sum + (r.warnings ?? 0), 0),
     ranAt: new Date().toISOString(),
   }
+}
+
+/**
+ * Admin-facing wrapper around the Sherdog link audit.
+ * See src/lib/api/sherdog-audit.ts for what each problem means.
+ */
+export async function auditSherdogLinks(): Promise<SherdogAuditResult> {
+  await requireAdmin()
+  return runSherdogAudit(createAdminClient())
 }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDateTime } from '@/lib/utils'
 import { AdminEvents } from './admin-events'
 import { SherdogBackfill } from '@/components/admin/sherdog-backfill'
+import { SherdogAudit } from '@/components/admin/sherdog-audit'
 import type { Json } from '@/types/database'
 
 function summarizeAlertDetails(details: Json | null): string {
@@ -167,6 +168,9 @@ export default async function AdminPage() {
             <Activity className="w-3.5 h-3.5" />
             System Status
           </Link>
+        </div>
+        <div className="mt-3">
+          <SherdogAudit />
         </div>
       </section>
 
