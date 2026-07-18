@@ -1,21 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { getAnthropicKey } from './anthropic-key'
 
 function getApiKey(): string {
-  // process.env.ANTHROPIC_API_KEY may be empty if the shell sets it to ""
-  // (e.g. from Claude Code), which prevents Next.js from loading .env.local value.
-  const envKey = process.env.ANTHROPIC_API_KEY?.trim()
-  if (envKey) return envKey
-
-  // Fallback: read directly from .env.local
-  try {
-    const envFile = readFileSync(join(process.cwd(), '.env.local'), 'utf-8')
-    const match = envFile.match(/^ANTHROPIC_API_KEY=(.+)$/m)
-    if (match?.[1]?.trim()) return match[1].trim()
-  } catch { /* file not found in production — that's fine */ }
-
-  throw new Error('ANTHROPIC_API_KEY not set. Add it to .env.local (local) or Vercel Environment Variables (prod).')
+  const key = getAnthropicKey()
+  if (!key) {
+    throw new Error('ANTHROPIC_API_KEY not set. Add it to .env.local (local) or Vercel Environment Variables (prod).')
+  }
+  return key
 }
 
 function getClient() {
@@ -209,9 +200,15 @@ Return ONLY the JSON object, no other text.`,
       }
       const parsed: Record<string, string | null> = JSON.parse(jsonStr)
       for (const [name, url] of Object.entries(parsed)) {
-        if (url && url.includes('sherdog.com/fighter/')) {
-          allResults[name] = url
+        if (!url || !url.includes('sherdog.com/fighter/')) continue
+        // Reject URLs that don't belong to the fighter asked for. Batched
+        // lookups have previously returned another fighter from the same batch,
+        // which shows up as two fighters with each other's profile linked.
+        if (!sherdogUrlMatchesName(url, name)) {
+          console.warn(`Sherdog AI lookup returned mismatched URL for ${name}: ${url}`)
+          continue
         }
+        allResults[name] = url
       }
     } catch {
       // Continue with remaining batches even if one fails
@@ -349,6 +346,65 @@ interface SherdogSearchHit {
   firstname?: string
   lastname?: string
   url?: string
+}
+
+const normalizeName = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()
+
+/**
+ * Check that a Sherdog profile URL actually belongs to the named fighter, by
+ * comparing the fighter name against the URL's slug.
+ *
+ * The AI fallback looks up fighters in batches and has mixed up which URL goes
+ * with which name (e.g. Nikita Krylov's row pointing at Robert Whittaker's
+ * profile). Slugs are spelled loosely — "Dooho Choi" is "Doo-Ho-Choi",
+ * "Waldo Cortes Acosta" is "Waldo-CortesAcosta" — so compare on collapsed
+ * letters rather than requiring exact tokens.
+ */
+export function sherdogUrlMatchesName(url: string, name: string): boolean {
+  const slug = url.match(/\/fighter\/(.+?)-\d+$/)?.[1]
+  if (!slug) return false
+
+  const slugTokens = normalizeName(slug.replace(/-/g, ' ')).split(' ').filter(Boolean)
+  const nameTokens = normalizeName(name).split(' ').filter(Boolean)
+  if (slugTokens.length === 0 || nameTokens.length === 0) return false
+
+  // Compare letters only, ignoring where the word breaks fall. Sherdog splits
+  // names differently ("Dooho Choi" → "Doo-Ho-Choi", "Waldo Cortes Acosta" →
+  // "Waldo-CortesAcosta", "Sumudaerji" → "Su-Mudaerji").
+  const slugLetters = slugTokens.join('')
+  const nameLetters = nameTokens.join('')
+  if (slugLetters === nameLetters) return true
+
+  // Same letters in a different order ("Aoriqileng" → "Qileng-Aori").
+  if ([...slugTokens].sort().join('') === [...nameTokens].sort().join('')) return true
+
+  // Tolerate transliteration drift ("Daria Zhelezniakova" vs
+  // "Darya-Zheleznyakova") — a few characters over a long name is a spelling
+  // variant, not a different fighter.
+  const maxLen = Math.max(slugLetters.length, nameLetters.length)
+  if (levenshtein(slugLetters, nameLetters) <= Math.floor(maxLen * 0.15)) return true
+
+  // Last resort: majority of name parts appear in the slug, for partial names.
+  const nameSet = new Set(nameTokens)
+  const shared = slugTokens.filter((t) => nameSet.has(t)).length
+  return shared > 0 && shared / Math.max(slugTokens.length, nameSet.size) >= 0.5
+}
+
+function levenshtein(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i]
+    for (let j = 1; j <= b.length; j++) {
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    prev = curr
+  }
+  return prev[b.length]
 }
 
 /**
