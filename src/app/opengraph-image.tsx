@@ -3,7 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Node.js runtime for fs access
-export const alt = 'UFC Fight Night: Du Plessis vs. Usman — Make your picks on Jabsy'
+// Picnicface "Hey Africa!" energy — both main-event fighters are African
+// (Du Plessis RSA, Usman NGA). Funny share card, still clearly a picks CTA.
+export const alt =
+  'Hey Africa! Du Plessis vs Usman — Make your picks on Jabsy'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -32,18 +35,25 @@ export default async function Image() {
   // ── Background photo (Du Plessis–Usman dual headshot) ─────────
   let bgData: string | null = null
   try {
-    const buf = fs.readFileSync(path.join(process.cwd(), 'public/og/ufc-fn-duplessis-usman-faceoff.jpg'))
+    const buf = fs.readFileSync(
+      path.join(process.cwd(), 'public/og/ufc-fn-duplessis-usman-faceoff.jpg')
+    )
     bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
   } catch { /* fallback to dark bg */ }
 
   return new ImageResponse(
     (
-      <div style={{
-        width: 1200, height: 630,
-        display: 'flex', position: 'relative', overflow: 'hidden',
-        background: '#06070c', fontFamily: ff,
-      }}>
-
+      <div
+        style={{
+          width: 1200,
+          height: 630,
+          display: 'flex',
+          position: 'relative',
+          overflow: 'hidden',
+          background: '#06070c',
+          fontFamily: ff,
+        }}
+      >
         {/* ── Background ── */}
         {bgData && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,76 +63,256 @@ export default async function Image() {
             width={1200}
             height={630}
             style={{
-              position: 'absolute', top: 0, left: 0,
-              width: 1200, height: 630,
-              objectFit: 'cover', objectPosition: '50% 20%',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 1200,
+              height: 630,
+              objectFit: 'cover',
+              objectPosition: '50% 20%',
             }}
           />
         )}
 
         {/* ── Top scrim — keeps the brand legible ── */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 180, display: 'flex',
-          background: 'linear-gradient(180deg, rgba(6,7,12,0.85) 0%, rgba(6,7,12,0) 100%)',
-        }} />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 180,
+            display: 'flex',
+            background:
+              'linear-gradient(180deg, rgba(6,7,12,0.88) 0%, rgba(6,7,12,0) 100%)',
+          }}
+        />
 
         {/* ── Bottom scrim — grounds the title over the fighters ── */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 340, display: 'flex',
-          background: 'linear-gradient(0deg, rgba(6,7,12,0.96) 0%, rgba(6,7,12,0.74) 45%, rgba(6,7,12,0) 100%)',
-        }} />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 360,
+            display: 'flex',
+            background:
+              'linear-gradient(0deg, rgba(6,7,12,0.97) 0%, rgba(6,7,12,0.78) 48%, rgba(6,7,12,0) 100%)',
+          }}
+        />
 
         {/* ════ Brand — top left ════ */}
-        <div style={{ position: 'absolute', top: 44, left: 60, display: 'flex', alignItems: 'center' }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 14, background: '#e11d48',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14,
-          }}>
-            <div style={{ fontSize: 40, fontWeight: 900, color: '#0a0a0a', display: 'flex', marginTop: -2 }}>J</div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 44,
+            left: 60,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              background: '#e11d48',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 40,
+                fontWeight: 900,
+                color: '#0a0a0a',
+                display: 'flex',
+                marginTop: -2,
+              }}
+            >
+              J
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: '#ffffff', letterSpacing: 1, lineHeight: 1, display: 'flex' }}>JABSY</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#a1a1aa', letterSpacing: 4, display: 'flex', marginTop: 4 }}>FANTASY MMA PICKS</div>
+            <div
+              style={{
+                fontSize: 34,
+                fontWeight: 900,
+                color: '#ffffff',
+                letterSpacing: 1,
+                lineHeight: 1,
+                display: 'flex',
+              }}
+            >
+              JABSY
+            </div>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: '#a1a1aa',
+                letterSpacing: 4,
+                display: 'flex',
+                marginTop: 4,
+              }}
+            >
+              FANTASY MMA PICKS
+            </div>
           </div>
         </div>
 
-        {/* ════ Fight Night badge — top right ════ */}
-        <div style={{
-          position: 'absolute', top: 50, right: 60, display: 'flex', alignItems: 'center',
-          padding: '10px 18px', borderRadius: 10,
-          border: '2px solid rgba(225,29,72,0.55)', background: 'rgba(6,7,12,0.62)',
-        }}>
-          <div style={{ fontSize: 21, fontWeight: 900, color: '#fb7185', letterSpacing: 5, display: 'flex' }}>FIGHT NIGHT</div>
+        {/* ════ Hey Africa badge — top right ════ */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 50,
+            right: 60,
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 18px',
+            borderRadius: 10,
+            border: '2px solid rgba(250,204,21,0.65)',
+            background: 'rgba(6,7,12,0.7)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 900,
+              color: '#facc15',
+              letterSpacing: 4,
+              display: 'flex',
+            }}
+          >
+            HEY AFRICA!
+          </div>
         </div>
 
-        {/* ════ Title block — bottom left ════ */}
-        <div style={{ position: 'absolute', left: 60, bottom: 40, width: 1080, display: 'flex', flexDirection: 'column' }}>
-
-          {/* Eyebrow */}
-          <div style={{ fontSize: 21, fontWeight: 700, color: '#d4d4d8', letterSpacing: 5, display: 'flex', marginBottom: 10 }}>
-            UFC FIGHT NIGHT · PAYCOM CENTER · OKC
+        {/* ════ Title block — bottom ════ */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 60,
+            bottom: 36,
+            width: 1080,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Eyebrow — the Picnicface bit, compressed */}
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#facc15',
+              letterSpacing: 3,
+              display: 'flex',
+              marginBottom: 8,
+            }}
+          >
+            RSA VS NGA · TWO AFRICANS · ZERO TIGERS
           </div>
 
-          {/* Names — one line, corners implied by the bar below */}
+          {/* Names */}
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <div style={{ fontSize: 86, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>DU PLESSIS</div>
-            <div style={{ fontSize: 40, fontWeight: 900, color: '#e11d48', letterSpacing: 2, display: 'flex', margin: '0 20px' }}>VS</div>
-            <div style={{ fontSize: 86, fontWeight: 900, color: '#ffffff', lineHeight: 1, display: 'flex' }}>USMAN</div>
+            <div
+              style={{
+                fontSize: 82,
+                fontWeight: 900,
+                color: '#ffffff',
+                lineHeight: 1,
+                display: 'flex',
+              }}
+            >
+              DU PLESSIS
+            </div>
+            <div
+              style={{
+                fontSize: 38,
+                fontWeight: 900,
+                color: '#e11d48',
+                letterSpacing: 2,
+                display: 'flex',
+                margin: '0 18px',
+              }}
+            >
+              VS
+            </div>
+            <div
+              style={{
+                fontSize: 82,
+                fontWeight: 900,
+                color: '#ffffff',
+                lineHeight: 1,
+                display: 'flex',
+              }}
+            >
+              USMAN
+            </div>
           </div>
 
-          {/* Red corner → blue corner bar */}
-          <div style={{
-            width: 850, height: 6, display: 'flex', marginTop: 14, marginBottom: 16,
-            background: 'linear-gradient(90deg, #e11d48 0%, #e11d48 38%, #3b82f6 62%, #3b82f6 100%)',
-          }} />
+          {/* Red → blue bar */}
+          <div
+            style={{
+              width: 820,
+              height: 6,
+              display: 'flex',
+              marginTop: 12,
+              marginBottom: 14,
+              background:
+                'linear-gradient(90deg, #e11d48 0%, #e11d48 38%, #3b82f6 62%, #3b82f6 100%)',
+            }}
+          />
+
+          {/* Gag subline */}
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: '#d4d4d8',
+              letterSpacing: 1,
+              display: 'flex',
+              marginBottom: 14,
+            }}
+          >
+            Are the lions scary? Sure they are. Also: make your picks.
+          </div>
 
           {/* Footer row */}
-          <div style={{ display: 'flex', width: 1080, justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 25, fontWeight: 700, color: '#ffffff', letterSpacing: 1, display: 'flex' }}>PICKS LOCK · SAT JUL 18 · 5:00 PM ET</div>
-            <div style={{ fontSize: 27, fontWeight: 900, color: '#fb7185', display: 'flex' }}>JABSYPICKS.COM</div>
+          <div
+            style={{
+              display: 'flex',
+              width: 1080,
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: '#ffffff',
+                letterSpacing: 1,
+                display: 'flex',
+              }}
+            >
+              PICKS LOCK · SAT JUL 18 · 5:00 PM ET · OKC
+            </div>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 900,
+                color: '#fb7185',
+                display: 'flex',
+              }}
+            >
+              JABSYPICKS.COM
+            </div>
           </div>
         </div>
-
       </div>
     ),
     { ...size, fonts }
