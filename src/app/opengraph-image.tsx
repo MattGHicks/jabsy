@@ -32,14 +32,19 @@ export default async function Image() {
       ]
     : []
 
-  // ── Background photo (Du Plessis–Usman dual headshot) ─────────
+  // ── Background photo (Du Plessis–Usman "Hey Africa" lion shoot) ─
   let bgData: string | null = null
-  try {
-    const buf = fs.readFileSync(
-      path.join(process.cwd(), 'public/og/ufc-fn-duplessis-usman-faceoff.jpg')
-    )
-    bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
-  } catch { /* fallback to dark bg */ }
+  const bgCandidates = [
+    'public/og/ufc-fn-duplessis-usman-africa-1200.jpg',
+    'public/og/ufc-fn-duplessis-usman-africa.jpg',
+  ]
+  for (const rel of bgCandidates) {
+    try {
+      const buf = fs.readFileSync(path.join(process.cwd(), rel))
+      bgData = `data:image/jpeg;base64,${buf.toString('base64')}`
+      break
+    } catch { /* try next candidate */ }
+  }
 
   return new ImageResponse(
     (
@@ -69,36 +74,36 @@ export default async function Image() {
               width: 1200,
               height: 630,
               objectFit: 'cover',
-              objectPosition: '50% 20%',
+              objectPosition: '50% 40%',
             }}
           />
         )}
 
-        {/* ── Top scrim — keeps the brand legible ── */}
+        {/* ── Top scrim — light, just enough to seat the brand row ── */}
         <div
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            height: 180,
+            height: 150,
             display: 'flex',
             background:
-              'linear-gradient(180deg, rgba(6,7,12,0.88) 0%, rgba(6,7,12,0) 100%)',
+              'linear-gradient(180deg, rgba(6,7,12,0.65) 0%, rgba(6,7,12,0) 100%)',
           }}
         />
 
-        {/* ── Bottom scrim — grounds the title over the fighters ── */}
+        {/* ── Bottom scrim — graduated fade, no hard black slab ── */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: 360,
+            height: 410,
             display: 'flex',
             background:
-              'linear-gradient(0deg, rgba(6,7,12,0.97) 0%, rgba(6,7,12,0.78) 48%, rgba(6,7,12,0) 100%)',
+              'linear-gradient(0deg, rgba(6,7,12,0.96) 0%, rgba(6,7,12,0.88) 26%, rgba(6,7,12,0.62) 50%, rgba(6,7,12,0.28) 74%, rgba(6,7,12,0) 100%)',
           }}
         />
 
