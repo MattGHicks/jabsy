@@ -170,7 +170,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
       <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white/70 hover:text-white cursor-pointer">
         <X className="w-5 h-5" />
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
     </div>
   )
