@@ -39,8 +39,8 @@ export default async function DashboardPage() {
 
   let memberCounts: Record<string, number> = {}
   let eventCounts: Record<string, number> = {}
-  let nextEvents: Record<string, { id: string; name: string; start_time: string }> = {}
-  let liveEventsByLeague: Record<string, { id: string; name: string }> = {}
+  const nextEvents: Record<string, { id: string; name: string; start_time: string }> = {}
+  const liveEventsByLeague: Record<string, { id: string; name: string }> = {}
 
   if (leagueIds.length > 0) {
     const [membersRes, leagueEventsRes, upcomingEventsRes] = await Promise.all([
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
     : null
 
   // League rankings — all picks in user's leagues grouped by (league_id, user_id)
-  let userRanks: Record<string, { rank: number; total: number; of: number }> = {}
+  const userRanks: Record<string, { rank: number; total: number; of: number }> = {}
   if (leagueIds.length > 0) {
     const allLeaguePicks = allLeaguePicksData
 

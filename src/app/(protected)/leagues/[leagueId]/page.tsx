@@ -85,7 +85,7 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
 
   // Pick counts are only relevant while picks are still open (upcoming)
   const upcomingEventIds = events.filter((e) => e.status === 'upcoming').map((e) => e.id)
-  let pickCounts: Record<string, number> = {}
+  const pickCounts: Record<string, number> = {}
   if (upcomingEventIds.length > 0) {
     const { data: picks } = await supabase
       .from('picks')
@@ -108,7 +108,7 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
 
   // Get winner(s) per completed event
   type WinnerInfo = { username: string | null; avatar_url: string | null; points: number }
-  let eventWinners: Record<string, WinnerInfo[]> = {}
+  const eventWinners: Record<string, WinnerInfo[]> = {}
   const completedEventIds = events.filter((e) => e.status === 'completed').map((e) => e.id)
   if (completedEventIds.length > 0) {
     const { data: completedPicks } = await supabase
