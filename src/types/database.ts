@@ -339,7 +339,7 @@ export interface Database {
           id: string
           sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check' | 'cross_validation'
           event_id: string | null
-          api_source: 'espn' | 'ufc_api' | 'claude'
+          api_source: 'espn' | 'ufc_api' | 'claude' | 'sherdog'
           status: 'success' | 'error' | 'partial' | 'warning'
           request_count: number
           details: Json | null
@@ -349,7 +349,7 @@ export interface Database {
           id?: string
           sync_type: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check' | 'cross_validation'
           event_id?: string | null
-          api_source: 'espn' | 'ufc_api' | 'claude'
+          api_source: 'espn' | 'ufc_api' | 'claude' | 'sherdog'
           status: 'success' | 'error' | 'partial' | 'warning'
           request_count?: number
           details?: Json | null
@@ -359,7 +359,7 @@ export interface Database {
           id?: string
           sync_type?: 'event_import' | 'card_update' | 'live_results' | 'validation' | 'health_check'
           event_id?: string | null
-          api_source?: 'espn' | 'claude'
+          api_source?: 'espn' | 'ufc_api' | 'claude' | 'sherdog'
           status?: 'success' | 'error' | 'partial' | 'warning'
           request_count?: number
           details?: Json | null

@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { getAnthropicKey } from './anthropic-key'
 
 type AdminClient = SupabaseClient<Database>
 
@@ -19,8 +20,11 @@ export async function generateMatchupPreview(opts: {
   scheduledRounds: number
   isMainEvent: boolean
 }): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return null
+  const apiKey = getAnthropicKey()
+  if (!apiKey) {
+    console.error('matchup preview skipped: ANTHROPIC_API_KEY not set')
+    return null
+  }
 
   const prompt = `${PROMPT_PREFIX}
 

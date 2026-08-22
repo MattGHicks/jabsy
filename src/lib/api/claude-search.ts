@@ -1,21 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { getAnthropicKey } from './anthropic-key'
 
 function getApiKey(): string {
-  // process.env.ANTHROPIC_API_KEY may be empty if the shell sets it to ""
-  // (e.g. from Claude Code), which prevents Next.js from loading .env.local value.
-  const envKey = process.env.ANTHROPIC_API_KEY?.trim()
-  if (envKey) return envKey
-
-  // Fallback: read directly from .env.local
-  try {
-    const envFile = readFileSync(join(process.cwd(), '.env.local'), 'utf-8')
-    const match = envFile.match(/^ANTHROPIC_API_KEY=(.+)$/m)
-    if (match?.[1]?.trim()) return match[1].trim()
-  } catch { /* file not found in production — that's fine */ }
-
-  throw new Error('ANTHROPIC_API_KEY not set. Add it to .env.local (local) or Vercel Environment Variables (prod).')
+  const key = getAnthropicKey()
+  if (!key) {
+    throw new Error('ANTHROPIC_API_KEY not set. Add it to .env.local (local) or Vercel Environment Variables (prod).')
+  }
+  return key
 }
 
 function getClient() {
@@ -209,9 +200,15 @@ Return ONLY the JSON object, no other text.`,
       }
       const parsed: Record<string, string | null> = JSON.parse(jsonStr)
       for (const [name, url] of Object.entries(parsed)) {
-        if (url && url.includes('sherdog.com/fighter/')) {
-          allResults[name] = url
+        if (!url || !url.includes('sherdog.com/fighter/')) continue
+        // Reject URLs that don't belong to the fighter asked for. Batched
+        // lookups have previously returned another fighter from the same batch,
+        // which shows up as two fighters with each other's profile linked.
+        if (!sherdogUrlMatchesName(url, name)) {
+          console.warn(`Sherdog AI lookup returned mismatched URL for ${name}: ${url}`)
+          continue
         }
+        allResults[name] = url
       }
     } catch {
       // Continue with remaining batches even if one fails
@@ -345,10 +342,163 @@ Return ONLY the numeric fmid (e.g. 600057365), or the word null if you cannot fi
   }
 }
 
+interface SherdogSearchHit {
+  firstname?: string
+  lastname?: string
+  url?: string
+}
+
+const normalizeName = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()
+
 /**
- * Look up exact Sherdog profile URLs by scraping the Sherdog search page directly.
- * No AI needed — just fetches the fightfinder search results and extracts the first match.
- * Returns a map of fighter name → Sherdog profile URL.
+ * How confidently a Sherdog profile URL can be tied to a fighter's name.
+ *
+ * - `match`    the slug is this fighter, allowing for spelling variation
+ * - `partial`  shares part of the name — usually a ring name over a legal name
+ *              ("King Green" is Bobby Green, "Renato Moicano" is Renato
+ *              Carneiro), but also how a wrong same-surname fighter looks
+ *              ("Tim Elliott" pointing at Oban Elliott). Needs human eyes.
+ * - `mismatch` nothing in common; the link is wrong
+ *
+ * Used strictly when picking a search result (only `match` is accepted, since a
+ * wrong pick means a wrong link) and leniently when auditing links we already
+ * have (where `partial` is a review queue, not an error).
+ */
+export type SherdogUrlVerdict = 'match' | 'partial' | 'mismatch'
+
+export function classifySherdogUrl(url: string, name: string): SherdogUrlVerdict {
+  const slug = url.match(/\/fighter\/(.+?)-\d+$/)?.[1]
+  if (!slug) return 'mismatch'
+
+  const slugTokens = normalizeName(slug.replace(/-/g, ' ')).split(' ').filter(Boolean)
+  const nameTokens = normalizeName(name).split(' ').filter(Boolean)
+  if (slugTokens.length === 0 || nameTokens.length === 0) return 'mismatch'
+
+  if (isSameFighter(slugTokens, nameTokens)) return 'match'
+
+  // Any shared name part means it's plausibly the same person under a different
+  // name, rather than a mix-up with an unrelated fighter.
+  const nameSet = new Set(nameTokens)
+  return slugTokens.some((t) => nameSet.has(t)) ? 'partial' : 'mismatch'
+}
+
+/**
+ * Strict check used when accepting a candidate from search or from the AI
+ * fallback. Only a verified match passes.
+ */
+export function sherdogUrlMatchesName(url: string, name: string): boolean {
+  return classifySherdogUrl(url, name) === 'match'
+}
+
+function isSameFighter(slugTokens: string[], nameTokens: string[]): boolean {
+
+  // Compare letters only, ignoring where the word breaks fall. Sherdog splits
+  // names differently ("Dooho Choi" → "Doo-Ho-Choi", "Waldo Cortes Acosta" →
+  // "Waldo-CortesAcosta", "Sumudaerji" → "Su-Mudaerji").
+  const slugLetters = slugTokens.join('')
+  const nameLetters = nameTokens.join('')
+  if (slugLetters === nameLetters) return true
+
+  // Same letters in a different order ("Aoriqileng" → "Qileng-Aori").
+  if ([...slugTokens].sort().join('') === [...nameTokens].sort().join('')) return true
+
+  // Tolerate transliteration drift ("Daria Zhelezniakova" vs
+  // "Darya-Zheleznyakova") — a few characters over a long name is a spelling
+  // variant, not a different fighter.
+  const maxLen = Math.max(slugLetters.length, nameLetters.length)
+  if (levenshtein(slugLetters, nameLetters) <= Math.floor(maxLen * 0.15)) return true
+
+  // Sherdog carries the fuller legal name ("Jose Delano" → "Jose Delano Viana
+  // Rodrigues"). Accept only when our name is a leading run of the slug —
+  // matching scattered tokens would let "Felipe Franco" claim
+  // "Fabio Felipe Barbosa Franco", a different fighter.
+  if (slugTokens.length <= nameTokens.length) return false
+  return slugTokens.slice(0, nameTokens.length).join('') === nameLetters
+}
+
+function levenshtein(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i]
+    for (let j = 1; j <= b.length; j++) {
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    prev = curr
+  }
+  return prev[b.length]
+}
+
+/**
+ * Query Sherdog's fighter search JSON endpoint — the same one their own search
+ * box uses. The HTML page at /stats/fightfinder?SearchTxt=... stopped
+ * server-rendering results, so scraping it always came back empty.
+ */
+async function querySherdogSearch(term: string): Promise<SherdogSearchHit[]> {
+  const response = await fetch(`https://www.sherdog.com/search/fightfinder/?q=${encodeURIComponent(term)}`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'application/json,text/javascript,*/*;q=0.01',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  })
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+  const json = await response.json()
+  return Array.isArray(json?.collection) ? json.collection : []
+}
+
+/**
+ * Build the search terms to try for a fighter, cheapest and most likely first.
+ *
+ * Sherdog's search matches literally against how *they* split a name, which
+ * often differs from ESPN's spelling — most commonly for Korean and Chinese
+ * fighters, where ESPN runs the given name together and Sherdog splits it
+ * ("Seokhyeon Ko" is "Seok Hyeon Ko", "JunYong Park" is "Jun Yong Park").
+ * Since it matches on token prefixes, searching the surname plus the first few
+ * letters of the given name finds these even when we can't guess the split.
+ *
+ * Common names hit on the first term, so this costs one request in the normal
+ * case and only fans out for the awkward ones.
+ */
+function sherdogSearchTerms(name: string): string[] {
+  const terms = [name]
+  const push = (t: string) => { if (t && !terms.includes(t)) terms.push(t) }
+  const tokens = name.split(/\s+/).filter(Boolean)
+
+  push(name.replace(/\s+(jr\.?|sr\.?|i{2,3}|iv)$/i, '').trim())
+
+  // "JunYong Park" → "Jun Yong Park"
+  push(tokens.map((t) => t.replace(/(?<=[a-z])(?=[A-Z])/g, ' ')).join(' '))
+
+  // "RJ Harris" → "R.J. Harris"
+  const initials = name.match(/^([A-Z])([A-Z])\s+(.+)$/)
+  if (initials) push(`${initials[1]}.${initials[2]}. ${initials[3]}`)
+
+  if (tokens.length >= 2) {
+    // Surname plus a prefix of the given name, which survives any split point.
+    const [first, last] = [tokens[0], tokens[tokens.length - 1]]
+    for (const len of [4, 3, 2, 5]) {
+      if (first.length > len) push(`${last} ${first.slice(0, len)}`)
+    }
+  } else {
+    // Single run-together token ("Sumudaerji" is "Su Mudaerji"): we don't know
+    // where it splits, so try each side as a prefix.
+    for (const cut of [4, 5]) if (name.length > cut + 2) push(name.slice(0, cut))
+    for (const cut of [2, 3, 4]) if (name.length > cut + 3) push(name.slice(cut))
+  }
+
+  return terms
+}
+
+/**
+ * Look up exact Sherdog profile URLs via Sherdog's own search API.
+ * No AI needed. Returns a map of fighter name → Sherdog profile URL.
  */
 export async function lookupSherdogUrls(fighterNames: string[]): Promise<{ results: Record<string, string>; errors: string[] }> {
   if (fighterNames.length === 0) return { results: {}, errors: [] }
@@ -358,61 +508,39 @@ export async function lookupSherdogUrls(fighterNames: string[]): Promise<{ resul
 
   for (const name of fighterNames) {
     try {
-      const searchUrl = `https://www.sherdog.com/stats/fightfinder?SearchTxt=${encodeURIComponent(name)}`
-      const response = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
-      })
+      let matched: string | null = null
+      let ambiguous = 0
 
-      if (!response.ok) {
-        errors.push(`${name}: HTTP ${response.status}`)
-        continue
-      }
+      for (const term of sherdogSearchTerms(name)) {
+        const hits = await querySherdogSearch(term)
+        // Small delay to be respectful to Sherdog's servers
+        await new Promise(resolve => setTimeout(resolve, 300))
 
-      const html = await response.text()
+        // Only accept hits whose profile URL verifiably belongs to this
+        // fighter — the same check applied to AI results. Looser terms return
+        // plenty of same-surname fighters, and picking one of those is worse
+        // than returning nothing.
+        const candidates = [...new Set(
+          hits.filter((h) => h.url && sherdogUrlMatchesName(h.url, name)).map((h) => h.url!),
+        )]
 
-      // Check for Cloudflare challenge or empty response
-      if (html.length < 500 || html.includes('cf-challenge') || html.includes('Just a moment')) {
-        errors.push(`${name}: blocked by Cloudflare`)
-        continue
-      }
-
-      // Match links: <a href="/fighter/Elijah-Smith-385324">Elijah Smith</a>
-      const linkPattern = /<a\s+href="(\/fighter\/[^"]+)"[^>]*>([^<]+)<\/a>/g
-      const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[.\-']/g, '').replace(/\s+/g, ' ')
-      const targetName = normalize(name)
-      const targetParts = targetName.split(' ')
-      const targetLast = targetParts[targetParts.length - 1]
-
-      let exactMatch: string | null = null
-      let fuzzyMatch: string | null = null
-      for (const m of html.matchAll(linkPattern)) {
-        const linkText = normalize(m[2])
-        // Exact match — best case
-        if (linkText === targetName) { exactMatch = m[1]; break }
-        // Fuzzy: Sherdog name starts with ESPN name (e.g. "Jose Delano" → "Jose Delano Viana Rodrigues")
-        // or ESPN name's last name matches Sherdog's last name and first part overlaps
-        if (!fuzzyMatch) {
-          const linkParts = linkText.split(' ')
-          const linkLast = linkParts[linkParts.length - 1]
-          if (linkText.startsWith(targetName + ' ') || (targetLast === linkLast && linkText.includes(targetParts[0]))) {
-            fuzzyMatch = m[1]
-          }
+        if (candidates.length === 1) { matched = candidates[0]; break }
+        if (candidates.length > 1) {
+          // Sherdog carries several fighters under the same name (three Levi
+          // Rodrigueses, six Jose Delgados). Nothing here distinguishes them,
+          // so leave it for the AI fallback rather than link the wrong man.
+          ambiguous = candidates.length
+          break
         }
       }
 
-      const matched = exactMatch ?? fuzzyMatch
       if (matched) {
         results[name] = `https://www.sherdog.com${matched}`
+      } else if (ambiguous) {
+        errors.push(`${name}: ambiguous (${ambiguous} fighters share this name)`)
       } else {
         errors.push(`${name}: no match`)
       }
-
-      // Small delay to be respectful to Sherdog's servers
-      await new Promise(resolve => setTimeout(resolve, 500))
     } catch (err) {
       errors.push(`${name}: ${String(err).slice(0, 80)}`)
     }

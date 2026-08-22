@@ -92,9 +92,22 @@ export function isPicksOpen(startTime: string, lockTime: string | null): boolean
 
 /**
  * Generate a Sherdog fighter profile search URL from a fighter's name.
+ *
+ * This is only a placeholder written at sync time — the backfill resolves it to
+ * a real /fighter/ profile URL. Never link to it directly; run it through
+ * sherdogProfileUrl() first.
  */
 export function sherdogSearchUrl(fighterName: string): string {
   return `https://www.sherdog.com/stats/fightfinder?SearchTxt=${encodeURIComponent(fighterName)}`
+}
+
+/**
+ * Return a Sherdog URL only if it points at an actual fighter profile.
+ * Unresolved search placeholders land users on Sherdog's empty Fight Finder
+ * form instead of the fighter, so treat them as "no link available".
+ */
+export function sherdogProfileUrl(url: string | null | undefined): string | null {
+  return url?.includes('/fighter/') ? url : null
 }
 
 /**

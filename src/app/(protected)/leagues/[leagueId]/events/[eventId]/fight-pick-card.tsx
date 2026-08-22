@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react'
 import { ExternalLink } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, sherdogProfileUrl } from '@/lib/utils'
 import { savePick } from '@/actions/picks'
 import { MatchupInfoButton } from './matchup-info-button'
 
@@ -149,7 +149,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
   const blueName = splitName(fight.blue_name)
 
   const showRounds = winner && method && ROUND_ELIGIBLE_METHODS.includes(method)
-  const hasSherdog = fight.red_sherdog_url || fight.blue_sherdog_url
+  const redSherdog = sherdogProfileUrl(fight.red_sherdog_url)
+  const blueSherdog = sherdogProfileUrl(fight.blue_sherdog_url)
+  const hasSherdog = redSherdog || blueSherdog
 
   return (
     <div className={cn(
@@ -299,9 +301,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
       {hasSherdog && (
         <div className="flex items-center justify-between px-5 py-1.5 border-t border-[#1a1a1a]/60">
           <div>
-            {fight.red_sherdog_url ? (
+            {redSherdog ? (
               <a
-                href={fight.red_sherdog_url}
+                href={redSherdog}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[#71717a] hover:text-[#e11d48] transition-colors"
@@ -312,9 +314,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
             ) : <span />}
           </div>
           <div>
-            {fight.blue_sherdog_url ? (
+            {blueSherdog ? (
               <a
-                href={fight.blue_sherdog_url}
+                href={blueSherdog}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[#71717a] hover:text-blue-400 transition-colors"

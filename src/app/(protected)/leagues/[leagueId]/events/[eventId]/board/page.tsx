@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { ChevronLeft, TrendingUp, Trophy, ExternalLink, Lock, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate } from '@/lib/utils'
+import { cn, formatDateTime, getInitials, getLastName, isPicksOpen, getPicksOpenDate, sherdogProfileUrl } from '@/lib/utils'
 import { StickyStandings } from './sticky-standings'
 import { BoardLiveUpdater } from './board-live-updater'
 
@@ -346,6 +346,8 @@ export default async function BoardPage({ params }: PageProps) {
               const resultName =
                 result === 'red' ? fight.red_name :
                 result === 'blue' ? fight.blue_name : null
+              const redSherdog = sherdogProfileUrl(fight.red_sherdog_url)
+              const blueSherdog = sherdogProfileUrl(fight.blue_sherdog_url)
 
               return (
                 <div
@@ -369,9 +371,9 @@ export default async function BoardPage({ params }: PageProps) {
                     <div className="flex items-center justify-between gap-4">
                       {/* Fighters */}
                       <div className="flex-1 min-w-0">
-                        {fight.red_sherdog_url ? (
+                        {redSherdog ? (
                           <a
-                            href={fight.red_sherdog_url}
+                            href={redSherdog}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={cn('group/red flex items-center gap-1.5 w-fit', isCancelled && 'pointer-events-none')}
@@ -398,9 +400,9 @@ export default async function BoardPage({ params }: PageProps) {
                           </p>
                         )}
                         <p className="text-[9px] text-[#3f3f46] font-bold my-1 tracking-widest uppercase">vs</p>
-                        {fight.blue_sherdog_url ? (
+                        {blueSherdog ? (
                           <a
-                            href={fight.blue_sherdog_url}
+                            href={blueSherdog}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={cn('group/blue flex items-center gap-1.5 w-fit', isCancelled && 'pointer-events-none')}

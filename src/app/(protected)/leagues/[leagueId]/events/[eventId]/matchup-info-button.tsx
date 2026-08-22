@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Sparkles, ChevronDown, ExternalLink, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, sherdogProfileUrl } from '@/lib/utils'
 import { getMatchupPreview, type MatchupInfo } from '@/actions/fights'
 
 interface Props {
@@ -49,6 +49,9 @@ export function MatchupInfoButton({
   )
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  const redProfileUrl = sherdogProfileUrl(redSherdogUrl)
+  const blueProfileUrl = sherdogProfileUrl(blueSherdogUrl)
 
   function handleToggle() {
     const next = !open
@@ -143,11 +146,11 @@ export function MatchupInfoButton({
           </div>
 
           {/* Sherdog links */}
-          {(redSherdogUrl || blueSherdogUrl) && (
+          {(redProfileUrl || blueProfileUrl) && (
             <div className="px-4 py-2.5 border-t border-[#1e1e1e]/60 flex items-center justify-between gap-3">
-              {redSherdogUrl ? (
+              {redProfileUrl ? (
                 <a
-                  href={redSherdogUrl}
+                  href={redProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#71717a] hover:text-[#e11d48] transition-colors uppercase tracking-wider"
@@ -156,9 +159,9 @@ export function MatchupInfoButton({
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               ) : <span />}
-              {blueSherdogUrl ? (
+              {blueProfileUrl ? (
                 <a
-                  href={blueSherdogUrl}
+                  href={blueProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#71717a] hover:text-blue-400 transition-colors uppercase tracking-wider"

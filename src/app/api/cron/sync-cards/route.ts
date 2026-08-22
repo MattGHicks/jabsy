@@ -5,6 +5,7 @@ import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
 import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI, findUfcEventFmidWithClaude } from '@/lib/api/claude-search'
 import { fetchUfcLiveEvent } from '@/lib/api/ufc'
 import { prewarmMatchupPreviews } from '@/lib/api/matchup-preview'
+import { auditSherdogLinks, actionableIssues } from '@/lib/api/sherdog-audit'
 import type { ValidationWarning } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -266,6 +267,33 @@ export async function GET(request: NextRequest) {
           // Claude validation is best-effort
         }
       }
+    }
+
+    // Audit Sherdog links on upcoming cards. A bad link renders identically to
+    // a good one, so without this the only way to notice is a user clicking it.
+    try {
+      const audit = await auditSherdogLinks(adminClient, { upcomingOnly: true })
+      const actionable = actionableIssues(audit.issues)
+      if (actionable.length > 0) {
+        await adminClient.from('api_sync_log').insert({
+          sync_type: 'validation',
+          api_source: 'sherdog',
+          status: 'warning',
+          request_count: audit.checked,
+          details: {
+            kind: 'sherdog_link_audit',
+            checked: audit.checked,
+            issues: actionable.map((i) => ({
+              fighter: i.fighterName,
+              event: i.eventName,
+              problem: i.problem,
+              url: i.url,
+            })),
+          },
+        })
+      }
+    } catch (err) {
+      console.error('Sherdog link audit failed:', err)
     }
 
     // Log overall sync result

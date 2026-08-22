@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchCalendar, fetchEventById, extractEventId } from '@/lib/api/espn'
 import { mapEspnEvent, toEventInsert, toFightInsert } from '@/lib/api/sync'
 import { searchUpcomingUFCEvents, lookupSherdogUrls } from '@/lib/api/claude-search'
+import { prewarmMatchupPreviews } from '@/lib/api/matchup-preview'
 import type { MappedEvent, MappedFight } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -235,6 +236,15 @@ export async function importEvent(espnEventId: string): Promise<{
       }
     } catch {
       // Sherdog lookup is best-effort — search URL fallback is already in place
+    }
+
+    // Pre-warm matchup previews. The daily card-sync cron also does this, but it
+    // only runs once a day — an event imported after that run (or on fight day)
+    // would otherwise have no previews for its entire life.
+    try {
+      await prewarmMatchupPreviews(adminClient, newEvent.id)
+    } catch {
+      // Best-effort — previews still generate lazily on first click.
     }
 
     // Log the sync
