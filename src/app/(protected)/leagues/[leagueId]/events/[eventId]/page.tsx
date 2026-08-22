@@ -7,6 +7,9 @@ import { formatDateTime, isPicksOpen } from '@/lib/utils'
 import { PicksPageClient } from './picks-page-client'
 import { LocalTime } from '@/components/local-time'
 
+// Picks are per-user; never let this page's RSC payload be reused across requests.
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ leagueId: string; eventId: string }>
 }
