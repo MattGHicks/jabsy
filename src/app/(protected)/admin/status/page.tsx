@@ -3,10 +3,37 @@ import Link from 'next/link'
 import { Activity, Wifi, Bot, Zap, AlertTriangle, CheckCircle2, ShieldCheck, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton, ClaudeCheckButton, SyncCardsButton } from './status-client'
+import { RefreshCountdown, RefreshTimestamp, ActivityFeed, SystemTestButton, ClaudeCheckButton, SyncCardsButton, VerifyResultsButton } from './status-client'
 import type { LogEntry } from './status-client'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+type VerificationDetails = {
+  kind?: string
+  changes?: { fight: string; from: string; to: string; action: string }[]
+  conflicts?: { fight: string; ufc: string; espn: string }[]
+  pointsFixed?: number
+}
+
+function verificationHeadline(details: unknown): string {
+  const d = (details ?? {}) as VerificationDetails
+  if (d.kind !== 'result_verification') return 'Cross-validation mismatch'
+  const corrected = d.changes?.filter(c => c.action !== 'flagged').length ?? 0
+  const flagged = d.changes?.filter(c => c.action === 'flagged').length ?? 0
+  const parts = [
+    corrected > 0 && `${corrected} result${corrected !== 1 ? 's' : ''} auto-corrected`,
+    flagged > 0 && `${flagged} admin result${flagged !== 1 ? 's' : ''} disagree with feeds`,
+    (d.pointsFixed ?? 0) > 0 && `${d.pointsFixed} pick score${d.pointsFixed !== 1 ? 's' : ''} fixed`,
+    (d.conflicts?.length ?? 0) > 0 && `ESPN/UFC disagree on ${d.conflicts!.length}`,
+  ].filter(Boolean)
+  return parts.length > 0 ? `Result check: ${parts.join(' · ')}` : 'Result check warning'
+}
+
+function verificationLines(details: unknown): string[] {
+  const d = (details ?? {}) as VerificationDetails
+  if (d.kind !== 'result_verification') return []
+  return (d.changes ?? []).map(c => `${c.action === 'flagged' ? '⚠ ' : ''}${c.fight}: ${c.from} → ${c.to}`)
+}
 
 function relTime(iso: string | null | undefined): string {
   if (!iso) return 'never'
@@ -329,6 +356,7 @@ export default async function StatusPage() {
         <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3">Tools</p>
         <div className="flex flex-col gap-3">
           <SystemTestButton />
+          <VerifyResultsButton />
           <ClaudeCheckButton />
           <SyncCardsButton />
         </div>
@@ -476,12 +504,15 @@ export default async function StatusPage() {
                     <div key={w.id} className="p-3.5 flex items-start gap-2.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-[11px] text-[#f4f4f5]">Cross-validation mismatch</p>
+                        <p className="text-[11px] text-[#f4f4f5]">{verificationHeadline(w.details)}</p>
                         <p className="text-[10px] text-[#52525b] mt-0.5">
                           <span className="text-[#71717a]">{(w.events as unknown as { name: string } | null)?.name ?? 'Unknown event'}</span>
                           <span className="text-[#3f3f46] mx-1">·</span>
                           <span className="font-mono">{relTime(w.created_at)}</span>
                         </p>
+                        {verificationLines(w.details).map(line => (
+                          <p key={line} className="text-[10px] text-[#71717a] font-mono mt-0.5 truncate">{line}</p>
+                        ))}
                       </div>
                     </div>
                   ))}

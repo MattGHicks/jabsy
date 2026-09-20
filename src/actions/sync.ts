@@ -8,6 +8,7 @@ import { fetchCalendar, fetchEventById, extractEventId } from '@/lib/api/espn'
 import { mapEspnEvent, toEventInsert, toFightInsert } from '@/lib/api/sync'
 import { searchUpcomingUFCEvents, lookupSherdogUrls } from '@/lib/api/claude-search'
 import { prewarmMatchupPreviews } from '@/lib/api/matchup-preview'
+import { syncUfcIds } from '@/lib/api/ufc-ids'
 import type { MappedEvent, MappedFight } from '@/lib/api/types'
 import type { Json } from '@/types/database'
 
@@ -236,6 +237,14 @@ export async function importEvent(espnEventId: string): Promise<{
       }
     } catch {
       // Sherdog lookup is best-effort — search URL fallback is already in place
+    }
+
+    // UFC stats-feed IDs — the official record the result verifier and the
+    // Tier 2 fallback check against. Best-effort; the verifier retries later.
+    try {
+      await syncUfcIds(adminClient, { id: newEvent.id, name: mapped.name, ufc_event_fmid: null, start_time: mapped.startTime })
+    } catch {
+      // Best-effort
     }
 
     // Pre-warm matchup previews. The daily card-sync cron also does this, but it

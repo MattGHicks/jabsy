@@ -98,6 +98,7 @@ export interface Database {
           result_winner: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round: number | null
+          result_source: 'espn' | 'ufc_api' | 'claude' | 'admin' | 'verified' | null
           espn_competition_id: string | null
           ufc_fight_id: string | null
           sync_status: 'synced' | 'modified' | 'manual'
@@ -126,6 +127,7 @@ export interface Database {
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
+          result_source?: 'espn' | 'ufc_api' | 'claude' | 'admin' | 'verified' | null
           espn_competition_id?: string | null
           ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'
@@ -154,6 +156,7 @@ export interface Database {
           result_winner?: 'red' | 'blue' | 'draw' | 'nc' | null
           result_method?: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null
           result_round?: number | null
+          result_source?: 'espn' | 'ufc_api' | 'claude' | 'admin' | 'verified' | null
           espn_competition_id?: string | null
           ufc_fight_id?: string | null
           sync_status?: 'synced' | 'modified' | 'manual'

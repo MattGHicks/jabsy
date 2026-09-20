@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { fetchEventById, getCorners, getResultMethod, mapFightStatus } from '@/lib/api/espn'
-import { fetchUfcLiveEvent, mapUfcMethod, getUfcWinner } from '@/lib/api/ufc'
+import { fetchEventById, mapFightStatus } from '@/lib/api/espn'
+import { fetchUfcLiveEvent } from '@/lib/api/ufc'
 import { fetchFightResultsWithClaude } from '@/lib/api/claude-search'
+import { alignUfcFight, espnResult, resolveResult, ufcResult, describeResult, type FightResult } from '@/lib/api/results'
+import { runResultVerification } from '@/lib/api/verify-results'
 import type { Json } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
@@ -11,20 +13,22 @@ export const dynamic = 'force-dynamic'
  * Live results polling cron job — three-tier fallback system.
  * Runs every 60 seconds via Vercel cron.
  *
- * Tier 1: ESPN API (primary)
+ * Tier 1: ESPN API (primary) — bout status + completion, with the result
+ *   taken from the official UFC feed when it has one and otherwise from ESPN's
+ *   explicit "Unofficial Winner" line. A completed bout with neither is left
+ *   pending until the next poll; results are never guessed.
  *   → If ESPN consecutive_failures >= 1, skip to Tier 2
  *
  * Tier 2: UFC CloudFront API (fallback when ESPN is down)
- *   → Uses ufc_event_fmid / ufc_fight_id stored during daily sync
- *   → Only activates if ESPN has been failing
+ *   → Uses ufc_event_fmid / ufc_fight_id
  *
  * Tier 3: Claude web_search (last resort when both APIs down > 3 mins)
  *   → Rate-limited to one call per event per 3 minutes via api_sync_log
  *   → Only high-confidence results are written
  *
- * Cross-validation (every 5 mins):
- *   → Compares ESPN vs UFC results for recently completed fights
- *   → Discrepancies logged for admin review — never auto-corrected
+ * Result verification (every 5 mins while live, every 30 mins for 4 days after):
+ *   → Re-checks every stored result against the UFC feed + ESPN, corrects
+ *     mismatches, and re-checks every pick's points. See lib/api/verify-results.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -50,32 +54,39 @@ export async function GET(request: NextRequest) {
       .eq('status', 'live')
       .not('espn_event_id', 'is', null)
 
-    if (!liveEvents || liveEvents.length === 0) {
-      await detectStuckEvents(adminClient)
-      return NextResponse.json({ message: 'No live events' })
-    }
-
-    // Check ESPN health once — applies to all events this run
-    const espnHealthy = await isEspnHealthy(adminClient)
-
     const allUpdates: { eventId: string; fightId: string; winner: string; method: string; round: number | null; tier: string }[] = []
     const allErrors: { eventId: string; type: string; detail: string }[] = []
 
-    for (const event of liveEvents) {
-      try {
-        const { updates, errors } = await processLiveEvent(adminClient, event as typeof event & { espn_event_id: string }, espnHealthy)
-        allUpdates.push(...updates)
-        allErrors.push(...errors)
-      } catch (err) {
-        console.error(`Live results failed for event ${event.id}:`, err)
-        allErrors.push({ eventId: event.id, type: 'unhandled_error', detail: String(err) })
+    if (liveEvents && liveEvents.length > 0) {
+      // Check ESPN health once — applies to all events this run
+      const espnHealthy = await isEspnHealthy(adminClient)
+
+      for (const event of liveEvents) {
+        try {
+          const { updates, errors } = await processLiveEvent(adminClient, event as typeof event & { espn_event_id: string }, espnHealthy)
+          allUpdates.push(...updates)
+          allErrors.push(...errors)
+        } catch (err) {
+          console.error(`Live results failed for event ${event.id}:`, err)
+          allErrors.push({ eventId: event.id, type: 'unhandled_error', detail: String(err) })
+        }
       }
     }
 
-    // Cross-validation (rate-limited to every 5 mins globally)
-    await runCrossValidation(adminClient, liveEvents)
+    // Backstop: re-verify results of live and recently completed events.
+    // Self-throttled (every 5 min live / 30 min after), so safe to call each run.
+    let verification: Awaited<ReturnType<typeof runResultVerification>> = []
+    try {
+      verification = await runResultVerification(adminClient)
+    } catch (err) {
+      console.error('Result verification error:', err)
+    }
 
     await detectStuckEvents(adminClient)
+
+    if (!liveEvents || liveEvents.length === 0) {
+      return NextResponse.json({ message: 'No live events', verified: verification.length })
+    }
 
     if (allUpdates.length > 0 || allErrors.length > 0) {
       await adminClient.from('api_sync_log').insert({
@@ -92,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       message: `Polled ${liveEvents.length} live events`,
-      espnHealthy,
+      verified: verification.length,
       resultsApplied: allUpdates.length,
       updates: allUpdates,
       errors: allErrors.length > 0 ? allErrors : undefined,
@@ -122,7 +133,7 @@ async function processLiveEvent(
       } else {
         const { data: existingFights } = await adminClient
           .from('fights')
-          .select('id, espn_competition_id, ufc_fight_id, status, result_winner')
+          .select('id, red_name, blue_name, espn_competition_id, ufc_fight_id, status, result_winner')
           .eq('event_id', event.id)
 
         const fightsByEspnId = new Map(
@@ -131,28 +142,10 @@ async function processLiveEvent(
             .map(f => [f.espn_competition_id!, f])
         )
 
-        // Pre-fetch UFC fight results once per event for spot-checking ambiguous ESPN results
-        const ufcSpotCheckMap = new Map<string, { winner: 'red' | 'blue' | 'draw' | 'nc'; method: 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null; round: number | null }>()
-        if (event.ufc_event_fmid) {
-          try {
-            const ufcFights = await fetchUfcLiveEvent(event.ufc_event_fmid)
-            if (ufcFights) {
-              for (const f of ufcFights) {
-                if (f.result.isComplete && f.fightId) {
-                  const w = getUfcWinner(f)
-                  const m = mapUfcMethod(f.result.method)
-                  ufcSpotCheckMap.set(f.fightId, {
-                    winner: w,
-                    method: m,
-                    round: (m === 'ko_tko' || m === 'submission') ? (f.result.round ?? null) : null,
-                  })
-                }
-              }
-            }
-          } catch {
-            // UFC pre-fetch is best-effort — missing it won't block ESPN results
-          }
-        }
+        // Official UFC results for this event (best-effort) — preferred over ESPN
+        const ufcFights = event.ufc_event_fmid
+          ? await fetchUfcLiveEvent(event.ufc_event_fmid).catch(() => null)
+          : null
 
         for (const comp of espnEvent.competitions) {
           const dbFight = fightsByEspnId.get(comp.id)
@@ -166,84 +159,38 @@ async function processLiveEvent(
 
           if (!comp.status.type.completed) continue
 
-          const cornersResult = getCorners(comp)
-          if (!cornersResult.data) {
-            await logOncePerHour(adminClient, 'live_results', event.id, 'error', {
-              type: 'corners_extraction_failed',
-              fight_id: dbFight.id,
-              competition_id: comp.id,
-              warnings: cornersResult.warnings,
-            })
-            errors.push({ eventId: event.id, type: 'corners_failed', detail: `Competition ${comp.id}` })
-            continue
-          }
+          const ufcRaw = ufcFights?.find(f => f.fightId === dbFight.ufc_fight_id)
+            ?? ufcFights?.find(f => alignUfcFight(f, dbFight.red_name, dbFight.blue_name))
+          const ufcAligned = ufcRaw ? alignUfcFight(ufcRaw, dbFight.red_name, dbFight.blue_name) : null
+          const resolved = resolveResult(ufcAligned ? ufcResult(ufcAligned) : null, espnResult(comp))
 
-          const methodResult = getResultMethod(comp)
-          if (methodResult.warnings.length > 0) {
+          if (!resolved) {
+            // ESPN says the bout is over but neither feed states a result yet
+            // (ESPN often marks it final before posting the result line).
+            // Writing a guess here is how fights got scored wrong — wait.
             await logOncePerHour(adminClient, 'live_results', event.id, 'warning', {
+              type: 'result_pending',
               fight_id: dbFight.id,
               competition_id: comp.id,
-              warnings: methodResult.warnings,
+              details_texts: (comp.details ?? []).slice(0, 6).map(d => d.type?.text),
             })
-          }
-
-          if (!methodResult.data) {
-            await logOncePerHour(adminClient, 'live_results', event.id, 'error', {
-              type: 'result_extraction_failed',
-              fight_id: dbFight.id,
-              competition_id: comp.id,
-            })
-            errors.push({ eventId: event.id, type: 'method_not_found', detail: `Competition ${comp.id}` })
             continue
           }
 
-          const corners = cornersResult.data
-          let winner: 'red' | 'blue' | 'draw' | 'nc' = 'draw'
-          if (corners.red.winner) winner = 'red'
-          else if (corners.blue.winner) winner = 'blue'
-
-          // ESPN completed the fight but neither corner is marked as winner (possible placeholder draw)
-          // Spot-check against UFC API before writing — draws are rare in MMA
-          if (winner === 'draw' && dbFight.ufc_fight_id) {
-            const ufcSpot = ufcSpotCheckMap.get(dbFight.ufc_fight_id)
-            if (ufcSpot) {
-              if (ufcSpot.winner !== 'draw' && ufcSpot.method) {
-                // UFC has a definitive winner — use it instead of ESPN's ambiguous draw
-                const { error } = await adminClient.from('fights').update({
-                  result_winner: ufcSpot.winner,
-                  result_method: ufcSpot.method,
-                  result_round: ufcSpot.round,
-                  status: 'final',
-                }).eq('id', dbFight.id)
-                if (!error) {
-                  updates.push({ eventId: event.id, fightId: dbFight.id, winner: ufcSpot.winner, method: ufcSpot.method, round: ufcSpot.round, tier: 'ufc_spot_check' })
-                } else {
-                  errors.push({ eventId: event.id, type: 'update_failed', detail: error.message })
-                }
-                continue
-              }
-              // ufcSpot.winner === 'draw' too — confirmed draw, fall through and write it
-            } else {
-              // UFC has no result for this fight yet — skip writing until next cycle
-              continue
-            }
+          if (resolved.conflict) {
+            await logOncePerHour(adminClient, 'live_results', event.id, 'warning', {
+              type: 'espn_ufc_disagree',
+              fight_id: dbFight.id,
+              used: `ufc_api ${describeResult(resolved.result)}`,
+              espn: describeResult(espnResult(comp)),
+            })
           }
 
-          const round = (methodResult.data === 'ko_tko' || methodResult.data === 'submission')
-            ? comp.status.period
-            : null
-
-          const { error } = await adminClient.from('fights').update({
-            result_winner: winner,
-            result_method: methodResult.data,
-            result_round: round,
-            status: 'final',
-          }).eq('id', dbFight.id)
-
+          const error = await writeResult(adminClient, dbFight.id, resolved.result, resolved.source)
           if (!error) {
-            updates.push({ eventId: event.id, fightId: dbFight.id, winner, method: methodResult.data, round, tier: 'espn' })
+            updates.push({ eventId: event.id, fightId: dbFight.id, ...resolved.result, tier: resolved.source === 'ufc_api' ? 'espn+ufc' : 'espn' })
           } else {
-            errors.push({ eventId: event.id, type: 'update_failed', detail: error.message })
+            errors.push({ eventId: event.id, type: 'update_failed', detail: error })
           }
         }
 
@@ -280,37 +227,24 @@ async function processLiveEvent(
       } else {
         const { data: pendingFights } = await adminClient
           .from('fights')
-          .select('id, ufc_fight_id, status, result_winner')
+          .select('id, red_name, blue_name, ufc_fight_id, status, result_winner')
           .eq('event_id', event.id)
           .is('result_winner', null)
           .neq('status', 'final')
           .neq('status', 'cancelled')
 
-        const ufcById = new Map(ufcFights.map(f => [f.fightId, f]))
         let tier2Updates = 0
 
         for (const dbFight of pendingFights ?? []) {
-          if (!dbFight.ufc_fight_id) continue
-          const ufcFight = ufcById.get(dbFight.ufc_fight_id)
-          if (!ufcFight?.result.isComplete) continue
+          const ufcRaw = ufcFights.find(f => f.fightId === dbFight.ufc_fight_id)
+            ?? ufcFights.find(f => alignUfcFight(f, dbFight.red_name, dbFight.blue_name))
+          const ufcAligned = ufcRaw ? alignUfcFight(ufcRaw, dbFight.red_name, dbFight.blue_name) : null
+          const result = ufcAligned ? ufcResult(ufcAligned) : null
+          if (!result) continue
 
-          const method = mapUfcMethod(ufcFight.result.method)
-          if (!method) continue
-
-          const winner = getUfcWinner(ufcFight)
-          const round = (method === 'ko_tko' || method === 'submission')
-            ? (ufcFight.result.round ?? null)
-            : null
-
-          const { error } = await adminClient.from('fights').update({
-            result_winner: winner,
-            result_method: method,
-            result_round: round,
-            status: 'final',
-          }).eq('id', dbFight.id)
-
+          const error = await writeResult(adminClient, dbFight.id, result, 'ufc_api')
           if (!error) {
-            updates.push({ eventId: event.id, fightId: dbFight.id, winner, method, round, tier: 'ufc_api' })
+            updates.push({ eventId: event.id, fightId: dbFight.id, ...result, tier: 'ufc_api' })
             tier2Updates++
           }
         }
@@ -380,12 +314,12 @@ async function processLiveEvent(
         ? (result.round ?? null)
         : null
 
-      const { error } = await adminClient.from('fights').update({
-        result_winner: result.winner,
-        result_method: result.method,
-        result_round: round,
-        status: 'final',
-      }).eq('id', result.fightId)
+      const error = await writeResult(
+        adminClient,
+        result.fightId,
+        { winner: result.winner, method: result.method, round },
+        'claude'
+      )
 
       if (!error) {
         updates.push({ eventId: event.id, fightId: result.fightId, winner: result.winner, method: result.method, round, tier: 'claude' })
@@ -414,146 +348,24 @@ async function processLiveEvent(
   return { updates, errors }
 }
 
-// ─── Cross-validation ─────────────────────────────────────────────────────────
-
-async function runCrossValidation(
-  adminClient: ReturnType<typeof createAdminClient>,
-  liveEvents: { id: string; name: string; ufc_event_fmid: string | null }[]
-) {
-  // Rate-limit: once every 5 minutes globally across all events
-  const { data: recent } = await adminClient
-    .from('api_sync_log')
-    .select('id')
-    .eq('sync_type', 'cross_validation')
-    .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
-    .limit(1)
-
-  if (recent && recent.length > 0) return
-
-  const discrepancies: { fightId: string; espnResult: string; ufcResult: string }[] = []
-  const claudeCorrections: { fightId: string; from: string; to: string }[] = []
-  const correctedEventIds = new Set<string>()
-  let claudeCalled = 0
-
-  for (const event of liveEvents) {
-    if (!event.ufc_event_fmid) continue
-
-    try {
-      // Check fights finalized in last 30 mins — wide enough to catch delayed/corrected results
-      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-      const { data: recentFights } = await adminClient
-        .from('fights')
-        .select('id, red_name, blue_name, ufc_fight_id, result_winner, result_method, result_round')
-        .eq('event_id', event.id)
-        .eq('status', 'final')
-        .gte('updated_at', thirtyMinsAgo)
-
-      if (!recentFights || recentFights.length === 0) continue
-
-      const ufcFights = await fetchUfcLiveEvent(event.ufc_event_fmid)
-      if (!ufcFights) continue
-
-      const ufcById = new Map(ufcFights.map(f => [f.fightId, f]))
-
-      // Collect fights for Claude — all fights with complete UFC data, not just discrepancies
-      const fightsForClaude: { id: string; redName: string; blueName: string }[] = []
-
-      for (const dbFight of recentFights) {
-        if (!dbFight.ufc_fight_id) continue
-        const ufcFight = ufcById.get(dbFight.ufc_fight_id)
-        if (!ufcFight?.result.isComplete) continue
-
-        fightsForClaude.push({ id: dbFight.id, redName: dbFight.red_name, blueName: dbFight.blue_name })
-
-        // Still log ESPN vs UFC discrepancies for visibility
-        const ufcWinner = getUfcWinner(ufcFight)
-        const ufcMethod = mapUfcMethod(ufcFight.result.method)
-        if (dbFight.result_winner !== ufcWinner || dbFight.result_method !== ufcMethod) {
-          discrepancies.push({
-            fightId: dbFight.id,
-            espnResult: `${dbFight.result_winner}/${dbFight.result_method}`,
-            ufcResult: `${ufcWinner}/${ufcMethod}`,
-          })
-        }
-      }
-
-      // Claude triple-checks all recent fights regardless of ESPN/UFC agreement
-      if (fightsForClaude.length > 0) {
-        try {
-          claudeCalled++
-          const claudeResults = await fetchFightResultsWithClaude(event.name, fightsForClaude)
-
-          for (const match of claudeResults) {
-            if (match.confidence !== 'high' || !match.winner || !match.method) continue
-            const dbFight = recentFights.find(f => f.id === match.fightId)
-            if (!dbFight) continue
-
-            if (match.winner !== dbFight.result_winner || match.method !== dbFight.result_method) {
-              const correctedRound = (match.method === 'ko_tko' || match.method === 'submission')
-                ? (match.round ?? null)
-                : null
-              const { error } = await adminClient.from('fights').update({
-                result_winner: match.winner,
-                result_method: match.method,
-                result_round: correctedRound,
-              }).eq('id', match.fightId)
-              if (!error) {
-                correctedEventIds.add(event.id)
-                claudeCorrections.push({
-                  fightId: match.fightId,
-                  from: `${dbFight.result_winner}/${dbFight.result_method}`,
-                  to: `${match.winner}/${match.method}`,
-                })
-              }
-            }
-          }
-        } catch {
-          // Claude is best-effort
-        }
-      }
-    } catch {
-      // Cross-validation is best-effort per event
-    }
-  }
-
-  // Recalculate picks for any events where Claude made corrections
-  for (const eventId of correctedEventIds) {
-    try {
-      await adminClient.rpc('recalculate_event_picks', { p_event_id: eventId })
-    } catch {
-      // Best-effort
-    }
-  }
-
-  // Log UFC cross-check
-  await adminClient.from('api_sync_log').insert({
-    sync_type: 'cross_validation',
-    api_source: 'ufc_api',
-    status: discrepancies.length > 0 ? 'warning' : 'success',
-    request_count: liveEvents.length,
-    details: {
-      discrepancies: discrepancies.length > 0 ? discrepancies : undefined,
-      eventsChecked: liveEvents.length,
-    } as unknown as Json,
-  })
-
-  // Log Claude triple-check separately so it shows on status page
-  if (claudeCalled > 0) {
-    await adminClient.from('api_sync_log').insert({
-      sync_type: 'cross_validation',
-      api_source: 'claude',
-      status: claudeCorrections.length > 0 ? 'warning' : 'success',
-      request_count: claudeCalled,
-      details: {
-        fightsChecked: liveEvents.reduce((n, _) => n, 0),
-        corrections: claudeCorrections.length > 0 ? claudeCorrections : undefined,
-        correctionsApplied: correctedEventIds.size,
-      } as unknown as Json,
-    })
-  }
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Write a final result, recording which feed it came from. Returns an error message or null. */
+async function writeResult(
+  adminClient: ReturnType<typeof createAdminClient>,
+  fightId: string,
+  result: FightResult,
+  source: 'espn' | 'ufc_api' | 'claude'
+): Promise<string | null> {
+  const { error } = await adminClient.from('fights').update({
+    result_winner: result.winner,
+    result_method: result.method,
+    result_round: result.round,
+    result_source: source,
+    status: 'final',
+  }).eq('id', fightId)
+  return error?.message ?? null
+}
 
 async function isEspnHealthy(adminClient: ReturnType<typeof createAdminClient>): Promise<boolean> {
   try {

@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, FlaskConical, CheckCircle2, XCircle, Bot, RefreshCw } from 'lucide-react'
-import { runSystemTest, runClaudeCheck, runSyncCards } from '@/actions/admin'
+import { Loader2, FlaskConical, CheckCircle2, XCircle, Bot, RefreshCw, ScanSearch, AlertTriangle } from 'lucide-react'
+import { runSystemTest, runClaudeCheck, runSyncCards, verifyResultsNow } from '@/actions/admin'
 import type { SystemTestResult, ClaudeCheckResult, SyncCardsResult } from '@/actions/admin'
+import type { EventVerification } from '@/lib/api/verify-results'
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
@@ -307,6 +308,100 @@ export function SystemTestButton() {
 
       {status === 'error' && (
         <p className="text-xs text-red-400">Test failed — check console</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Verify Results Button ────────────────────────────────────────────────────
+
+export function VerifyResultsButton() {
+  const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [events, setEvents] = useState<EventVerification[]>([])
+  const [ranAt, setRanAt] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+
+  async function handleRun() {
+    setStatus('running')
+    setEvents([])
+    setErrorMsg('')
+    try {
+      const res = await verifyResultsNow()
+      setEvents(res.events)
+      setRanAt(res.ranAt)
+      setStatus('done')
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Unknown error')
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={handleRun}
+        disabled={status === 'running'}
+        className="inline-flex items-center gap-2 h-8 px-3 rounded-lg bg-[#111111] border border-green-500/20 text-green-400/70 text-xs font-semibold hover:text-green-400 hover:border-green-500/40 transition-all disabled:opacity-50 cursor-pointer"
+      >
+        {status === 'running'
+          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          : <ScanSearch className="w-3.5 h-3.5" />
+        }
+        {status === 'running' ? 'Verifying results...' : 'Verify Results & Scores'}
+      </button>
+
+      {status === 'done' && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 space-y-3">
+          {events.length === 0 && (
+            <p className="text-xs text-[#71717a]">No live or recently completed events to verify.</p>
+          )}
+          {events.map(ev => (
+            <div key={ev.eventId} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-[#a1a1aa] truncate">{ev.eventName}</p>
+                <span className="text-[9px] text-[#3f3f46] font-mono shrink-0 ml-2">
+                  {ev.fightsChecked} fights · {[ev.sources.ufc && 'UFC', ev.sources.espn && 'ESPN'].filter(Boolean).join(' + ') || 'no feeds'}
+                </span>
+              </div>
+              {ev.changes.length === 0 && ev.pointsFixed === 0 && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                  <span className="text-xs text-[#a1a1aa]">All results and points match the official record</span>
+                </div>
+              )}
+              {ev.changes.map(c => (
+                <div key={c.fightId} className="ml-5 text-[10px] text-[#71717a] font-mono">
+                  <span className={c.action === 'flagged' ? 'text-amber-400' : 'text-green-400/80'}>
+                    {c.action === 'flagged' ? 'check manually' : c.action}
+                  </span>
+                  <span className="text-[#52525b]"> · </span>
+                  <span className="text-[#a1a1aa]">{c.fight}</span>
+                  <span className="text-[#52525b]"> · </span>
+                  <span className="line-through text-red-400/60">{c.from}</span>
+                  <span className="text-[#52525b]"> → </span>
+                  <span className="text-green-400/80">{c.to}</span>
+                  <span className="text-[#3f3f46]"> ({c.source})</span>
+                </div>
+              ))}
+              {ev.pointsFixed > 0 && (
+                <p className="ml-5 text-[10px] text-green-400/80 font-mono">{ev.pointsFixed} pick score{ev.pointsFixed !== 1 ? 's' : ''} recalculated</p>
+              )}
+              {ev.unverified.length > 0 && (
+                <div className="ml-5 flex items-start gap-1.5 text-[10px] text-amber-400/80 font-mono">
+                  <AlertTriangle className="w-3 h-3 shrink-0 mt-px" />
+                  <span>No feed result to confirm: {ev.unverified.join(', ')}</span>
+                </div>
+              )}
+            </div>
+          ))}
+          <p className="text-[9px] text-[#3f3f46] font-mono pt-1 border-t border-[#1a1a1a]">
+            Ran at {new Date(ranAt).toLocaleTimeString()}
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <p className="text-xs text-red-400 font-mono">{errorMsg || 'Verification failed'}</p>
       )}
     </div>
   )
