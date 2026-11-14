@@ -7,6 +7,7 @@ import type {
   ValidatedResult,
 } from './types'
 import { recordSuccess, recordFailure } from './espn-health'
+import { parseEspnMethodLine } from './results'
 
 const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc'
 
@@ -175,52 +176,33 @@ export function getCorners(competition: EspnCompetition): ValidatedResult<{
 }
 
 /**
- * Extract fight result method from ESPN details array.
- * Uses case-insensitive partial matching for resilience.
- * Returns ValidatedResult with warnings when method can't be determined.
+ * Extract the fight result method from ESPN's "Unofficial Winner <method>"
+ * detail line. Everything else in `details` is play-by-play ("Submission
+ * Attempt", "Knockdown", "Clinch") and must not be read as a result — doing so,
+ * and guessing KO/TKO when the line was missing, is how fights got scored wrong.
+ * A completed bout with no result line yet returns null plus a warning; callers
+ * wait for the next poll or for the UFC feed instead of writing a guess.
  */
 export function getResultMethod(competition: EspnCompetition): ValidatedResult<'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null> {
   const warnings: ValidationWarning[] = []
   const details = competition.details ?? []
 
   for (const detail of details) {
-    const text = (detail.type?.text ?? '').toLowerCase()
-
-    // Broad matching: case-insensitive + partial
-    if (text.includes('decision')) return { data: 'decision', warnings }
-    if (text.includes('kotko') || text.includes('ko/tko') || text.includes('ko tko') || text.includes('knockout') || text.includes('tko')) {
-      return { data: 'ko_tko', warnings }
-    }
-    if (text.includes('submission')) return { data: 'submission', warnings }
-    if (text.includes('disqualif') || text.includes('dq')) return { data: 'dq', warnings }
-    if (text.includes('no contest') || text.includes('no_contest') || text.includes('nc')) {
-      return { data: 'nc', warnings }
-    }
+    const method = parseEspnMethodLine(detail.type?.text ?? '')
+    if (method) return { data: method, warnings }
   }
 
-  // Fallback inference for completed fights
   if (competition.status.type.completed) {
-    const period = competition.status.period
-    const rounds = competition.format?.regulation?.periods
-    const clock = competition.status.displayClock
-
-    // Full rounds completed with full clock = decision
-    if (rounds && period === rounds && clock === '5:00') {
-      return { data: 'decision', warnings }
-    }
-
-    // We couldn't find a method match — log warning and infer ko_tko
     warnings.push({
       type: 'missing_method',
-      message: `Competition ${competition.id} completed but no method found in details`,
+      message: `Competition ${competition.id} completed but ESPN has no result line yet`,
       context: {
         competition_id: competition.id,
-        details_texts: details.map(d => d.type?.text),
-        period,
-        clock,
+        details_texts: details.slice(0, 10).map(d => d.type?.text),
+        period: competition.status.period,
+        clock: competition.status.displayClock,
       },
     })
-    return { data: 'ko_tko', warnings }
   }
 
   return { data: null, warnings }

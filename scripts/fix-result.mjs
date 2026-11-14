@@ -101,7 +101,7 @@ if (!fight) {
 if (cmd === 'clear') {
   console.log('BEFORE:\n' + render(fight))
   const { error } = await db.from('fights')
-    .update({ result_winner: null, result_method: null, result_round: null, status: 'scheduled' })
+    .update({ result_winner: null, result_method: null, result_round: null, result_source: null, status: 'scheduled' })
     .eq('id', fight.id)
   if (error) { console.error('Update failed:', error.message); process.exit(1) }
 } else if (cmd === 'set') {
@@ -125,6 +125,8 @@ if (cmd === 'clear') {
       result_winner: effectiveWinner,
       result_method: methodArg,
       result_round: round,
+      // Hand-entered: the result verifier flags disagreements but never overwrites it.
+      result_source: 'admin',
       status: 'final',
     })
     .eq('id', fight.id)

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchEventById } from '@/lib/api/espn'
 import { mapEspnEvent, toFightInsert } from '@/lib/api/sync'
-import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI, findUfcEventFmidWithClaude } from '@/lib/api/claude-search'
-import { fetchUfcLiveEvent } from '@/lib/api/ufc'
+import { validateEventData, lookupSherdogUrls, lookupSherdogUrlsWithAI } from '@/lib/api/claude-search'
+import { syncUfcIds } from '@/lib/api/ufc-ids'
 import { prewarmMatchupPreviews } from '@/lib/api/matchup-preview'
 import { auditSherdogLinks, actionableIssues } from '@/lib/api/sherdog-audit'
 import type { ValidationWarning } from '@/lib/api/types'
@@ -311,127 +311,4 @@ export async function GET(request: NextRequest) {
     console.error('Card sync cron error:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
-}
-
-/**
- * Fetch the UFC CloudFront event fmid from the UFC.com event page and
- * populate ufc_event_fmid on the event + ufc_fight_id on each fight.
- * Matches UFC fights to DB fights by normalizing fighter names.
- * Safe to call multiple times — skips fields already populated.
- */
-async function syncUfcIds(
-  adminClient: ReturnType<typeof createAdminClient>,
-  event: { id: string; name: string; ufc_event_fmid: string | null; start_time: string }
-) {
-  // Step 1: Get the fmid if we don't have it yet
-  let fmid = event.ufc_event_fmid
-
-  if (!fmid) {
-    const slug = eventNameToSlug(event.name)
-    // Try scraping UFC.com event page for the fmid first
-    try {
-      const res = await fetch(`https://www.ufc.com/event/${slug}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-      })
-      if (res.ok) {
-        const html = await res.text()
-        const match = html.match(/"event_fmid"\s*:\s*"(\d+)"/)
-        if (match?.[1]) {
-          fmid = match[1]
-          await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
-        }
-      }
-    } catch { /* fall through to Claude */ }
-
-    // If scraping failed, try sequential ID guessing from the last known fmid
-    if (!fmid) {
-      const { data: lastEvent } = await adminClient
-        .from('events')
-        .select('ufc_event_fmid')
-        .not('ufc_event_fmid', 'is', null)
-        .lt('start_time', event.start_time)
-        .order('start_time', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (lastEvent?.ufc_event_fmid) {
-        const lastId = parseInt(lastEvent.ufc_event_fmid, 10)
-        for (let candidate = lastId + 1; candidate <= lastId + 5; candidate++) {
-          try {
-            const ufcFights = await fetchUfcLiveEvent(String(candidate))
-            if (!ufcFights) continue
-            // Verify by checking if main event fighters match
-            const mainEventFighters = ufcFights[0]
-            const eventNameLower = event.name.toLowerCase()
-            const redMatch = mainEventFighters?.redName && eventNameLower.includes(mainEventFighters.redName.split(' ').pop()!.toLowerCase())
-            const blueMatch = mainEventFighters?.blueName && eventNameLower.includes(mainEventFighters.blueName.split(' ').pop()!.toLowerCase())
-            if (redMatch || blueMatch) {
-              fmid = String(candidate)
-              await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
-              break
-            }
-          } catch { continue }
-        }
-      }
-    }
-
-    // If sequential guessing failed, ask Claude Haiku with web search as last resort
-    if (!fmid) {
-      fmid = await findUfcEventFmidWithClaude(event.name, slug)
-      if (fmid) {
-        await adminClient.from('events').update({ ufc_event_fmid: fmid }).eq('id', event.id)
-      }
-    }
-
-    if (!fmid) return
-  }
-
-  // Step 2: Get UFC fight IDs and match to DB fights by name
-  const ufcFights = await fetchUfcLiveEvent(fmid)
-  if (!ufcFights) return
-
-  const { data: dbFights } = await adminClient
-    .from('fights')
-    .select('id, red_name, blue_name, ufc_fight_id')
-    .eq('event_id', event.id)
-
-  if (!dbFights) return
-
-  const normalize = (s: string) =>
-    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-
-  for (const dbFight of dbFights) {
-    if (dbFight.ufc_fight_id) continue // already have it
-
-    const redNorm = normalize(dbFight.red_name)
-    const blueNorm = normalize(dbFight.blue_name)
-
-    const match = ufcFights.find(uf => {
-      const ufRed = uf.redName ? normalize(uf.redName) : ''
-      const ufBlue = uf.blueName ? normalize(uf.blueName) : ''
-      return (
-        (ufRed.includes(redNorm.split(' ').pop()!) || redNorm.includes(ufRed.split(' ').pop()!)) &&
-        (ufBlue.includes(blueNorm.split(' ').pop()!) || blueNorm.includes(ufBlue.split(' ').pop()!))
-      )
-    })
-
-    if (match) {
-      await adminClient
-        .from('fights')
-        .update({ ufc_fight_id: match.fightId })
-        .eq('id', dbFight.id)
-    }
-  }
-}
-
-/**
- * Convert an event name like "UFC Fight Night: Emmett vs. Vallejos"
- * to a UFC.com URL slug like "ufc-fight-night-emmett-vs-vallejos".
- */
-function eventNameToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
 }
