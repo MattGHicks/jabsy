@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fetchFightResultsWithClaude } from '@/lib/api/claude-search'
 import { auditSherdogLinks as runSherdogAudit, type SherdogAuditResult } from '@/lib/api/sherdog-audit'
+import { runResultVerification, type EventVerification } from '@/lib/api/verify-results'
 
 export interface SystemTestResult {
   espn: { ok: boolean; latencyMs: number; error?: string }
@@ -273,6 +274,9 @@ export async function saveResult(data: {
       result_winner: effectiveWinner as 'red' | 'blue' | 'draw' | 'nc',
       result_method: data.result_method as 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | 'draw' | null,
       result_round: data.result_round,
+      // Marks the result as hand-entered: the result verifier will flag a
+      // disagreement with the feeds but never overwrite it.
+      result_source: 'admin' as const,
       status: 'final' as const,
     })
     .eq('id', data.fight_id)
@@ -315,6 +319,7 @@ export async function clearResult(fightId: string, eventId: string): Promise<{ s
       result_winner: null,
       result_method: null,
       result_round: null,
+      result_source: null,
       status: 'scheduled' as const,
     })
     .eq('id', fightId)
@@ -511,6 +516,7 @@ export async function runClaudeCheck(): Promise<ClaudeCheckResult> {
         result_winner: match.winner,
         result_method: match.method,
         result_round: correctedRound,
+        result_source: 'claude',
         status: 'final',
       }).eq('id', match.fightId)
       if (!error) {
@@ -543,6 +549,19 @@ export async function runClaudeCheck(): Promise<ClaudeCheckResult> {
     corrections,
     ranAt: new Date().toISOString(),
   }
+}
+
+/**
+ * Manual trigger for the result verifier: re-checks every result of live and
+ * recently completed events against the UFC feed + ESPN, corrects mismatches
+ * (except hand-entered results, which are only flagged) and re-checks points.
+ */
+export async function verifyResultsNow(): Promise<{ events: EventVerification[]; ranAt: string }> {
+  await requireAdmin()
+  const events = await runResultVerification(createAdminClient(), { force: true })
+  revalidatePath('/leagues', 'layout')
+  revalidatePath('/admin/status')
+  return { events, ranAt: new Date().toISOString() }
 }
 
 export interface SyncCardsResult {

@@ -10,6 +10,10 @@
  * Invalid IDs return {"LiveEventDetail":{}} — handled by returning null.
  */
 
+import { mapUfcMethod } from './results'
+
+export { mapUfcMethod }
+
 const UFC_BASE = 'https://d29dxerjsp82wz.cloudfront.net/api/v3'
 
 // ─── Raw API shapes (only fields we use) ─────────────────────────────────────
@@ -36,6 +40,8 @@ interface UfcApiFight {
 
 interface UfcApiEventResponse {
   LiveEventDetail: {
+    Name?: string
+    StartTime?: string
     FightCard?: UfcApiFight[]
   }
 }
@@ -56,26 +62,14 @@ export interface UfcLiveFight {
   blueName: string | null
   redWinner: boolean
   blueWinner: boolean
+  /** Official per-fighter outcome: 'Win' | 'Loss' | 'Draw' | 'No Contest' (new feed format only). */
+  redOutcome: string | null
+  blueOutcome: string | null
   result: {
     method: string | null
     round: number | null
     isComplete: boolean
   }
-}
-
-// ─── Method mapping ────────────────────────────────────────────────────────────
-
-export function mapUfcMethod(
-  method: string | null
-): 'decision' | 'ko_tko' | 'submission' | 'dq' | 'nc' | null {
-  if (!method) return null
-  const m = method.toLowerCase()
-  if (m.includes('decision')) return 'decision'
-  if (m.includes('ko') || m.includes('tko') || m.includes('knockout')) return 'ko_tko'
-  if (m.includes('submission')) return 'submission'
-  if (m.includes('disqualif') || m === 'dq') return 'dq'
-  if (m.includes('no contest') || m === 'nc') return 'nc'
-  return null
 }
 
 // ─── Normalizer ───────────────────────────────────────────────────────────────
@@ -106,6 +100,8 @@ function normalizeFight(raw: UfcApiFight): UfcLiveFight {
     blueName: blue ? getFighterName(blue) : null,
     redWinner: red ? getFighterWinner(red) : false,
     blueWinner: blue ? getFighterWinner(blue) : false,
+    redOutcome: red?.Outcome?.Outcome ?? null,
+    blueOutcome: blue?.Outcome?.Outcome ?? null,
     result: { method, round, isComplete },
   }
 }
@@ -128,6 +124,21 @@ export async function fetchUfcLiveEvent(fmid: string): Promise<UfcLiveFight[] | 
   } catch (err) {
     throw new Error(`fetchUfcLiveEvent(${fmid}): ${String(err)}`)
   }
+}
+
+/**
+ * Event name + start time for an fmid — used to identify which fmid belongs to
+ * one of our events. Returns null for unused fmids.
+ */
+export async function fetchUfcEventSummary(
+  fmid: string
+): Promise<{ fmid: string; name: string; startTime: string; fights: UfcLiveFight[] } | null> {
+  const res = await fetch(`${UFC_BASE}/event/live/${fmid}.json`, { next: { revalidate: 0 } })
+  if (!res.ok) return null
+  const data: UfcApiEventResponse = await res.json()
+  const detail = data.LiveEventDetail
+  if (!detail?.Name || !detail.StartTime || !detail.FightCard?.length) return null
+  return { fmid, name: detail.Name, startTime: detail.StartTime, fights: detail.FightCard.map(normalizeFight) }
 }
 
 /**
@@ -160,7 +171,8 @@ export function getUfcWinner(
   fight: UfcLiveFight
 ): 'red' | 'blue' | 'draw' | 'nc' {
   const method = mapUfcMethod(fight.result.method)
-  if (method === 'nc') return 'nc'
+  const noContest = [fight.redOutcome, fight.blueOutcome].some(o => o?.toLowerCase().includes('no contest'))
+  if (method === 'nc' || noContest) return 'nc'
   if (fight.redWinner) return 'red'
   if (fight.blueWinner) return 'blue'
   return 'draw'
