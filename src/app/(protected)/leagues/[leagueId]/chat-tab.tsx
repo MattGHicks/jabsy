@@ -82,27 +82,27 @@ function GifPicker({ onSelect, onClose }: { onSelect: (url: string) => void; onC
     <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 sm:mx-3 z-20">
       <div className="rounded-xl bg-[#0e0e0e] border border-[#27272a] shadow-2xl shadow-black/50 overflow-hidden max-h-[340px] flex flex-col">
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[#1e1e1e]">
-          <Search className="w-3.5 h-3.5 text-[#52525b] shrink-0" />
+          <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => handleInput(e.target.value)}
             placeholder="Search GIFs..."
-            className="flex-1 bg-transparent text-sm text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-faint focus:outline-none"
           />
-          <button onClick={onClose} className="p-1 rounded hover:bg-[#1e1e1e] text-[#52525b] hover:text-[#a1a1aa] transition-colors cursor-pointer">
+          <button onClick={onClose} className="p-1 rounded hover:bg-[#1e1e1e] text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
         <div className="overflow-y-auto flex-1 p-2">
           {isSearching ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 text-[#52525b] animate-spin" />
+              <Loader2 className="w-5 h-5 text-text-muted animate-spin" />
             </div>
           ) : displayGifs.length === 0 ? (
             <div className="flex items-center justify-center py-8">
-              <p className="text-xs text-[#3f3f46]">{query ? 'No GIFs found' : 'Loading...'}</p>
+              <p className="text-xs text-text-faint">{query ? 'No GIFs found' : 'Loading...'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
@@ -121,7 +121,7 @@ function GifPicker({ onSelect, onClose }: { onSelect: (url: string) => void; onC
           )}
         </div>
         <div className="px-3 py-1.5 border-t border-[#1e1e1e] flex justify-end">
-          <span className="text-[9px] text-[#3f3f46] uppercase tracking-wider">Powered by GIPHY</span>
+          <span className="text-[10px] text-text-faint uppercase tracking-wider">Powered by GIPHY</span>
         </div>
       </div>
     </div>
@@ -152,7 +152,7 @@ function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) 
           <X className="w-3 h-3" />
         </button>
       </div>
-      <p className="text-[10px] text-[#3f3f46] mt-1 truncate max-w-[200px]">{file.name}</p>
+      <p className="text-[11px] text-text-faint mt-1 truncate max-w-[200px]">{file.name}</p>
     </div>
   )
 }
@@ -224,9 +224,9 @@ function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1 min-w-0">
                 <Globe className="w-2.5 h-2.5 text-[#e11d48]/60 shrink-0" />
-                <span className="text-[9px] text-[#e11d48]/70 group-hover/link:text-[#e11d48] uppercase tracking-[0.15em] truncate transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{hostname}</span>
+                <span className="text-[10px] text-[#e11d48]/70 group-hover/link:text-[#e11d48] uppercase tracking-[0.15em] truncate transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{hostname}</span>
               </div>
-              <ArrowUpRight className="w-3 h-3 text-[#3f3f46] group-hover/link:text-[#e11d48] transition-colors shrink-0" />
+              <ArrowUpRight className="w-3 h-3 text-text-faint group-hover/link:text-[#e11d48] transition-colors shrink-0" />
             </div>
 
             {preview.title && (
@@ -235,7 +235,7 @@ function LinkPreviewCard({ preview }: { preview: LinkPreview }) {
               </p>
             )}
             {preview.description && (
-              <p className="text-[10px] text-[#52525b] leading-relaxed mt-1 line-clamp-2">
+              <p className="text-[11px] text-text-muted leading-relaxed mt-1 line-clamp-2">
                 {preview.description}
               </p>
             )}
@@ -297,8 +297,8 @@ function ReactionPills({
             className={cn(
               'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] transition-all cursor-pointer border',
               reacted
-                ? 'bg-[#e11d48]/10 border-[#e11d48]/30 text-[#f4f4f5] hover:bg-[#e11d48]/20'
-                : 'bg-[#1e1e1e] border-[#27272a] text-[#a1a1aa] hover:bg-[#27272a] hover:border-[#3f3f46]'
+                ? 'bg-[#e11d48]/10 border-[#e11d48]/30 text-text-primary hover:bg-[#e11d48]/20'
+                : 'bg-[#1e1e1e] border-[#27272a] text-text-secondary hover:bg-[#27272a] hover:border-[#3f3f46]'
             )}
           >
             <span className="text-[12px] leading-none">{EMOJI_DISPLAY[r.emoji]}</span>
@@ -541,8 +541,8 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 text-[#52525b] animate-spin mb-3" />
-        <p className="text-sm text-[#52525b]">Loading chat...</p>
+        <Loader2 className="w-6 h-6 text-text-muted animate-spin mb-3" />
+        <p className="text-sm text-text-muted">Loading chat...</p>
       </div>
     )
   }
@@ -563,7 +563,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
             <button
               onClick={loadMore}
               disabled={isLoadingMore}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-wider text-[#52525b] hover:text-[#a1a1aa] bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] uppercase tracking-wider text-text-muted hover:text-text-secondary bg-[#111111] border border-[#1e1e1e] hover:border-[#27272a] transition-colors cursor-pointer"
               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
             >
               {isLoadingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronUp className="w-3 h-3" />}
@@ -578,8 +578,8 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
             <div className="w-14 h-14 rounded-2xl bg-[#22c55e]/[0.06] border border-[#22c55e]/10 flex items-center justify-center mb-4">
               <MessageCircle className="w-6 h-6 text-[#22c55e]/40" />
             </div>
-            <p className="text-sm text-[#71717a] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>No messages yet</p>
-            <p className="text-xs text-[#3f3f46]">Break the ice — say something!</p>
+            <p className="text-sm text-text-secondary mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>No messages yet</p>
+            <p className="text-xs text-text-faint">Break the ice — say something!</p>
           </div>
         )}
 
@@ -599,7 +599,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                 <div className="flex items-center gap-3 py-3">
                   <div className="flex-1 h-px bg-[#1e1e1e]" />
                   <span
-                    className="text-[10px] text-[#52525b] uppercase tracking-widest shrink-0"
+                    className="text-[11px] text-text-muted uppercase tracking-widest shrink-0"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
                   >
                     {getDateLabel(msg.created_at)}
@@ -633,14 +633,14 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[10px] font-bold text-[#52525b] flex items-center justify-center w-full h-full">
+                        <span className="text-[11px] font-bold text-text-muted flex items-center justify-center w-full h-full">
                           {getInitials(profile?.username ?? 'U')}
                         </span>
                       )}
                     </div>
                   ) : (
                     /* Hover timestamp in the avatar gutter for continuation messages */
-                    <span className="text-[9px] text-[#3f3f46] opacity-0 group-hover:opacity-100 transition-opacity leading-[20px] flex items-center justify-center h-full select-none">
+                    <span className="text-[10px] text-text-faint opacity-0 group-hover:opacity-100 transition-opacity leading-[20px] flex items-center justify-center h-full select-none">
                       {formatMsgTime(msg.created_at)}
                     </span>
                   )}
@@ -657,7 +657,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                       >
                         {profile?.username ?? 'Unknown'}
                       </span>
-                      <span className="text-[10px] text-[#3f3f46] leading-tight">
+                      <span className="text-[11px] text-text-faint leading-tight">
                         {formatMsgTime(msg.created_at)}
                       </span>
                     </div>
@@ -670,7 +670,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                         const el = document.getElementById(`msg-${msg.reply_to_id}`)
                         if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ring-1', 'ring-[#22c55e]/30'); setTimeout(() => el.classList.remove('ring-1', 'ring-[#22c55e]/30'), 1500) }
                       }}
-                      className="flex items-start gap-2 mt-0.5 mb-0.5 pl-2.5 border-l-2 border-[#27272a] rounded-r text-[11px] text-[#52525b] cursor-pointer hover:bg-[#141414] hover:text-[#71717a] transition-colors py-0.5 pr-2 max-w-[400px]"
+                      className="flex items-start gap-2 mt-0.5 mb-0.5 pl-2.5 border-l-2 border-[#27272a] rounded-r text-[11px] text-text-muted cursor-pointer hover:bg-[#141414] hover:text-text-secondary transition-colors py-0.5 pr-2 max-w-[400px]"
                     >
                       <CornerUpRight className="w-3 h-3 shrink-0 mt-0.5" />
                       <span className="truncate">
@@ -701,10 +701,10 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                               Fight Card
                             </span>
                           </div>
-                          <p className="text-[14px] text-[#f4f4f5] font-bold group-hover/card:text-white transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                          <p className="text-[14px] text-text-primary font-bold group-hover/card:text-white transition-colors" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                             {leagueEvents.find((e) => e.id === msg.event_id)?.name ?? 'Event'}
                           </p>
-                          <p className="text-[10px] text-[#52525b] mt-1">Tap to view picks →</p>
+                          <p className="text-[11px] text-text-muted mt-1">Tap to view picks →</p>
                         </a>
                       ) : isMedia ? (
                         <div className="flex flex-col gap-1.5 mt-1">
@@ -722,7 +722,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                             />
                             {/* GIF badge */}
                             {msg.message_type === 'gif' && (
-                              <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest bg-black/70 text-white backdrop-blur-sm border border-white/10" style={{ fontFamily: 'var(--font-barlow)' }}>
+                              <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-black tracking-widest bg-black/70 text-white backdrop-blur-sm border border-white/10" style={{ fontFamily: 'var(--font-barlow)' }}>
                                 GIF
                               </span>
                             )}
@@ -734,7 +734,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                             )}
                           </button>
                           {msg.content && (
-                            <p className="text-[12px] text-[#a1a1aa] leading-relaxed break-words italic">{renderTextWithMentions(msg.content)}</p>
+                            <p className="text-[12px] text-text-secondary leading-relaxed break-words italic">{renderTextWithMentions(msg.content)}</p>
                           )}
                         </div>
                       ) : (
@@ -757,7 +757,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                         ))}
                         <button
                           onClick={() => setReplyingTo(msg)}
-                          className="w-7 h-7 flex items-center justify-center text-[#52525b] hover:text-[#22c55e] hover:bg-[#1e1e1e] transition-colors cursor-pointer border-l border-[#27272a]"
+                          className="w-7 h-7 flex items-center justify-center text-text-muted hover:text-[#22c55e] hover:bg-[#1e1e1e] transition-colors cursor-pointer border-l border-[#27272a]"
                           title="Reply"
                         >
                           <Reply className="w-3 h-3" />
@@ -765,7 +765,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                         {isMe && (
                           <button
                             onClick={() => handleDelete(msg.id)}
-                            className="w-7 h-7 flex items-center justify-center text-[#52525b] hover:text-[#e11d48] hover:bg-[#1e1e1e] transition-colors cursor-pointer rounded-r-md border-l border-[#27272a]"
+                            className="w-7 h-7 flex items-center justify-center text-text-muted hover:text-[#e11d48] hover:bg-[#1e1e1e] transition-colors cursor-pointer rounded-r-md border-l border-[#27272a]"
                             title="Delete message"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -814,10 +814,10 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <div className="w-0.5 h-6 bg-[#22c55e] rounded-full shrink-0" />
             <div className="min-w-0">
-              <p className="text-[10px] text-[#22c55e] font-semibold" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+              <p className="text-[11px] text-[#22c55e] font-semibold" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
                 Replying to {replyingTo.profiles?.username ?? 'Unknown'}
               </p>
-              <p className="text-[11px] text-[#52525b] truncate">
+              <p className="text-[11px] text-text-muted truncate">
                 {replyingTo.message_type !== 'text'
                   ? (replyingTo.message_type === 'gif' ? 'GIF' : 'Image')
                   : (replyingTo.content ?? '')}
@@ -826,7 +826,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
           </div>
           <button
             onClick={() => setReplyingTo(null)}
-            className="p-1 rounded hover:bg-[#1e1e1e] text-[#52525b] hover:text-[#a1a1aa] transition-colors cursor-pointer shrink-0"
+            className="p-1 rounded hover:bg-[#1e1e1e] text-text-muted hover:text-text-secondary transition-colors cursor-pointer shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -836,13 +836,13 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
       {/* Typing indicator */}
       {typingNames.length > 0 && (
         <div className="px-3 py-1 border-t border-[#1e1e1e] bg-[#0c0c0c]">
-          <p className="text-[11px] text-[#52525b] flex items-center gap-1.5">
+          <p className="text-[11px] text-text-muted flex items-center gap-1.5">
             <span className="flex gap-0.5">
               <span className="w-1 h-1 rounded-full bg-[#52525b] animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-1 h-1 rounded-full bg-[#52525b] animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1 h-1 rounded-full bg-[#52525b] animate-bounce" style={{ animationDelay: '300ms' }} />
             </span>
-            <span className="text-[#71717a] font-medium">
+            <span className="text-text-secondary font-medium">
               {typingNames.length === 1
                 ? `${typingNames[0]} is typing`
                 : typingNames.length === 2
@@ -863,14 +863,14 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
           <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 sm:mx-3 z-20">
             <div className="rounded-xl bg-[#0e0e0e] border border-[#27272a] shadow-2xl shadow-black/50 overflow-hidden max-h-[240px] flex flex-col">
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#1e1e1e]">
-                <span className="text-[11px] text-[#71717a] uppercase tracking-wider font-bold" style={{ fontFamily: 'var(--font-barlow)' }}>Share Fight Card</span>
-                <button onClick={() => setShowEventPicker(false)} className="p-1 rounded hover:bg-[#1e1e1e] text-[#52525b] hover:text-[#a1a1aa] transition-colors cursor-pointer">
+                <span className="text-[11px] text-text-secondary uppercase tracking-wider font-bold" style={{ fontFamily: 'var(--font-barlow)' }}>Share Fight Card</span>
+                <button onClick={() => setShowEventPicker(false)} className="p-1 rounded hover:bg-[#1e1e1e] text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
               <div className="overflow-y-auto flex-1 p-1.5">
                 {leagueEvents.map((event) => {
-                  const statusStyle = event.status === 'live' ? 'text-[#e11d48]' : event.status === 'upcoming' ? 'text-blue-400' : 'text-[#52525b]'
+                  const statusStyle = event.status === 'live' ? 'text-[#e11d48]' : event.status === 'upcoming' ? 'text-blue-400' : 'text-text-muted'
                   return (
                     <button
                       key={event.id}
@@ -879,8 +879,8 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                     >
                       <Trophy className={cn('w-4 h-4 shrink-0', statusStyle)} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] text-[#f4f4f5] font-medium truncate">{event.name}</p>
-                        <p className={cn('text-[10px] uppercase tracking-wider font-bold', statusStyle)} style={{ fontFamily: 'var(--font-barlow)' }}>
+                        <p className="text-[13px] text-text-primary font-medium truncate">{event.name}</p>
+                        <p className={cn('text-[11px] uppercase tracking-wider font-bold', statusStyle)} style={{ fontFamily: 'var(--font-barlow)' }}>
                           {event.status}
                         </p>
                       </div>
@@ -898,7 +898,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616] transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-text-muted hover:text-text-secondary hover:bg-[#161616] transition-colors cursor-pointer"
               title="Attach image"
             >
               <ImagePlus className="w-[18px] h-[18px]" />
@@ -909,7 +909,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                 'h-9 px-2.5 rounded-xl flex items-center justify-center text-[11px] font-black tracking-wide transition-colors cursor-pointer',
                 showGifPicker
                   ? 'bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20'
-                  : 'text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616]'
+                  : 'text-text-muted hover:text-text-secondary hover:bg-[#161616]'
               )}
               title="Send GIF"
             >
@@ -922,7 +922,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                   'w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer',
                   showEventPicker
                     ? 'bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20'
-                    : 'text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#161616]'
+                    : 'text-text-muted hover:text-text-secondary hover:bg-[#161616]'
                 )}
                 title="Share fight card"
               >
@@ -950,12 +950,12 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[8px] font-bold text-[#52525b] flex items-center justify-center w-full h-full">
+                        <span className="text-[10px] font-bold text-text-muted flex items-center justify-center w-full h-full">
                           {getInitials(m.username ?? 'U')}
                         </span>
                       )}
                     </div>
-                    <span className="text-[13px] text-[#f4f4f5] font-medium truncate">{m.username}</span>
+                    <span className="text-[13px] text-text-primary font-medium truncate">{m.username}</span>
                   </button>
                 ))}
               </div>
@@ -969,7 +969,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
               placeholder={pendingImage ? 'Add a caption...' : 'Message...'}
               maxLength={500}
               rows={1}
-              className="w-full resize-none bg-[#111111] border border-[#1e1e1e] rounded-xl px-3 py-2 text-[16px] sm:text-[13px] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#27272a] transition-colors min-h-[36px] max-h-[100px]"
+              className="w-full resize-none bg-[#111111] border border-[#1e1e1e] rounded-xl px-3 py-2 text-[16px] sm:text-[13px] text-text-primary placeholder:text-text-faint focus:outline-none focus:border-[#27272a] transition-colors min-h-[36px] max-h-[100px]"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
             />
           </div>
@@ -982,7 +982,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
               'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer',
               canSend
                 ? 'bg-[#e11d48] text-white hover:bg-[#be123c] shadow-lg shadow-[#e11d48]/20'
-                : 'bg-[#161616] text-[#3f3f46] cursor-not-allowed'
+                : 'bg-[#161616] text-text-faint cursor-not-allowed'
             )}
           >
             {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
@@ -991,7 +991,7 @@ export function ChatTab({ leagueId, currentUserId, currentUserProfile, members, 
 
         {input.length > 400 && (
           <div className="px-3 pb-1">
-            <p className={cn('text-[9px] text-right', input.length >= 500 ? 'text-[#e11d48]' : 'text-[#3f3f46]')}>
+            <p className={cn('text-[10px] text-right', input.length >= 500 ? 'text-[#e11d48]' : 'text-text-faint')}>
               {input.length}/500
             </p>
           </div>

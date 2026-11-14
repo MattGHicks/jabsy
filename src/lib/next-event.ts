@@ -7,6 +7,13 @@ export type NextEventData = {
   venue: string | null
   status: 'upcoming' | 'live'
   fightCount: number
+  /** Full card in bout order (main event first). Public card facts only. */
+  fights: {
+    red_name: string
+    blue_name: string
+    weight_class: string | null
+    scheduled_rounds: number
+  }[]
   mainEvent: {
     red_name: string
     red_record: string | null
@@ -54,6 +61,12 @@ export async function getNextUpcomingEvent(): Promise<NextEventData | null> {
       venue: event.venue,
       status: event.status as 'upcoming' | 'live',
       fightCount: activeFights.length,
+      fights: activeFights.map(f => ({
+        red_name: f.red_name,
+        blue_name: f.blue_name,
+        weight_class: f.weight_class,
+        scheduled_rounds: f.scheduled_rounds,
+      })),
       mainEvent: main
         ? {
             red_name: main.red_name,

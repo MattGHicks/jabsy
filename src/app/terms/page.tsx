@@ -10,7 +10,7 @@ export default function TermsPage() {
   const lastUpdated = 'March 13, 2026'
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f4f4f5]">
+    <div className="min-h-screen bg-[#0a0a0a] text-text-primary">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Link
           href="/"
@@ -20,12 +20,12 @@ export default function TermsPage() {
           JABSY
         </Link>
 
-        <h1 className="text-3xl font-bold text-[#f4f4f5] mb-2">Terms of Service</h1>
-        <p className="text-sm text-[#71717a] mb-10">Last updated: {lastUpdated}</p>
+        <h1 className="text-3xl font-bold text-text-primary mb-2">Terms of Service</h1>
+        <p className="text-sm text-text-secondary mb-10">Last updated: {lastUpdated}</p>
 
-        <div className="space-y-8 text-[#a1a1aa] leading-relaxed">
+        <div className="space-y-8 text-text-secondary leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">1. Acceptance of Terms</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">1. Acceptance of Terms</h2>
             <p>
               By accessing or using Jabsy ("the App"), you agree to be bound by these Terms of
               Service. If you do not agree to these terms, please do not use the App.
@@ -33,7 +33,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">2. Description of Service</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">2. Description of Service</h2>
             <p>
               Jabsy is a fantasy MMA picks platform that allows users to predict UFC fight
               outcomes, join private leagues, and compete with friends. The App is provided for
@@ -42,7 +42,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">3. Account Registration</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">3. Account Registration</h2>
             <p className="mb-3">To use Jabsy, you must:</p>
             <ul className="list-disc list-inside space-y-2 ml-2">
               <li>Be at least 13 years of age</li>
@@ -56,7 +56,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">4. Acceptable Use</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">4. Acceptable Use</h2>
             <p className="mb-3">You agree not to:</p>
             <ul className="list-disc list-inside space-y-2 ml-2">
               <li>Use the App for any unlawful purpose</li>
@@ -69,7 +69,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">5. Picks and Scoring</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">5. Picks and Scoring</h2>
             <p>
               Fight picks are submitted before an event locks. Once an event locks, picks cannot
               be changed. Scores are calculated automatically based on official UFC results.
@@ -79,7 +79,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibent text-[#f4f4f5] mb-3">6. Leagues and Invitations</h2>
+            <h2 className="text-lg font-semibent text-text-primary mb-3">6. Leagues and Invitations</h2>
             <p>
               League commissioners are responsible for managing their leagues. Jabsy is not
               responsible for disputes between league members. We reserve the right to remove
@@ -88,7 +88,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">7. Intellectual Property</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">7. Intellectual Property</h2>
             <p>
               All content, features, and functionality of the App — including but not limited to
               text, graphics, logos, and software — are owned by Jabsy and are protected by
@@ -98,7 +98,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">8. Disclaimer of Warranties</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">8. Disclaimer of Warranties</h2>
             <p>
               The App is provided "as is" without warranties of any kind, either express or
               implied. We do not warrant that the App will be uninterrupted, error-free, or free
@@ -107,7 +107,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">9. Limitation of Liability</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">9. Limitation of Liability</h2>
             <p>
               To the fullest extent permitted by law, Jabsy and its operators shall not be liable
               for any indirect, incidental, special, or consequential damages arising from your
@@ -117,7 +117,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">10. Termination</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">10. Termination</h2>
             <p>
               We reserve the right to suspend or terminate your account at any time for violation
               of these Terms or for any other reason at our sole discretion. You may also delete
@@ -126,7 +126,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">11. Changes to Terms</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">11. Changes to Terms</h2>
             <p>
               We may update these Terms at any time. We will notify users of material changes by
               posting the updated Terms with a new effective date. Continued use of the App after
@@ -135,7 +135,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">12. Governing Law</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">12. Governing Law</h2>
             <p>
               These Terms are governed by the laws of the United States. Any disputes arising
               from these Terms or your use of the App shall be resolved through binding
@@ -144,7 +144,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#f4f4f5] mb-3">13. Contact Us</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-3">13. Contact Us</h2>
             <p>
               If you have any questions about these Terms, please contact us at{' '}
               <a
@@ -158,9 +158,9 @@ export default function TermsPage() {
           </section>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-[#1e1e1e] flex gap-6 text-sm text-[#52525b]">
-          <Link href="/privacy" className="hover:text-[#a1a1aa] transition-colors">Privacy Policy</Link>
-          <Link href="/" className="hover:text-[#a1a1aa] transition-colors">Back to Jabsy</Link>
+        <div className="mt-12 pt-8 border-t border-[#1e1e1e] flex gap-6 text-sm text-text-muted">
+          <Link href="/privacy" className="hover:text-text-secondary transition-colors">Privacy Policy</Link>
+          <Link href="/" className="hover:text-text-secondary transition-colors">Back to Jabsy</Link>
         </div>
       </div>
     </div>

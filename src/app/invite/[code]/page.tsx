@@ -82,10 +82,10 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <p className="text-4xl mb-4">🥊</p>
-          <h1 className="text-[#f4f4f5] mb-2" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '2rem' }}>
+          <h1 className="text-text-primary mb-2" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '2rem' }}>
             INVALID INVITE
           </h1>
-          <p className="text-sm text-[#71717a] mb-6">This invite link is invalid or has expired.</p>
+          <p className="text-sm text-text-secondary mb-6">This invite link is invalid or has expired.</p>
           <Link href="/dashboard" className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-[#e11d48] text-white text-sm font-semibold hover:bg-[#be123c] transition-colors">
             Go to Dashboard
           </Link>
@@ -99,13 +99,13 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <p className="text-4xl mb-4">⛔</p>
-          <h1 className="text-[#f4f4f5] mb-2" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '2rem' }}>
+          <h1 className="text-text-primary mb-2" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '2rem' }}>
             {ctx.isExpired ? 'INVITE EXPIRED' : 'INVITE FULL'}
           </h1>
-          <p className="text-sm text-[#71717a] mb-6">
+          <p className="text-sm text-text-secondary mb-6">
             {ctx.isExpired ? 'This invite link has expired.' : 'This invite has reached its maximum number of uses.'}
           </p>
-          <Link href="/dashboard" className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] transition-colors">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors">
             Go to Dashboard
           </Link>
         </div>
@@ -133,17 +133,17 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
                 <Users className="w-5 h-5 text-[#e11d48]" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
-                <h1 className="text-xl text-[#f4f4f5] uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
+                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
+                <h1 className="text-xl text-text-primary uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
                   {ctx.leagueName}
                 </h1>
                 {ctx.leagueDescription && (
-                  <p className="text-xs text-[#71717a] mt-1 leading-snug">{ctx.leagueDescription}</p>
+                  <p className="text-xs text-text-secondary mt-1 leading-snug">{ctx.leagueDescription}</p>
                 )}
               </div>
             </div>
 
-            <p className="text-sm text-[#71717a] mb-5">Sign in or create an account to accept this invite.</p>
+            <p className="text-sm text-text-secondary mb-5">Sign in or create an account to accept this invite.</p>
 
             <div className="flex flex-col gap-3">
               <Link
@@ -155,7 +155,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
               </Link>
               <Link
                 href={`/login?pending_invite=${code}${eventQs}`}
-                className="inline-flex items-center justify-center gap-2 h-11 w-full rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa] text-sm font-semibold hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-11 w-full rounded-lg bg-[#1e1e1e] border border-[#27272a] text-text-secondary text-sm font-semibold hover:text-text-primary hover:border-[#333] transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Sign In &amp; Join
@@ -219,17 +219,17 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
               <Users className="w-5 h-5 text-[#e11d48]" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
-              <h1 className="text-xl text-[#f4f4f5] uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
+              <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-0.5">You&apos;re invited to join</p>
+              <h1 className="text-xl text-text-primary uppercase leading-tight truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
                 {ctx.leagueName}
               </h1>
               {ctx.leagueDescription && (
-                <p className="text-xs text-[#71717a] mt-1 leading-snug">{ctx.leagueDescription}</p>
+                <p className="text-xs text-text-secondary mt-1 leading-snug">{ctx.leagueDescription}</p>
               )}
             </div>
           </div>
 
-          <p className="text-sm text-[#71717a] mb-5">Ready to compete? Accept the invite to join the league.</p>
+          <p className="text-sm text-text-secondary mb-5">Ready to compete? Accept the invite to join the league.</p>
 
           {joinError && (
             <p className="text-sm text-[#e11d48] mb-4">{joinError}</p>
@@ -246,7 +246,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
           </form>
 
           <div className="mt-4 text-center">
-            <Link href="/dashboard" className="text-xs text-[#52525b] hover:text-[#71717a] transition-colors">
+            <Link href="/dashboard" className="text-xs text-text-muted hover:text-text-secondary transition-colors">
               Maybe later
             </Link>
           </div>

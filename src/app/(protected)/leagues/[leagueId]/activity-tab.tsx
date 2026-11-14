@@ -60,8 +60,8 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 text-[#52525b] animate-spin mb-3" />
-        <p className="text-sm text-[#52525b]">Loading activity...</p>
+        <Loader2 className="w-6 h-6 text-text-muted animate-spin mb-3" />
+        <p className="text-sm text-text-muted">Loading activity...</p>
       </div>
     )
   }
@@ -69,9 +69,9 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
   if (activities.length === 0) {
     return (
       <div className="flex flex-col items-center py-20 text-center">
-        <Activity className="w-8 h-8 text-[#52525b] mb-3" />
-        <p className="text-sm text-[#71717a] mb-1">No activity yet</p>
-        <p className="text-xs text-[#3f3f46]">Join events, make picks, and invite members to see activity here.</p>
+        <Activity className="w-8 h-8 text-text-muted mb-3" />
+        <p className="text-sm text-text-secondary mb-1">No activity yet</p>
+        <p className="text-xs text-text-faint">Join events, make picks, and invite members to see activity here.</p>
       </div>
     )
   }
@@ -101,7 +101,7 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
       {grouped.map((group) => (
         <div key={group.label}>
           <p
-            className="text-[10px] uppercase tracking-[0.15em] text-[#3f3f46] mb-3 px-1"
+            className="text-[11px] uppercase tracking-[0.15em] text-text-faint mb-3 px-1"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
           >
             {group.label}
@@ -132,7 +132,7 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.avatarUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[9px] font-bold text-[#52525b] flex items-center justify-center w-full h-full">
+                        <span className="text-[10px] font-bold text-text-muted flex items-center justify-center w-full h-full">
                           {getInitials(item.username ?? 'U')}
                         </span>
                       )}
@@ -141,13 +141,13 @@ export function ActivityTab({ leagueId, currentUserId }: ActivityTabProps) {
 
                   {/* Description */}
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-sm leading-snug', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                    <p className={cn('text-sm leading-snug', isMe ? 'text-text-primary' : 'text-text-secondary')}>
                       {getActivityDescription(item, isMe)}
                     </p>
                   </div>
 
                   {/* Timestamp */}
-                  <span className="text-[10px] text-[#3f3f46] shrink-0 whitespace-nowrap">
+                  <span className="text-[11px] text-text-faint shrink-0 whitespace-nowrap">
                     {formatRelativeTime(item.timestamp)}
                   </span>
                 </div>

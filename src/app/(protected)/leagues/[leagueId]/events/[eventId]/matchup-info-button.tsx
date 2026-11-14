@@ -80,7 +80,7 @@ export function MatchupInfoButton({
           'flex items-center justify-center gap-2 w-full h-9 px-4 text-[11px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer border-t',
           open
             ? 'bg-[#a78bfa]/10 border-[#a78bfa]/30 text-[#a78bfa]'
-            : 'bg-[#0e0e0e] border-[#1a1a1a]/60 text-[#71717a] hover:bg-[#a78bfa]/8 hover:text-[#a78bfa] hover:border-[#a78bfa]/25'
+            : 'bg-[#0e0e0e] border-[#1a1a1a]/60 text-text-secondary hover:bg-[#a78bfa]/8 hover:text-[#a78bfa] hover:border-[#a78bfa]/25'
         )}
         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
       >
@@ -98,21 +98,21 @@ export function MatchupInfoButton({
           {/* Tale of the tape */}
           <div className="px-4 py-3 border-b border-[#1e1e1e]/60 grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-[9px] font-semibold text-[#52525b] uppercase tracking-wider mb-1">Red</p>
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Red</p>
               <p className="text-sm font-bold text-[#e11d48] truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                 {redRecord ?? '—'}
               </p>
             </div>
             <div className="border-x border-[#1e1e1e]/60">
-              <p className="text-[9px] font-semibold text-[#52525b] uppercase tracking-wider mb-1">
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">
                 {weightClass ?? 'Class'}
               </p>
-              <p className="text-sm font-bold text-[#a1a1aa]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+              <p className="text-sm font-bold text-text-secondary" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                 {scheduledRounds} {scheduledRounds === 1 ? 'rd' : 'rds'}
               </p>
             </div>
             <div>
-              <p className="text-[9px] font-semibold text-[#52525b] uppercase tracking-wider mb-1">Blue</p>
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Blue</p>
               <p className="text-sm font-bold text-blue-400 truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                 {blueRecord ?? '—'}
               </p>
@@ -123,23 +123,23 @@ export function MatchupInfoButton({
           <div className="px-4 py-3.5">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3 h-3 text-[#a78bfa]" />
-              <p className="text-[9px] font-semibold text-[#a78bfa] uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-[#a78bfa] uppercase tracking-wider">
                 Matchup preview
               </p>
             </div>
             {isPending ? (
-              <div className="flex items-center gap-2 text-xs text-[#71717a]">
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 <span>Generating preview…</span>
               </div>
             ) : error ? (
-              <p className="text-[11px] text-[#71717a] leading-relaxed">
+              <p className="text-[11px] text-text-secondary leading-relaxed">
                 Couldn&rsquo;t generate a preview right now. Tap the Sherdog links below for fighter histories.
               </p>
             ) : info?.preview ? (
               <p className="text-[12.5px] text-[#d4d4d8] leading-relaxed">{info.preview}</p>
             ) : (
-              <p className="text-[11px] text-[#71717a] leading-relaxed">
+              <p className="text-[11px] text-text-secondary leading-relaxed">
                 No preview available. Tap the Sherdog links below for fighter histories.
               </p>
             )}
@@ -153,7 +153,7 @@ export function MatchupInfoButton({
                   href={redProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#71717a] hover:text-[#e11d48] transition-colors uppercase tracking-wider"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary hover:text-[#e11d48] transition-colors uppercase tracking-wider"
                 >
                   {redName}
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -164,7 +164,7 @@ export function MatchupInfoButton({
                   href={blueProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#71717a] hover:text-blue-400 transition-colors uppercase tracking-wider"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary hover:text-blue-400 transition-colors uppercase tracking-wider"
                 >
                   {blueName}
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -174,7 +174,7 @@ export function MatchupInfoButton({
           )}
 
           {/* AI disclaimer */}
-          <p className="px-4 pb-3 text-[9px] text-[#3f3f46] leading-relaxed">
+          <p className="px-4 pb-3 text-[10px] text-text-faint leading-relaxed">
             AI-generated for context only — not a prediction.
           </p>
         </div>

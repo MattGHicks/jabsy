@@ -57,24 +57,24 @@ function ConfirmInner() {
           {missingParams ? (
             <>
               <h2
-                className="text-2xl text-[#f4f4f5] uppercase mb-2"
+                className="text-2xl text-text-primary uppercase mb-2"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
               >
                 Invalid link
               </h2>
-              <p className="text-sm text-[#71717a]">
+              <p className="text-sm text-text-secondary">
                 This confirmation link is missing the token. Try signing up again to receive a new email.
               </p>
             </>
           ) : state === 'idle' ? (
             <>
               <h2
-                className="text-2xl text-[#f4f4f5] uppercase mb-2"
+                className="text-2xl text-text-primary uppercase mb-2"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
               >
                 Confirm your email
               </h2>
-              <p className="text-sm text-[#71717a] mb-6">
+              <p className="text-sm text-text-secondary mb-6">
                 Click the button below to verify your email and finish signing up.
               </p>
               <button
@@ -87,12 +87,12 @@ function ConfirmInner() {
           ) : state === 'verifying' ? (
             <>
               <h2
-                className="text-2xl text-[#f4f4f5] uppercase mb-3"
+                className="text-2xl text-text-primary uppercase mb-3"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
               >
                 Verifying
               </h2>
-              <div className="flex items-center justify-center gap-2 text-[#71717a]">
+              <div className="flex items-center justify-center gap-2 text-text-secondary">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm">Hang tight…</span>
               </div>
@@ -100,13 +100,13 @@ function ConfirmInner() {
           ) : (
             <>
               <h2
-                className="text-2xl text-[#f4f4f5] uppercase mb-2"
+                className="text-2xl text-text-primary uppercase mb-2"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
               >
                 Couldn&rsquo;t verify
               </h2>
               <p className="text-sm text-[#e11d48] mb-3">{error}</p>
-              <p className="text-xs text-[#71717a]">
+              <p className="text-xs text-text-secondary">
                 The link may have expired. Sign up again to receive a fresh confirmation email.
               </p>
             </>

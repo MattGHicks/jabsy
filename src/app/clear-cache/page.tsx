@@ -38,12 +38,12 @@ export default function ClearCachePage() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
       <div className="text-center">
         <h1
-          className="text-2xl text-[#f4f4f5] mb-4"
+          className="text-2xl text-text-primary mb-4"
           style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
         >
           {status}
         </h1>
-        <p className="text-sm text-[#71717a]">
+        <p className="text-sm text-text-secondary">
           This fixes loading issues from a previous version of the app.
         </p>
       </div>

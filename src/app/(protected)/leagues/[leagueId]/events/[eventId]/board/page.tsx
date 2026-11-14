@@ -176,12 +176,12 @@ export default async function BoardPage({ params }: PageProps) {
             className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 transition-all active:opacity-70"
           >
             <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
-              <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+              <ChevronLeft className="w-4 h-4 text-text-muted group-hover:text-[#e11d48] transition-colors duration-200" />
             </div>
             <div className="flex flex-col justify-center leading-none">
-              <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">League</span>
+              <span className="text-[10px] font-semibold tracking-[0.15em] text-text-muted uppercase mb-1">League</span>
               <span
-                className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase"
+                className="text-sm text-text-secondary group-hover:text-text-primary transition-colors duration-200 uppercase"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}
               >
                 {league.name}
@@ -197,7 +197,7 @@ export default async function BoardPage({ params }: PageProps) {
             )}
             {isCompleted && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#27272a]/60 border border-[#3f3f46]/40 shrink-0">
-                <span className="text-[11px] font-bold text-[#71717a] tracking-widest uppercase">Final</span>
+                <span className="text-[11px] font-bold text-text-secondary tracking-widest uppercase">Final</span>
               </div>
             )}
           </div>
@@ -205,16 +205,16 @@ export default async function BoardPage({ params }: PageProps) {
 
         {/* Event heading */}
         <div className="mb-10">
-          <p className="text-[10px] font-semibold text-[#e11d48] uppercase tracking-[0.2em] mb-1.5">
+          <p className="text-[11px] font-semibold text-[#e11d48] uppercase tracking-[0.2em] mb-1.5">
             Leaderboard
           </p>
           <h1
-            className="text-[#f4f4f5] uppercase leading-[0.9]"
+            className="text-text-primary uppercase leading-[0.9]"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2.2rem, 8vw, 3.5rem)' }}
           >
             {event.name}
           </h1>
-          <p className="text-[11px] text-[#52525b] mt-2">
+          <p className="text-[11px] text-text-muted mt-2">
             {formatDateTime(event.start_time)}
             {event.venue ? ` · ${event.venue}` : ''}
           </p>
@@ -225,7 +225,7 @@ export default async function BoardPage({ params }: PageProps) {
           <div className="mb-8 rounded-2xl border border-yellow-500/20 bg-yellow-500/[0.04] px-5 py-4">
             <div className="flex items-center gap-2 mb-3">
               <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="text-[10px] font-bold tracking-widest text-yellow-500/70 uppercase">
+              <span className="text-[11px] font-bold tracking-widest text-yellow-500/70 uppercase">
                 {winners.length === 1 ? 'Winner' : 'Tied for the Win'}
               </span>
             </div>
@@ -239,10 +239,10 @@ export default async function BoardPage({ params }: PageProps) {
                 return (
                   <Link key={uid} href={winnerHref} className="flex items-center gap-2 group hover:opacity-80 transition-opacity">
                     <div className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold overflow-hidden border shrink-0',
+                      'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold overflow-hidden border shrink-0',
                       uid === user.id
                         ? 'bg-[#e11d48]/20 border-[#e11d48]/40 text-[#e11d48]'
-                        : 'bg-[#1e1e1e] border-[#27272a] text-[#71717a]'
+                        : 'bg-[#1e1e1e] border-[#27272a] text-text-secondary'
                     )}>
                       {profile?.avatar_url
                         // eslint-disable-next-line @next/next/no-img-element
@@ -250,8 +250,8 @@ export default async function BoardPage({ params }: PageProps) {
                         : getInitials(profile?.username ?? 'U')}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[#f4f4f5] group-hover:text-white transition-colors">{profile?.username ?? 'Unknown'}</p>
-                      <p className="text-[10px] text-yellow-500/60">
+                      <p className="text-sm font-bold text-text-primary group-hover:text-white transition-colors">{profile?.username ?? 'Unknown'}</p>
+                      <p className="text-[11px] text-yellow-500/60">
                         <span style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{topScore}</span> pts
                       </p>
                     </div>
@@ -266,16 +266,16 @@ export default async function BoardPage({ params }: PageProps) {
         {hidePicksUntilLock && (
           <div className="mb-6 rounded-xl border border-[#27272a] bg-[#111111] px-4 py-3.5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#27272a] flex items-center justify-center shrink-0">
-              <EyeOff className="w-4 h-4 text-[#a1a1aa]" />
+              <EyeOff className="w-4 h-4 text-text-secondary" />
             </div>
             <div className="flex-1 min-w-0 leading-snug">
-              <p className="text-sm text-[#f4f4f5]">
+              <p className="text-sm text-text-primary">
                 <span className="font-semibold">{submittedCount}</span>
-                <span className="text-[#71717a]"> of </span>
+                <span className="text-text-secondary"> of </span>
                 <span className="font-semibold">{totalMembers}</span>
-                <span className="text-[#71717a]"> {totalMembers === 1 ? 'member has' : 'members have'} submitted picks</span>
+                <span className="text-text-secondary"> {totalMembers === 1 ? 'member has' : 'members have'} submitted picks</span>
               </p>
-              <p className="text-[11px] text-[#52525b] mt-0.5">
+              <p className="text-[11px] text-text-muted mt-0.5">
                 Other players&rsquo; picks are hidden until lock
                 {userHasSubmitted ? ' · You can still see your own picks' : ''}
               </p>
@@ -287,8 +287,8 @@ export default async function BoardPage({ params }: PageProps) {
         {leaderboard.length > 0 ? (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-3.5 h-3.5 text-[#52525b]" />
-              <span className="text-[10px] font-bold tracking-widest text-[#52525b] uppercase">Standings</span>
+              <TrendingUp className="w-3.5 h-3.5 text-text-muted" />
+              <span className="text-[11px] font-bold tracking-widest text-text-muted uppercase">Standings</span>
             </div>
 
             <StickyStandings
@@ -304,9 +304,9 @@ export default async function BoardPage({ params }: PageProps) {
         ) : (
           <section className="mb-10">
             <div className="flex flex-col items-center py-12 text-center rounded-xl border border-dashed border-[#1e1e1e]">
-              <TrendingUp className="w-6 h-6 text-[#3f3f46] mb-3" />
-              <p className="text-sm text-[#52525b]">No picks submitted yet</p>
-              <p className="text-xs text-[#3f3f46] mt-1">
+              <TrendingUp className="w-6 h-6 text-text-faint mb-3" />
+              <p className="text-sm text-text-muted">No picks submitted yet</p>
+              <p className="text-xs text-text-faint mt-1">
                 Standings will appear once members start making picks.
               </p>
               {!isLive && !isCompleted && picksOpen && (
@@ -319,11 +319,11 @@ export default async function BoardPage({ params }: PageProps) {
               )}
               {!isLive && !isCompleted && !picksOpen && (
                 <div className="mt-4 flex flex-col items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#52525b] text-xs font-semibold cursor-not-allowed">
+                  <span className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-text-muted text-xs font-semibold cursor-not-allowed">
                     <Lock className="w-3 h-3" />
                     Picks Locked
                   </span>
-                  <span className="text-[10px] text-[#3f3f46]">
+                  <span className="text-[11px] text-text-faint">
                     Opens {getPicksOpenDate(event.start_time)} at midnight ET
                   </span>
                 </div>
@@ -335,7 +335,7 @@ export default async function BoardPage({ params }: PageProps) {
         {/* ── Picks by fight ──────────────────────────────────────── */}
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] font-bold tracking-widest text-[#52525b] uppercase">Fight Picks</span>
+            <span className="text-[11px] font-bold tracking-widest text-text-muted uppercase">Fight Picks</span>
           </div>
 
           <div className="flex flex-col gap-4 xl:grid xl:grid-cols-2">
@@ -364,7 +364,7 @@ export default async function BoardPage({ params }: PageProps) {
                     isCancelled ? 'bg-[#0d0d0d]' : 'bg-[#111111]'
                   )}>
                     {fight.is_main_event && (
-                      <p className="text-[9px] font-bold tracking-widest text-[#e11d48] uppercase mb-2.5">
+                      <p className="text-[10px] font-bold tracking-widest text-[#e11d48] uppercase mb-2.5">
                         ★ Main Event
                       </p>
                     )}
@@ -379,27 +379,27 @@ export default async function BoardPage({ params }: PageProps) {
                             className={cn('group/red flex items-center gap-1.5 w-fit', isCancelled && 'pointer-events-none')}
                           >
                             <p
-                              className={cn('leading-tight uppercase truncate group-hover/red:underline decoration-1 underline-offset-2', isCancelled ? 'text-[#52525b]' : 'text-[#e11d48]')}
+                              className={cn('leading-tight uppercase truncate group-hover/red:underline decoration-1 underline-offset-2', isCancelled ? 'text-text-muted' : 'text-[#e11d48]')}
                               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.05rem' }}
                             >
                               {fight.red_name}
                             </p>
                             {!isCancelled && (
                               <span className="flex items-center gap-1 shrink-0">
-                                <ExternalLink className="w-3 h-3 text-[#3f3f46] group-hover/red:text-[#e11d48] transition-colors" />
-                                <span className="text-[9px] text-[#3f3f46] group-hover/red:text-[#e11d48] transition-colors">Sherdog</span>
+                                <ExternalLink className="w-3 h-3 text-text-faint group-hover/red:text-[#e11d48] transition-colors" />
+                                <span className="text-[10px] text-text-faint group-hover/red:text-[#e11d48] transition-colors">Sherdog</span>
                               </span>
                             )}
                           </a>
                         ) : (
                           <p
-                            className={cn('leading-tight uppercase truncate', isCancelled ? 'text-[#52525b]' : 'text-[#e11d48]')}
+                            className={cn('leading-tight uppercase truncate', isCancelled ? 'text-text-muted' : 'text-[#e11d48]')}
                             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.05rem' }}
                           >
                             {fight.red_name}
                           </p>
                         )}
-                        <p className="text-[9px] text-[#3f3f46] font-bold my-1 tracking-widest uppercase">vs</p>
+                        <p className="text-[10px] text-text-faint font-bold my-1 tracking-widest uppercase">vs</p>
                         {blueSherdog ? (
                           <a
                             href={blueSherdog}
@@ -408,21 +408,21 @@ export default async function BoardPage({ params }: PageProps) {
                             className={cn('group/blue flex items-center gap-1.5 w-fit', isCancelled && 'pointer-events-none')}
                           >
                             <p
-                              className={cn('leading-tight uppercase truncate group-hover/blue:underline decoration-1 underline-offset-2', isCancelled ? 'text-[#52525b]' : 'text-blue-400')}
+                              className={cn('leading-tight uppercase truncate group-hover/blue:underline decoration-1 underline-offset-2', isCancelled ? 'text-text-muted' : 'text-blue-400')}
                               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.05rem' }}
                             >
                               {fight.blue_name}
                             </p>
                             {!isCancelled && (
                               <span className="flex items-center gap-1 shrink-0">
-                                <ExternalLink className="w-3 h-3 text-[#3f3f46] group-hover/blue:text-blue-400 transition-colors" />
-                                <span className="text-[9px] text-[#3f3f46] group-hover/blue:text-blue-400 transition-colors">Sherdog</span>
+                                <ExternalLink className="w-3 h-3 text-text-faint group-hover/blue:text-blue-400 transition-colors" />
+                                <span className="text-[10px] text-text-faint group-hover/blue:text-blue-400 transition-colors">Sherdog</span>
                               </span>
                             )}
                           </a>
                         ) : (
                           <p
-                            className={cn('leading-tight uppercase truncate', isCancelled ? 'text-[#52525b]' : 'text-blue-400')}
+                            className={cn('leading-tight uppercase truncate', isCancelled ? 'text-text-muted' : 'text-blue-400')}
                             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.05rem' }}
                           >
                             {fight.blue_name}
@@ -433,23 +433,23 @@ export default async function BoardPage({ params }: PageProps) {
                       {/* Result or status pill */}
                       {isCancelled ? (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a1a] border border-[#222] shrink-0">
-                          <span className="text-[10px] font-bold text-[#52525b] tracking-widest uppercase">Cancelled</span>
+                          <span className="text-[11px] font-bold text-text-muted tracking-widest uppercase">Cancelled</span>
                         </div>
                       ) : isFinal ? (
                         <div className="text-right shrink-0">
-                          <p className="text-[9px] font-bold tracking-widest text-[#3f3f46] uppercase mb-1">Result</p>
+                          <p className="text-[10px] font-bold tracking-widest text-text-faint uppercase mb-1">Result</p>
                           <p
                             className={cn(
                               'leading-tight uppercase',
                               result === 'red' ? 'text-[#e11d48]'
                                 : result === 'blue' ? 'text-blue-400'
-                                : 'text-[#71717a]'
+                                : 'text-text-secondary'
                             )}
                             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.15rem' }}
                           >
                             {resultName ? getLastName(resultName) : (result === 'draw' ? 'Draw' : 'NC')}
                           </p>
-                          <p className="text-[10px] text-[#52525b] mt-0.5">
+                          <p className="text-[11px] text-text-muted mt-0.5">
                             {fight.result_method ? METHOD_LABELS[fight.result_method] : ''}
                             {fight.result_round ? ` · R${fight.result_round}` : ''}
                           </p>
@@ -457,11 +457,11 @@ export default async function BoardPage({ params }: PageProps) {
                       ) : fight.status === 'live' ? (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/20 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse" />
-                          <span className="text-[10px] font-bold text-[#e11d48] tracking-widest uppercase">Live</span>
+                          <span className="text-[11px] font-bold text-[#e11d48] tracking-widest uppercase">Live</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e1e1e] border border-[#27272a] shrink-0">
-                          <span className="text-[10px] font-bold text-[#52525b] tracking-widest uppercase">Pending</span>
+                          <span className="text-[11px] font-bold text-text-muted tracking-widest uppercase">Pending</span>
                         </div>
                       )}
                     </div>
@@ -499,10 +499,10 @@ export default async function BoardPage({ params }: PageProps) {
                                 className="flex items-center gap-3 flex-1 min-w-0 group/pick"
                               >
                                 <div className={cn(
-                                  'w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 border overflow-hidden',
+                                  'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border overflow-hidden',
                                   isMe
                                     ? 'bg-[#e11d48]/15 border-[#e11d48]/30 text-[#e11d48]'
-                                    : 'bg-[#141414] border-[#1e1e1e] text-[#52525b]'
+                                    : 'bg-[#141414] border-[#1e1e1e] text-text-muted'
                                 )}>
                                   {profile?.avatar_url
                                     // eslint-disable-next-line @next/next/no-img-element
@@ -513,7 +513,7 @@ export default async function BoardPage({ params }: PageProps) {
                                   'text-[13px] font-semibold flex-1 min-w-0 truncate transition-colors',
                                   isMe
                                     ? 'text-[#e11d48]/70 group-hover/pick:text-[#e11d48]'
-                                    : 'text-[#71717a] group-hover/pick:text-[#a1a1aa]'
+                                    : 'text-text-secondary group-hover/pick:text-text-secondary'
                                 )}>
                                   {profile?.username ?? '?'}
                                 </span>
@@ -533,21 +533,21 @@ export default async function BoardPage({ params }: PageProps) {
                                     <span className={cn(
                                       'text-[11px]',
                                       isFinal
-                                        ? correctWinner ? 'text-[#71717a]' : 'text-[#3f3f46]'
-                                        : 'text-[#52525b]'
+                                        ? correctWinner ? 'text-text-secondary' : 'text-text-faint'
+                                        : 'text-text-muted'
                                     )}>
                                       {METHOD_LABELS[pick.pick_method] ?? pick.pick_method}
                                       {pick.pick_round ? ` R${pick.pick_round}` : ''}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="text-[11px] text-[#3f3f46]">No pick</span>
+                                  <span className="text-[11px] text-text-faint">No pick</span>
                                 )}
                                 {isFinal && pick && (
                                   <span
                                     className={cn(
                                       'w-9 text-right tabular-nums',
-                                      pts > 0 ? 'text-green-400' : 'text-[#3f3f46]'
+                                      pts > 0 ? 'text-green-400' : 'text-text-faint'
                                     )}
                                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '0.85rem' }}
                                   >

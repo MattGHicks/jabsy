@@ -103,12 +103,12 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
           <div className="max-w-6xl mx-auto flex items-center gap-4">
             <div className="flex items-center gap-2 shrink-0">
               <span
-                className={`text-sm font-bold tabular-nums ${allDone ? 'text-green-400' : 'text-[#f4f4f5]'}`}
+                className={`text-sm font-bold tabular-nums ${allDone ? 'text-green-400' : 'text-text-primary'}`}
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
               >
                 {pickedCount}/{activeFightsCount}
               </span>
-              <span className="text-xs text-[#52525b]">picks</span>
+              <span className="text-xs text-text-muted">picks</span>
             </div>
             <div className="flex-1 h-1 rounded-full bg-[#1e1e1e] overflow-hidden">
               <div
@@ -143,7 +143,7 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
         <div className="mt-8 flex justify-center">
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-md text-xs font-semibold border border-[#27272a] text-[#52525b] hover:text-[#e11d48] hover:border-[#e11d48]/30 hover:bg-[#e11d48]/5 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-md text-xs font-semibold border border-[#27272a] text-text-muted hover:text-[#e11d48] hover:border-[#e11d48]/30 hover:bg-[#e11d48]/5 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Clear All Picks
@@ -169,15 +169,15 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
 
               {/* Heading */}
               <h2
-                className="text-center text-[#f4f4f5] uppercase leading-tight mb-2"
+                className="text-center text-text-primary uppercase leading-tight mb-2"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.75rem' }}
               >
                 Picks are in!
               </h2>
-              <p className="text-center text-sm text-[#71717a] mb-2">
-                All <span className="text-[#f4f4f5] font-semibold">{activeFightsCount}/{activeFightsCount}</span> picks submitted.
+              <p className="text-center text-sm text-text-secondary mb-2">
+                All <span className="text-text-primary font-semibold">{activeFightsCount}/{activeFightsCount}</span> picks submitted.
               </p>
-              <p className="text-center text-xs text-[#52525b] mb-7 leading-relaxed">
+              <p className="text-center text-xs text-text-muted mb-7 leading-relaxed">
                 You can still edit any pick before the event locks. Good luck!
               </p>
 
@@ -194,7 +194,7 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
               </button>
               <button
                 onClick={() => setShowDoneModal(false)}
-                className="w-full mt-2.5 h-9 rounded-lg text-xs text-[#52525b] hover:text-[#71717a] transition-colors cursor-pointer"
+                className="w-full mt-2.5 h-9 rounded-lg text-xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
               >
                 Stay & review picks
               </button>
@@ -218,7 +218,7 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
             {/* Close button */}
             <button
               onClick={() => !isClearing && setShowModal(false)}
-              className="absolute top-4 right-4 text-[#52525b] hover:text-[#a1a1aa] transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -230,17 +230,17 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
               </div>
               <div>
                 <h2
-                  className="text-[#f4f4f5] uppercase leading-tight"
+                  className="text-text-primary uppercase leading-tight"
                   style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.25rem' }}
                 >
                   Clear All Picks?
                 </h2>
-                <p className="text-xs text-[#71717a] mt-0.5">This cannot be undone</p>
+                <p className="text-xs text-text-secondary mt-0.5">This cannot be undone</p>
               </div>
             </div>
 
-            <p className="text-sm text-[#a1a1aa] mb-6">
-              All <span className="text-[#f4f4f5] font-semibold">{pickedCount}</span> of your picks for this event will be permanently deleted. You can re-pick any time before the event locks.
+            <p className="text-sm text-text-secondary mb-6">
+              All <span className="text-text-primary font-semibold">{pickedCount}</span> of your picks for this event will be permanently deleted. You can re-pick any time before the event locks.
             </p>
 
             {/* Actions */}
@@ -248,7 +248,7 @@ export function PicksPageClient({ fights, leagueId, eventId, picksMap, isLocked,
               <button
                 onClick={() => !isClearing && setShowModal(false)}
                 disabled={isClearing}
-                className="flex-1 h-10 rounded-lg text-sm font-semibold border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 h-10 rounded-lg text-sm font-semibold border border-[#27272a] bg-[#1e1e1e] text-text-secondary hover:text-text-primary hover:border-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>

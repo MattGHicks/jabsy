@@ -1,522 +1,277 @@
 import Link from 'next/link'
-import { Trophy, Users, Target, ChevronRight, Zap, Shield, Clock } from 'lucide-react'
 import { StaleAuthCleaner } from '@/components/stale-auth-cleaner'
 import { LockCountdown } from '@/components/lock-countdown'
+import { PickDemo } from '@/components/landing/pick-demo'
 import { getNextUpcomingEvent } from '@/lib/next-event'
+import { getLastName } from '@/lib/utils'
 
 // Landing page is ISR'd so the hero always shows the real next fight card
 // without a DB hit per visit. Countdown ticks client-side regardless.
 export const revalidate = 300
 
+// Shown only if the next event can't be loaded, so the page never renders empty.
+const SAMPLE_FIGHT = {
+  red_name: 'Jon Jones',
+  red_record: '28-1-0',
+  blue_name: 'Tom Aspinall',
+  blue_record: '15-3-0',
+  weight_class: 'Heavyweight',
+  scheduled_rounds: 5,
+}
+
+const display = { fontFamily: 'var(--font-barlow)', fontWeight: 900 } as const
+
 export default async function LandingPage() {
   const nextEvent = await getNextUpcomingEvent()
-  const mainEvent = nextEvent?.mainEvent ?? null
   const isLive = nextEvent?.status === 'live'
-  const lastName = (n: string) => (n.split(' ').pop() ?? n).toUpperCase()
-  const firstNames = (n: string) => n.split(' ').slice(0, -1).join(' ')
-  const eventDate = nextEvent
-    ? new Date(nextEvent.start_time).toLocaleDateString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York',
-      })
-    : ''
+  const fight = nextEvent?.mainEvent ?? SAMPLE_FIGHT
+  const redLast = getLastName(fight.red_name)
+  const blueLast = getLastName(fight.blue_name)
+
+  const start = nextEvent ? new Date(nextEvent.start_time) : null
+  const eventDate = start?.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric', timeZone: 'America/New_York',
+  })
+  const eventTime = start?.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
+  })
+
+  // One finished fight, four ways to have called it.
+  const examples = [
+    { call: `${redLast}, knockout, round 2`, winner: true, method: true, round: true, points: 10 },
+    { call: `${redLast}, knockout, round 4`, winner: true, method: true, round: false, points: 8 },
+    { call: `${redLast}, decision`, winner: true, method: false, round: false, points: 5 },
+    { call: `${blueLast}, any way`, winner: false, method: false, round: false, points: 0 },
+  ]
 
   return (
     <>
       <StaleAuthCleaner />
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(32px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes pulseGlow {
-          0%, 100% { transform: scale(1) translate(50%, -25%); opacity: 0.07; }
-          50% { transform: scale(1.15) translate(48%, -22%); opacity: 0.12; }
-        }
-        @keyframes pulseGlow2 {
-          0%, 100% { transform: scale(1) translate(-50%, 25%); opacity: 0.04; }
-          50% { transform: scale(1.2) translate(-48%, 22%); opacity: 0.08; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(-1deg); }
-          50% { transform: translateY(-12px) rotate(0.5deg); }
-        }
-        @keyframes shimmer {
-          0% { opacity: 0.06; transform: scale(0.9); }
-          50% { opacity: 0.14; transform: scale(1.05); }
-          100% { opacity: 0.06; transform: scale(0.9); }
-        }
-        @keyframes shimmer2 {
-          0% { opacity: 0.04; transform: scale(1); }
-          50% { opacity: 0.1; transform: scale(1.08); }
-          100% { opacity: 0.04; transform: scale(1); }
-        }
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes borderGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(225,29,72,0); }
-          50% { box-shadow: 0 0 24px 2px rgba(225,29,72,0.18); }
-        }
-        @keyframes borderGlowSubtle {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(225,29,72,0); }
-          50% { box-shadow: 0 0 16px 1px rgba(225,29,72,0.1); }
-        }
-        @keyframes scanlines {
-          0% { background-position: 0 0; }
-          100% { background-position: 0 4px; }
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        @keyframes tickerSlide {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .hero-word-1 { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
-        .hero-word-2 { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
-        .hero-word-3 { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
-        .hero-sub { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.55s both; }
-        .hero-cta { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.7s both; }
-        .hero-stats { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.85s both; }
-        .fight-card-float { animation: float 6s ease-in-out infinite; }
-        .fight-card-float { animation-delay: 0.5s; }
-        .score-tile-1 { animation: slideInLeft 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both, borderGlow 3s ease-in-out 1s infinite; }
-        .score-tile-2 { animation: slideInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both, borderGlowSubtle 4s ease-in-out 1.5s infinite; }
-        .score-tile-3 { animation: slideInRight 0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both, borderGlowSubtle 4s ease-in-out 2s infinite; }
-        .bg-num-shimmer { animation: shimmer 5s ease-in-out infinite; }
-        .bg-num-shimmer-2 { animation: shimmer2 6s ease-in-out 1s infinite; }
-        .how-card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), border-color 0.2s; }
-        .how-card:hover { transform: translateY(-6px); border-color: #333; }
-        .cta-btn-primary { transition: background-color 0.2s, box-shadow 0.2s; }
-        .cta-btn-primary:hover { background-color: #be123c; box-shadow: 0 0 32px 4px rgba(225,29,72,0.3); }
-        .cta-btn-secondary { transition: background-color 0.2s, border-color 0.2s; }
-        .cta-btn-secondary:hover { background-color: #1e1e1e; border-color: #3f3f46; }
-        .nav-link { transition: color 0.15s; }
-        .nav-link:hover { color: #f4f4f5; }
-        .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
-      `}</style>
 
-      <div className="min-h-screen bg-[#0a0a0a] text-[#f4f4f5] overflow-x-hidden">
-
+      <div className="min-h-screen bg-surface-0 text-text-primary overflow-x-clip">
         {/* Nav */}
-        <nav className="fixed top-0 inset-x-0 z-50 border-b border-[#141414] bg-[#0a0a0a]/85 backdrop-blur-md">
+        <header className="fixed top-0 inset-x-0 z-50 border-b border-border-subtle bg-surface-0/85 backdrop-blur-md">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <span className="text-xl font-black text-[#e11d48] tracking-wider" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, letterSpacing: '0.08em' }}>
+            <Link href="/" className="text-xl text-brand" style={{ ...display, letterSpacing: '0.08em' }}>
               JABSY
-            </span>
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="nav-link text-sm font-medium text-[#71717a]">
-                Sign In
+            </Link>
+            <nav className="flex items-center gap-1 sm:gap-2">
+              <Link
+                href="/login"
+                className="inline-flex items-center h-10 px-3 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Sign in
               </Link>
-              <Link href="/signup" className="cta-btn-primary inline-flex items-center h-9 px-4 text-sm font-semibold rounded-md bg-[#e11d48] text-white">
-                Get Started
+              <Link href="/signup" className="btn-primary inline-flex items-center h-10 px-4 rounded-lg text-sm font-semibold">
+                Create account
               </Link>
-            </div>
+            </nav>
           </div>
-        </nav>
+        </header>
 
-        {/* Hero */}
-        <section className="relative min-h-screen flex items-center pt-14 overflow-hidden">
-          {/* Animated glow blobs */}
-          <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full bg-[#e11d48]" style={{ animation: 'pulseGlow 8s ease-in-out infinite', transform: 'translate(50%, -25%)', opacity: 0.07, filter: 'blur(130px)', pointerEvents: 'none' }} />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-[#e11d48]" style={{ animation: 'pulseGlow2 10s ease-in-out infinite', transform: 'translate(-50%, 25%)', opacity: 0.04, filter: 'blur(100px)', pointerEvents: 'none' }} />
-
-          {/* Subtle grid overlay */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '80px 80px' }} />
-
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 w-full">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              {/* Left: Text */}
-              <div>
-                <div className="hero-word-1 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#e11d48]/10 border border-[#e11d48]/25 mb-8">
-                  <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[#e11d48] inline-block" />
-                  <span className="text-xs font-semibold text-[#e11d48] uppercase tracking-widest">Fantasy MMA Picks</span>
+        <main>
+          {/* Hero — a working pick slip for the real main event */}
+          <section className="pt-14">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-14 sm:pb-20">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-8 lg:gap-12 lg:items-end mb-8 sm:mb-10">
+                <div>
+                  <h1 className="uppercase leading-[0.85]" style={{ ...display, fontSize: 'clamp(3.75rem, 10.5vw, 7.5rem)' }}>
+                    Who you got?
+                  </h1>
+                  <p className="mt-5 max-w-xl text-lg text-text-secondary leading-relaxed">
+                    Call every fight on the card: who wins, how, and in what round. Score
+                    points when you&rsquo;re right, and settle it with your friends on a live board.
+                  </p>
                 </div>
 
-                <h1 className="leading-none mb-6" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, letterSpacing: '-0.01em' }}>
-                  <span className="hero-word-1 block text-[#f4f4f5]" style={{ fontSize: 'clamp(3.5rem, 10vw, 7.5rem)' }}>PROVE</span>
-                  <span className="hero-word-2 block text-[#f4f4f5]" style={{ fontSize: 'clamp(3.5rem, 10vw, 7.5rem)' }}>YOU KNOW</span>
-                  <span className="hero-word-3 block text-[#e11d48]" style={{ fontSize: 'clamp(3.5rem, 10vw, 7.5rem)' }}>MMA.</span>
-                </h1>
-
-                <p className="hero-sub text-lg text-[#71717a] max-w-md mb-10 leading-relaxed">
-                  Pick every fight on the card. Call the winner, the method, the round.
-                  Compete with your crew — and prove who really knows the sport.
-                </p>
-
-                <div className="hero-cta flex flex-col sm:flex-row items-start gap-3 mb-14">
-                  <Link href="/signup" className="cta-btn-primary inline-flex items-center gap-2 h-12 px-8 text-base font-semibold rounded-md bg-[#e11d48] text-white">
-                    Get Started <ChevronRight className="w-4 h-4" />
-                  </Link>
-                  <Link href="/login" className="cta-btn-secondary inline-flex items-center gap-2 h-12 px-8 text-base font-semibold rounded-md border border-[#27272a] text-[#f4f4f5]">
-                    Sign In
-                  </Link>
-                </div>
-
-                {/* Scoring preview pills */}
-                <div className="hero-stats grid grid-cols-3 gap-2 sm:gap-3">
-                  {[
-                    { value: '5', short: 'Winner', long: 'correct winner' },
-                    { value: '3', short: 'Method', long: 'correct method' },
-                    { value: '2', short: 'Round', long: 'correct round' },
-                  ].map(({ value, short, long }) => (
-                    <div key={short} className="flex flex-col gap-0.5 px-3 py-2.5 rounded-md bg-[#141414] border border-[#1e1e1e]">
-                      <span className="text-2xl font-black text-[#e11d48] leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{value} <span className="text-xs text-[#71717a] font-semibold">pts</span></span>
-                      <span className="text-[10px] text-[#52525b] leading-tight">
-                        <span className="sm:hidden">{short}</span>
-                        <span className="hidden sm:inline">{long}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Next event strip — mobile/tablet, where the fight card is hidden */}
-                {nextEvent && mainEvent && (
-                  <Link
-                    href="/signup"
-                    className="hero-stats lg:hidden mt-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#111111] border border-[#e11d48]/20 active:scale-[0.98] transition-transform"
-                  >
-                    <span className={`pulse-dot w-1.5 h-1.5 rounded-full shrink-0 ${isLive ? 'bg-[#e11d48]' : 'bg-blue-400'}`} />
-                    <span className="flex-1 min-w-0 flex flex-col">
-                      <span className={`text-[9px] font-semibold uppercase tracking-[0.18em] ${isLive ? 'text-[#e11d48]' : 'text-blue-400'}`}>
-                        {isLive ? 'Live now' : 'Up next'}
-                      </span>
-                      <span className="truncate text-sm uppercase text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                        {nextEvent.name}
-                      </span>
-                    </span>
+                {nextEvent ? (
+                  <div className="lg:text-right lg:pb-1">
+                    <p className={`inline-flex items-center gap-2 text-sm font-medium ${isLive ? 'text-brand-light' : 'text-text-secondary'}`}>
+                      {isLive && <span className="live-dot w-2 h-2 rounded-full bg-brand" />}
+                      {isLive ? 'Live now' : 'Up next'}
+                    </p>
+                    <p className="mt-1 text-2xl sm:text-3xl uppercase leading-none" style={{ ...display, fontWeight: 800 }}>
+                      {nextEvent.name}
+                    </p>
+                    <p className="mt-2 text-sm text-text-muted">
+                      {eventDate}, {eventTime} ET
+                      {nextEvent.venue && <span className="block">{nextEvent.venue}</span>}
+                    </p>
                     {!isLive && (
-                      <span className="shrink-0 flex flex-col items-end">
-                        <span className="text-base leading-none text-blue-400" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                      <p className="mt-3 text-sm text-text-secondary">
+                        Picks lock in{' '}
+                        <span className="text-lg text-text-primary align-[-1px]" style={{ ...display, fontWeight: 800 }}>
                           <LockCountdown lockTime={nextEvent.start_time} variant="inline" />
                         </span>
-                        <span className="text-[8px] text-[#52525b] uppercase tracking-wider mt-0.5">until lock</span>
-                      </span>
+                      </p>
                     )}
-                  </Link>
+                  </div>
+                ) : (
+                  <p className="text-sm text-text-muted lg:pb-1">Sample fight</p>
                 )}
               </div>
 
-              {/* Right: Fight Card — real next event when available, static mockup fallback */}
-              <div className="hidden lg:flex items-center justify-center">
-                <div className="fight-card-float relative w-full max-w-[380px]">
-                  {/* Card glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-[#e11d48]/8 blur-2xl scale-110" />
-
-                  {nextEvent && mainEvent ? (
-                  <div className="relative rounded-2xl bg-[#111111] border border-[#1e1e1e] overflow-hidden shadow-2xl">
-                    {/* Card header */}
-                    <div className="px-5 pt-5 pb-3 border-b border-[#1e1e1e]">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest">
-                          Main Event{mainEvent.weight_class ? ` · ${mainEvent.weight_class}` : ''}
-                        </span>
-                        {isLive ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e11d48]/10 border border-[#e11d48]/25 text-[10px] font-semibold text-[#e11d48]">
-                            <span className="pulse-dot w-1 h-1 rounded-full bg-[#e11d48]" />
-                            LIVE
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[10px] font-semibold text-blue-400">
-                            <span className="pulse-dot w-1 h-1 rounded-full bg-blue-400" />
-                            UP NEXT
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[#71717a] truncate">{nextEvent.name} · {eventDate}</p>
-                    </div>
-
-                    {/* Fighters */}
-                    <div className="px-5 py-5">
-                      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-6">
-                        {/* Red corner */}
-                        <div className="text-center">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-[#e11d48]/15 border-2 border-[#e11d48]/40 mb-2 flex items-center justify-center">
-                            <span className="text-xs font-black text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)' }}>RED</span>
-                          </div>
-                          <p className="text-[10px] text-[#71717a] leading-none mb-0.5">{firstNames(mainEvent.red_name)}</p>
-                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>{lastName(mainEvent.red_name)}</p>
-                          {mainEvent.red_record && <p className="text-[10px] text-[#71717a]">{mainEvent.red_record}</p>}
-                        </div>
-
-                        {/* VS */}
-                        <div className="text-center flex flex-col items-center gap-1.5">
-                          <span className="text-lg font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>VS</span>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#141414] border border-[#27272a] text-[#71717a]">{mainEvent.scheduled_rounds} RDS</span>
-                        </div>
-
-                        {/* Blue corner */}
-                        <div className="text-center">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-blue-500/10 border-2 border-blue-500/30 mb-2 flex items-center justify-center">
-                            <span className="text-xs font-black text-blue-400" style={{ fontFamily: 'var(--font-barlow)' }}>BLUE</span>
-                          </div>
-                          <p className="text-[10px] text-[#71717a] leading-none mb-0.5">{firstNames(mainEvent.blue_name)}</p>
-                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>{lastName(mainEvent.blue_name)}</p>
-                          {mainEvent.blue_record && <p className="text-[10px] text-[#71717a]">{mainEvent.blue_record}</p>}
-                        </div>
-                      </div>
-
-                      {/* Pick UI preview */}
-                      <div className="rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-3 mb-3">
-                        <p className="text-[10px] text-[#52525b] uppercase tracking-widest mb-2">Your Pick</p>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <span className="flex items-center justify-center h-8 rounded-md bg-[#e11d48] text-white text-xs font-bold" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{lastName(mainEvent.red_name)}</span>
-                          <span className="flex items-center justify-center h-8 rounded-md bg-[#141414] border border-[#27272a] text-[#71717a] text-xs font-semibold">{lastName(mainEvent.blue_name)}</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {['KO/TKO', 'SUB', 'DEC'].map((m, i) => (
-                            <span key={m} className={`flex items-center justify-center h-7 rounded text-[10px] font-semibold ${i === 0 ? 'bg-[#e11d48]/15 border border-[#e11d48]/40 text-[#e11d48]' : 'bg-[#141414] border border-[#1e1e1e] text-[#52525b]'}`}>{m}</span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Lock clock */}
-                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-[#e11d48]/8 border border-[#e11d48]/20">
-                        {isLive ? (
-                          <>
-                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#e11d48] uppercase tracking-wider">
-                              <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[#e11d48]" />
-                              Live now
-                            </span>
-                            <span className="text-xs text-[#71717a]">Results updating</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[10px] font-semibold text-[#e11d48]/80 uppercase tracking-widest">Locks in</span>
-                            <LockCountdown lockTime={nextEvent.start_time} variant="clock" />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  ) : (
-                  <div className="relative rounded-2xl bg-[#111111] border border-[#1e1e1e] overflow-hidden shadow-2xl">
-                    {/* Card header */}
-                    <div className="px-5 pt-5 pb-3 border-b border-[#1e1e1e]">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-[#52525b] uppercase tracking-widest">Main Event · Heavyweight</span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e11d48]/10 border border-[#e11d48]/25 text-[10px] font-semibold text-[#e11d48]">
-                          <span className="pulse-dot w-1 h-1 rounded-full bg-[#e11d48]" />
-                          LIVE
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#71717a]">UFC 315 · May 10, 2025</p>
-                    </div>
-
-                    {/* Fighters */}
-                    <div className="px-5 py-5">
-                      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-6">
-                        {/* Red corner */}
-                        <div className="text-center">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-[#e11d48]/15 border-2 border-[#e11d48]/40 mb-2 flex items-center justify-center">
-                            <span className="text-xs font-black text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)' }}>RED</span>
-                          </div>
-                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>JONES</p>
-                          <p className="text-[10px] text-[#71717a]">27-1-0</p>
-                          <div className="mt-1 inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20">Champion</div>
-                        </div>
-
-                        {/* VS */}
-                        <div className="text-center">
-                          <span className="text-lg font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>VS</span>
-                        </div>
-
-                        {/* Blue corner */}
-                        <div className="text-center">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-blue-500/10 border-2 border-blue-500/30 mb-2 flex items-center justify-center">
-                            <span className="text-xs font-black text-blue-400" style={{ fontFamily: 'var(--font-barlow)' }}>BLUE</span>
-                          </div>
-                          <p className="text-sm font-bold text-[#f4f4f5] leading-tight" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>ASPINALL</p>
-                          <p className="text-[10px] text-[#71717a]">15-3-0</p>
-                          <div className="mt-1 inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Challenger</div>
-                        </div>
-                      </div>
-
-                      {/* Pick UI preview */}
-                      <div className="rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-3 mb-3">
-                        <p className="text-[10px] text-[#52525b] uppercase tracking-widest mb-2">Your Pick</p>
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <button className="h-8 rounded-md bg-[#e11d48] text-white text-xs font-bold" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>RED — JONES</button>
-                          <button className="h-8 rounded-md bg-[#141414] border border-[#27272a] text-[#71717a] text-xs font-semibold">BLUE — ASPINALL</button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {['KO/TKO', 'SUB', 'DEC'].map((m, i) => (
-                            <button key={m} className={`h-7 rounded text-[10px] font-semibold ${i === 0 ? 'bg-[#e11d48]/15 border border-[#e11d48]/40 text-[#e11d48]' : 'bg-[#141414] border border-[#1e1e1e] text-[#52525b]'}`}>{m}</button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Points preview */}
-                      <div className="flex items-center justify-between px-3 py-2 rounded-md bg-[#e11d48]/8 border border-[#e11d48]/20">
-                        <span className="text-xs text-[#e11d48]/70">Potential Points</span>
-                        <span className="text-sm font-black text-[#e11d48]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>8 pts</span>
-                      </div>
-                    </div>
-                  </div>
-                  )}
-                </div>
-              </div>
+              <PickDemo
+                red={{ name: fight.red_name, record: fight.red_record }}
+                blue={{ name: fight.blue_name, record: fight.blue_record }}
+                weightClass={fight.weight_class}
+                rounds={fight.scheduled_rounds}
+              />
+              <p className="mt-3 text-sm text-text-muted">
+                {nextEvent ? 'That’s the main event.' : 'That’s one fight.'} Try it. Nothing is saved until you sign up.
+              </p>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Scoring System — MAIN REVAMP */}
-        <section className="py-24 border-t border-[#141414] relative overflow-hidden">
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full bg-[#e11d48]" style={{ opacity: 0.04, filter: 'blur(110px)', transform: 'translate(-40%, 30%)', pointerEvents: 'none' }} />
-
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            {/* Section header */}
-            <div className="mb-16 text-center">
-              <p className="text-xs font-semibold text-[#e11d48] uppercase tracking-widest mb-3">Scoring System</p>
-              <h2 className="leading-none mb-4" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-                THE 5-3-2 SYSTEM.
-              </h2>
-              <p className="text-[#71717a] text-base max-w-md mx-auto">Call the finish. Nail the method. Predict the round. Stack points with every correct call.</p>
-            </div>
-
-            {/* Three scoring tiles */}
-            <div className="grid md:grid-cols-3 gap-5 mb-6">
-              {/* 5 pts — hero red tile */}
-              <div className="score-tile-1 relative rounded-xl overflow-hidden p-7 flex flex-col" style={{ background: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)' }}>
-                {/* Ghost number */}
-                <span className="bg-num-shimmer absolute right-4 bottom-2 text-white select-none pointer-events-none leading-none" style={{ fontSize: '10rem', fontFamily: 'var(--font-barlow)', fontWeight: 900, opacity: 0.1 }}>5</span>
-
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center mb-5">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-8xl font-black leading-none mb-3 text-white" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>5</div>
-                  <p className="text-white/90 text-sm font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>POINTS</p>
-                  <p className="text-white/70 text-sm">Correct winner — the foundation of every pick</p>
-                </div>
-              </div>
-
-              {/* 3 pts */}
-              <div className="score-tile-2 relative rounded-xl overflow-hidden p-7 flex flex-col bg-[#141414] border border-[#27272a]">
-                <span className="bg-num-shimmer-2 absolute right-4 bottom-2 text-[#e11d48] select-none pointer-events-none leading-none" style={{ fontSize: '10rem', fontFamily: 'var(--font-barlow)', fontWeight: 900, opacity: 0.07 }}>3</span>
-
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/25 flex items-center justify-center mb-5">
-                    <Zap className="w-4 h-4 text-[#e11d48]" />
-                  </div>
-                  <div className="text-8xl font-black leading-none mb-3 text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>3</div>
-                  <p className="text-[#a1a1aa] text-sm font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>POINTS</p>
-                  <p className="text-[#71717a] text-sm">Correct method — KO/TKO, Submission, or Decision</p>
-                  <p className="text-[#52525b] text-xs mt-1.5">Requires correct winner</p>
-                </div>
-              </div>
-
-              {/* 2 pts */}
-              <div className="score-tile-3 relative rounded-xl overflow-hidden p-7 flex flex-col bg-[#141414] border border-[#27272a]">
-                <span className="bg-num-shimmer absolute right-4 bottom-2 text-[#e11d48] select-none pointer-events-none leading-none" style={{ fontSize: '10rem', fontFamily: 'var(--font-barlow)', fontWeight: 900, opacity: 0.05, animationDelay: '2s' }}>2</span>
-
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/25 flex items-center justify-center mb-5">
-                    <Clock className="w-4 h-4 text-[#e11d48]" />
-                  </div>
-                  <div className="text-8xl font-black leading-none mb-3 text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>2</div>
-                  <p className="text-[#a1a1aa] text-sm font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>POINTS</p>
-                  <p className="text-[#71717a] text-sm">Correct round — KO or Sub finishes only</p>
-                  <p className="text-[#52525b] text-xs mt-1.5">Not available for Decision picks</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Max points callout */}
-            <div className="rounded-xl bg-[#111111] border border-[#1e1e1e] p-5 flex flex-col sm:flex-row items-center gap-5">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="w-12 h-12 rounded-xl bg-[#e11d48]/10 border border-[#e11d48]/25 flex items-center justify-center shrink-0">
-                  <Trophy className="w-6 h-6 text-[#e11d48]" />
-                </div>
-                <div>
-                  <p className="text-base font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, fontSize: '1.1rem' }}>
-                    10 POINTS MAX PER FIGHT
+          {/* The rest of the card */}
+          {nextEvent && nextEvent.fights.length > 1 && (
+            <section className="border-t border-border-subtle">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-16">
+                <div className="lg:sticky lg:top-24 lg:self-start">
+                  <h2 className="uppercase leading-[0.9]" style={{ ...display, fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
+                    {nextEvent.fights.length} fights. Call every one.
+                  </h2>
+                  <p className="mt-4 max-w-md text-text-secondary leading-relaxed">
+                    The prelims count the same as the main event, so the board is usually decided
+                    by who did their homework on the early fights.
                   </p>
-                  <p className="text-sm text-[#71717a] mt-0.5">A perfect call — correct winner + KO or Sub + correct round — earns the full 10 pts. Decision picks cap at 8.</p>
                 </div>
+                <ol className="border-t border-border">
+                  {nextEvent.fights.map((f, i) => (
+                    <li
+                      key={`${f.red_name}-${f.blue_name}`}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-baseline gap-3 py-3 border-b border-border"
+                    >
+                      <span className="truncate text-lg sm:text-xl uppercase" style={{ ...display, fontWeight: i === 0 ? 900 : 700 }}>
+                        {getLastName(f.red_name)}
+                      </span>
+                      <span className="text-xs text-text-muted text-center whitespace-nowrap">
+                        {f.weight_class ?? 'vs'}
+                      </span>
+                      <span className="truncate text-lg sm:text-xl uppercase text-right" style={{ ...display, fontWeight: i === 0 ? 900 : 700 }}>
+                        {getLastName(f.blue_name)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-center px-4 py-2 rounded-lg bg-[#e11d48] text-white">
-                  <p className="text-2xl font-black leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>10</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">MAX</p>
-                </div>
-                <div className="text-center px-4 py-2 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-[#a1a1aa]">
-                  <p className="text-2xl font-black leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>8</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider opacity-70">DEC</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
+          )}
 
-        {/* How It Works */}
-        <section className="py-24 border-t border-[#141414]">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="mb-16">
-              <p className="text-xs font-semibold text-[#e11d48] uppercase tracking-widest mb-3">How It Works</p>
-              <h2 className="leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
-                THREE ROUNDS.<br />ONE WINNER.
+          {/* Scoring */}
+          <section className="border-t border-border-subtle bg-surface-1/40">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+              <h2 className="uppercase leading-[0.9] max-w-4xl" style={{ ...display, fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
+                Five for the winner. Three for the method. Two for the round.
               </h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                { num: '01', icon: Users, title: 'Join a League', desc: 'Get invited by a friend, or create your own league and invite your crew. Private leagues, your rules.' },
-                { num: '02', icon: Target, title: 'Make Your Picks', desc: 'For every fight on the card, pick the winner, how they finish it, and what round it ends in.' },
-                { num: '03', icon: Trophy, title: 'Win the Night', desc: "Stack points as results come in. The one who called it best takes the crown when the final bell sounds." },
-              ].map(({ num, icon: Icon, title, desc }) => (
-                <div key={num} className="how-card relative p-6 rounded-xl bg-[#111111] border border-[#1e1e1e] group cursor-default">
-                  <div className="absolute top-5 right-5 text-6xl font-black text-[#1e1e1e] group-hover:text-[#232323] transition-colors leading-none select-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{num}</div>
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-lg bg-[#e11d48]/10 border border-[#e11d48]/20 flex items-center justify-center mb-5 group-hover:bg-[#e11d48]/15 transition-colors">
-                      <Icon className="w-5 h-5 text-[#e11d48]" />
-                    </div>
-                    <h3 className="text-base font-bold text-[#f4f4f5] mb-2 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>{title}</h3>
-                    <p className="text-sm text-[#71717a] leading-relaxed">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+              <p className="mt-4 max-w-xl text-text-secondary leading-relaxed">
+                Each bonus only counts if the call before it was right, and decisions have no
+                round to call. Ten points is a perfect pick.
+              </p>
 
-        {/* CTA */}
-        <section className="py-28 border-t border-[#141414] relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(225,29,72,0.07) 0%, transparent 70%)' }} />
-          </div>
-          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
-            <p className="text-xs font-semibold text-[#e11d48] uppercase tracking-widest mb-4">Ready to compete?</p>
-            <h2 className="leading-none mb-6" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2.5rem, 8vw, 5.5rem)' }}>
-              READY FOR<br />FIGHT NIGHT?
-            </h2>
-            <p className="text-[#71717a] mb-10 text-lg max-w-md mx-auto leading-relaxed">
-              Create your free account and start competing with your crew on every UFC card.
-            </p>
-            <Link href="/signup" className="cta-btn-primary inline-flex items-center gap-2.5 h-14 px-12 text-base font-bold rounded-lg bg-[#e11d48] text-white tracking-wide" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.04em' }}>
-              CREATE FREE ACCOUNT <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </section>
+              <div className="mt-10 rounded-2xl border border-border bg-surface-0 overflow-hidden">
+                <p className="px-4 sm:px-6 py-4 border-b border-border text-sm text-text-secondary">
+                  Say it ends{' '}
+                  <span className="text-text-primary font-medium">{redLast} by knockout in round 2.</span>
+                </p>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-text-muted">
+                      <th scope="col" className="font-normal px-4 sm:px-6 py-3">Your call</th>
+                      <th scope="col" className="font-normal px-2 py-3 text-center hidden sm:table-cell">Winner</th>
+                      <th scope="col" className="font-normal px-2 py-3 text-center hidden sm:table-cell">Method</th>
+                      <th scope="col" className="font-normal px-2 py-3 text-center hidden sm:table-cell">Round</th>
+                      <th scope="col" className="font-normal px-4 sm:px-6 py-3 text-right">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {examples.map(ex => (
+                      <tr key={ex.call} className="border-t border-border">
+                        <th scope="row" className="font-normal text-left px-4 sm:px-6 py-4 text-text-primary">{ex.call}</th>
+                        {[
+                          { hit: ex.winner, pts: 5 },
+                          { hit: ex.method, pts: 3 },
+                          { hit: ex.round, pts: 2 },
+                        ].map(({ hit, pts }) => (
+                          <td key={pts} className="px-2 py-4 text-center tabular-nums hidden sm:table-cell">
+                            {hit ? <span className="text-text-primary">+{pts}</span> : <span className="text-text-muted">0</span>}
+                          </td>
+                        ))}
+                        <td className="px-4 sm:px-6 py-4 text-right">
+                          <span
+                            className={`text-2xl leading-none tabular-nums ${ex.points ? 'text-text-primary' : 'text-text-muted'}`}
+                            style={display}
+                          >
+                            {ex.points}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
 
-        {/* Footer */}
-        <footer className="border-t border-[#141414] py-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-lg font-black text-[#e11d48] tracking-wider" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, letterSpacing: '0.08em' }}>JABSY</span>
-            <p className="text-xs text-[#52525b]">© {new Date().getFullYear()} Jabsy. Fantasy MMA Picks.</p>
+          {/* How a night goes — a real sequence, so it is numbered */}
+          <section className="border-t border-border-subtle">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+              <h2 className="uppercase leading-[0.9]" style={{ ...display, fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
+                How fight night goes
+              </h2>
+              <ol className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-10">
+                {[
+                  {
+                    title: 'Start a league, or join one',
+                    body: 'Send your friends one invite link. Everyone in the league picks the same card.',
+                  },
+                  {
+                    title: 'Get your picks in before the lock',
+                    body: 'Picks lock when the first fight starts. Nobody sees anyone else’s until then.',
+                  },
+                  {
+                    title: 'Watch the board move',
+                    body: 'Results post after every fight and the standings update live. Top score takes the night.',
+                  },
+                ].map(({ title, body }, i) => (
+                  <li key={title} className="border-t-2 border-border pt-5">
+                    <span className="block text-5xl leading-none text-brand" style={display} aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <h3 className="mt-4 text-lg font-semibold text-text-primary">{title}</h3>
+                    <p className="mt-2 text-text-secondary leading-relaxed">{body}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          {/* Closing action */}
+          <section className="border-t border-border-subtle">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 flex flex-col items-start gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <h2 className="uppercase leading-[0.85]" style={{ ...display, fontSize: 'clamp(3rem, 9vw, 7rem)' }}>
+                {nextEvent && !isLive ? 'Get your picks in.' : 'Start your league.'}
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0 whitespace-nowrap">
+                <Link href="/signup" className="btn-primary inline-flex items-center justify-center h-14 px-8 rounded-lg text-base font-semibold">
+                  Create a free account
+                </Link>
+                <Link href="/login" className="btn-secondary inline-flex items-center justify-center h-14 px-8 rounded-lg text-base font-semibold">
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer className="border-t border-border-subtle">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <span className="text-lg text-brand" style={{ ...display, letterSpacing: '0.08em' }}>JABSY</span>
+            <nav className="flex items-center gap-5 text-sm text-text-muted">
+              <Link href="/privacy" className="hover:text-text-primary transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-text-primary transition-colors">Terms</Link>
+              <span>&copy; {new Date().getFullYear()} Jabsy</span>
+            </nav>
           </div>
         </footer>
       </div>

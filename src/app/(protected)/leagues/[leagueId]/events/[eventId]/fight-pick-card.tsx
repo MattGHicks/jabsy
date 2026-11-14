@@ -165,7 +165,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
       {/* Main Event badge */}
       {fight.is_main_event && (
         <div className="flex items-center justify-center py-1.5 bg-[#e11d48]/8 border-b border-[#e11d48]/15">
-          <span className="text-[9px] font-bold tracking-[0.25em] text-[#e11d48] uppercase">Main Event</span>
+          <span className="text-[10px] font-bold tracking-[0.25em] text-[#e11d48] uppercase">Main Event</span>
         </div>
       )}
 
@@ -175,8 +175,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
         <button
           onClick={() => !isLocked && !isCancelled && handleWinnerChange('red')}
           disabled={isLocked || isCancelled}
+          aria-pressed={winner === 'red'}
           className={cn(
-            'relative py-4 px-3 text-left transition-all group/red',
+            'relative py-5 px-3 text-left transition-all group/red',
             isLocked || isCancelled ? 'cursor-default' : 'cursor-pointer',
             !winner || winner !== 'red' ? '' : ''
           )}
@@ -201,19 +202,19 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
 
           <div className="pl-2">
             {redName.first && (
-              <p className="text-[10px] text-[#71717a] uppercase tracking-wide leading-none mb-0.5">{redName.first}</p>
+              <p className="text-[11px] text-text-secondary uppercase tracking-wide leading-none mb-0.5">{redName.first}</p>
             )}
             <p
               className={cn(
                 'uppercase leading-[0.95] transition-colors',
-                winner === 'red' ? 'text-[#e11d48]' : 'text-[#f4f4f5] group-hover/red:text-[#e11d48]/70'
+                winner === 'red' ? 'text-[#e11d48]' : 'text-text-primary group-hover/red:text-[#e11d48]/70'
               )}
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 'clamp(1.1rem, 3.5vw, 1.35rem)' }}
+              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 'clamp(1.3rem, 4.6vw, 1.6rem)' }}
             >
               {redName.last}
             </p>
             {fight.red_record && (
-              <p className="text-[10px] text-[#52525b] mt-1">{fight.red_record}</p>
+              <p className="text-[11px] text-text-muted mt-1">{fight.red_record}</p>
             )}
           </div>
 
@@ -232,7 +233,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
         {/* VS divider */}
         <div className="flex flex-col items-center justify-center px-1 relative">
           <span
-            className="relative z-10 text-[11px] font-black text-[#3f3f46] py-2"
+            className="relative z-10 text-[11px] font-black text-text-faint py-2"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
             VS
@@ -243,8 +244,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
         <button
           onClick={() => !isLocked && !isCancelled && handleWinnerChange('blue')}
           disabled={isLocked || isCancelled}
+          aria-pressed={winner === 'blue'}
           className={cn(
-            'relative py-4 px-3 text-right transition-all group/blue',
+            'relative py-5 px-3 text-right transition-all group/blue',
             isLocked || isCancelled ? 'cursor-default' : 'cursor-pointer',
           )}
           style={winner === 'blue'
@@ -268,19 +270,19 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
 
           <div className="pr-2">
             {blueName.first && (
-              <p className="text-[10px] text-[#71717a] uppercase tracking-wide leading-none mb-0.5">{blueName.first}</p>
+              <p className="text-[11px] text-text-secondary uppercase tracking-wide leading-none mb-0.5">{blueName.first}</p>
             )}
             <p
               className={cn(
                 'uppercase leading-[0.95] transition-colors',
-                winner === 'blue' ? 'text-blue-400' : 'text-[#f4f4f5] group-hover/blue:text-blue-400/70'
+                winner === 'blue' ? 'text-blue-400' : 'text-text-primary group-hover/blue:text-blue-400/70'
               )}
-              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 'clamp(1.1rem, 3.5vw, 1.35rem)' }}
+              style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 'clamp(1.3rem, 4.6vw, 1.6rem)' }}
             >
               {blueName.last}
             </p>
             {fight.blue_record && (
-              <p className="text-[10px] text-[#52525b] mt-1">{fight.blue_record}</p>
+              <p className="text-[11px] text-text-muted mt-1">{fight.blue_record}</p>
             )}
           </div>
 
@@ -306,10 +308,10 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
                 href={redSherdog}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#71717a] hover:text-[#e11d48] transition-colors"
+                className="inline-flex items-center gap-1 text-text-secondary hover:text-[#e11d48] transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-wide">Sherdog</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide">Sherdog</span>
               </a>
             ) : <span />}
           </div>
@@ -319,9 +321,9 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
                 href={blueSherdog}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#71717a] hover:text-blue-400 transition-colors"
+                className="inline-flex items-center gap-1 text-text-secondary hover:text-blue-400 transition-colors"
               >
-                <span className="text-[10px] font-semibold uppercase tracking-wide">Sherdog</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide">Sherdog</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             ) : <span />}
@@ -332,7 +334,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
       {/* Cancelled overlay */}
       {isCancelled && (
         <div className="px-4 py-2.5 border-t border-[#1e1e1e] text-center">
-          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Cancelled</span>
+          <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Cancelled</span>
         </div>
       )}
 
@@ -344,23 +346,24 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
               {/* Method row */}
               <div className="flex items-center gap-1.5">
                 <span className={cn(
-                  'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
-                  methodFlash ? 'text-amber-400' : 'text-[#3f3f46]'
+                  'text-[10px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
+                  methodFlash ? 'text-amber-400' : 'text-text-faint'
                 )}>
                   {methodFlash ? 'Method ▸' : 'Method'}
                 </span>
-                <div className="flex gap-1 flex-1">
+                <div className="flex gap-1.5 flex-1">
                   {['ko_tko', 'submission', 'decision'].map((m) => (
                     <button
                       key={m}
                       onClick={() => !isLocked && handleMethodChange(m)}
                       disabled={isLocked}
+                      aria-pressed={method === m}
                       className={cn(
-                        'h-7 px-2.5 rounded-md text-[11px] font-bold border transition-all flex-1',
+                        'h-10 px-2 rounded-lg text-xs font-bold border transition-colors flex-1',
                         isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
                         method === m
-                          ? 'bg-[#27272a] border-[#3f3f46] text-[#f4f4f5]'
-                          : 'bg-transparent border-[#1e1e1e] text-[#52525b] hover:border-[#3f3f46] hover:text-[#71717a]'
+                          ? 'bg-text-primary border-text-primary text-surface-0'
+                          : 'bg-surface-0 border-border text-text-secondary hover:border-[#52525b] hover:text-text-primary'
                       )}
                     >
                       {METHOD_LABELS[m]}
@@ -373,52 +376,54 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
               {showRounds && (
                 <div className="flex items-center gap-1.5 mt-2">
                   <span className={cn(
-                    'text-[9px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
-                    roundFlash ? 'text-amber-400' : 'text-[#3f3f46]'
+                    'text-[10px] font-bold uppercase tracking-[0.15em] shrink-0 transition-colors whitespace-nowrap w-14',
+                    roundFlash ? 'text-amber-400' : 'text-text-faint'
                   )}>
                     {roundFlash ? 'Round ▸' : 'Round'}
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5 flex-1">
                     {Array.from({ length: fight.scheduled_rounds }, (_, i) => i + 1).map((r) => (
                       <button
                         key={r}
                         onClick={() => !isLocked && handleRoundChange(r)}
                         disabled={isLocked}
+                        aria-pressed={round === r}
+                        aria-label={`Round ${r}`}
                         className={cn(
-                          'w-7 h-7 rounded-md text-[11px] font-bold border transition-all',
+                          'h-10 flex-1 max-w-12 rounded-lg text-xs font-bold border transition-colors tabular-nums',
                           isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
                           round === r
-                            ? 'bg-[#27272a] border-[#3f3f46] text-[#f4f4f5]'
-                            : 'bg-transparent border-[#1e1e1e] text-[#52525b] hover:border-[#3f3f46] hover:text-[#71717a]'
+                            ? 'bg-text-primary border-text-primary text-surface-0'
+                            : 'bg-surface-0 border-border text-text-secondary hover:border-[#52525b] hover:text-text-primary'
                         )}
                       >
                         {r}
                       </button>
                     ))}
                   </div>
-                  <span className="text-[8px] text-[#3f3f46] ml-1">+2 PTS</span>
+                  <span className="text-[10px] text-text-faint ml-1">+2 PTS</span>
                 </div>
               )}
             </div>
           ) : !isLocked ? (
             <div className="px-3 py-3 text-center">
-              <span className="text-[10px] text-[#3f3f46] uppercase tracking-[0.15em]">Tap a fighter to pick</span>
+              <span className="text-xs text-text-muted">Tap a fighter to pick</span>
             </div>
           ) : null}
 
           {/* Locked pick summary */}
           {isLocked && existingPick && (
             <div className="px-3 py-2.5 flex items-center justify-center gap-2 bg-[#0e0e0e]">
-              <span className="text-[10px] text-[#3f3f46] uppercase tracking-wide">Your pick</span>
-              <span className="text-[10px] text-[#3f3f46]">·</span>
+              <span className="text-[11px] text-text-faint uppercase tracking-wide">Your pick</span>
+              <span className="text-[11px] text-text-faint">·</span>
               <span className={cn(
                 'text-[11px] font-bold uppercase',
                 existingPick.pick_winner === 'red' ? 'text-[#e11d48]/70' : 'text-blue-400/70'
               )} style={{ fontFamily: 'var(--font-barlow)' }}>
                 {existingPick.pick_winner === 'red' ? fight.red_name : fight.blue_name}
               </span>
-              <span className="text-[10px] text-[#3f3f46]">·</span>
-              <span className="text-[10px] text-[#52525b] font-semibold">
+              <span className="text-[11px] text-text-faint">·</span>
+              <span className="text-[11px] text-text-muted font-semibold">
                 {METHOD_LABELS[existingPick.pick_method] ?? existingPick.pick_method}
                 {existingPick.pick_round ? ` R${existingPick.pick_round}` : ''}
               </span>
@@ -428,7 +433,7 @@ export function FightPickCard({ fight, leagueId, eventId, existingPick, isLocked
           {/* No pick when locked */}
           {isLocked && !existingPick && (
             <div className="px-3 py-2.5 text-center bg-[#0e0e0e]">
-              <span className="text-[10px] text-[#3f3f46] uppercase tracking-wide">No pick made</span>
+              <span className="text-[11px] text-text-faint uppercase tracking-wide">No pick made</span>
             </div>
           )}
         </div>

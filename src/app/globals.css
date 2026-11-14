@@ -12,6 +12,11 @@
   --color-brand-dark: #be123c;
   --color-brand-light: #fb7185;
 
+  /* Corners — red is the brand colour, blue is its opponent */
+  --color-corner-red: #e11d48;
+  --color-corner-blue: #2563eb;
+  --color-corner-blue-light: #60a5fa;
+
   /* Dark theme surfaces */
   --color-surface-0: #0a0a0a;
   --color-surface-1: #141414;
@@ -21,8 +26,11 @@
 
   /* Text */
   --color-text-primary: #f4f4f5;
+  /* Four steps. Muted and faint both clear 3.5:1 on the page background, so
+     nothing in the UI is decorative-grey-on-black any more. */
   --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
+  --color-text-muted: #8b8b95;
+  --color-text-faint: #6b6b74;
 
   /* Borders */
   --color-border: #27272a;
@@ -45,6 +53,42 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(225, 29, 72, 0.35);
+  color: #fff;
+}
+
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* Keyboard focus — one visible ring everywhere. Components that draw their own
+   ring opt out with outline-none. */
+:where(a, button, [role="button"], [tabindex], summary):focus-visible {
+  outline: 2px solid #fb7185;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* iOS zooms the page when a focused field is under 16px. Sizing fields up on
+   touch devices avoids that without disabling pinch-zoom for everyone. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Hide scrollbar utility */
@@ -84,9 +128,11 @@ body {
   from { opacity: 0; transform: translateX(-16px); }
   to { opacity: 1; transform: translateX(0); }
 }
+/* Ends on transform:none on purpose — a lingering translateY(0) would make the
+   animated element the containing block for every position:fixed descendant. */
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.96); }
@@ -141,3 +187,75 @@ body {
 .row-hover:hover {
   background-color: #161616;
 }
+
+/* ── Primary action ── */
+.btn-primary {
+  background: var(--color-brand);
+  color: #fff;
+  transition: background-color 0.15s, transform 0.1s;
+}
+.btn-primary:hover { background: var(--color-brand-dark); }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btn-secondary:hover { background: var(--color-surface-1); border-color: #3f3f46; }
+.btn-secondary:active { transform: scale(0.98); }
+
+/* ── Landing pick slip ── */
+.pick-demo { container-type: inline-size; --pick: var(--color-text-primary); --pick-ink: var(--color-surface-0); }
+.pick-demo[data-winner="red"]  { --pick: var(--color-corner-red);  --pick-ink: #fff; }
+.pick-demo[data-winner="blue"] { --pick: var(--color-corner-blue); --pick-ink: #fff; }
+
+/* The two corners overlap by the width of the slant so their clipped edges
+   meet on one diagonal; the 1px inset lets the divider colour show through. */
+.pick-demo .corners { background: var(--color-border); --slant: 1.25rem; }
+.pick-demo .corner {
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  transition: background-color 0.2s ease-out, opacity 0.2s ease-out;
+}
+.pick-demo .corner-red {
+  --c: var(--color-corner-red); --c-ink: var(--color-brand-light);
+  margin-right: calc(var(--slant) / -2);
+  clip-path: polygon(0 0, calc(100% - 1px) 0, calc(100% - var(--slant) - 1px) 100%, 0 100%);
+}
+.pick-demo .corner-blue {
+  --c: var(--color-corner-blue); --c-ink: var(--color-corner-blue-light);
+  margin-left: calc(var(--slant) / -2);
+  clip-path: polygon(calc(var(--slant) + 1px) 0, 100% 0, 100% 100%, 1px 100%);
+}
+.pick-demo .corner::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--c);
+}
+.pick-demo .corner-tag { color: var(--c-ink); }
+.pick-demo .corner-first, .pick-demo .corner-record { color: var(--color-text-secondary); }
+.pick-demo .corner:hover { background: color-mix(in srgb, var(--c) 14%, var(--color-surface-1)); }
+.pick-demo .corner.is-selected { background: var(--c); }
+.pick-demo .corner.is-selected :is(.corner-tag, .corner-first, .corner-record) { color: rgba(255, 255, 255, 0.85); }
+.pick-demo .corner.is-dimmed { opacity: 0.45; }
+.pick-demo .corner.is-dimmed:hover { opacity: 0.8; }
+/* clip-path would cut off an outset ring */
+.pick-demo .corner:focus-visible { outline: none; box-shadow: inset 0 0 0 3px #fff; }
+
+.pick-demo .chip {
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.pick-demo .chip:hover:not(:disabled) { border-color: #52525b; color: var(--color-text-primary); }
+.pick-demo .chip.is-on { background: var(--pick); border-color: var(--pick); color: var(--pick-ink); }
+.pick-demo .chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Live indicator */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot { animation: live-pulse 1.5s ease-in-out infinite; }

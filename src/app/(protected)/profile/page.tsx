@@ -119,11 +119,11 @@ export default async function ProfilePage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <Link href="/dashboard" className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70">
         <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
-          <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+          <ChevronLeft className="w-4 h-4 text-text-muted group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
-          <span className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
+          <span className="text-[10px] font-semibold tracking-[0.15em] text-text-muted uppercase mb-1">Back to</span>
+          <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
         </div>
       </Link>
 
@@ -154,10 +154,10 @@ export default async function ProfilePage() {
                     <Icon className="w-4 h-4" style={{ color: stat.accent }} />
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    <p className="text-2xl leading-none text-text-primary mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                       {stat.value}
                     </p>
-                    <p className="text-[9px] text-[#52525b] uppercase tracking-[0.12em]">{stat.label}</p>
+                    <p className="text-[10px] text-text-muted uppercase tracking-[0.12em]">{stat.label}</p>
                   </div>
                 </div>
               )
@@ -180,10 +180,10 @@ export default async function ProfilePage() {
                     <Icon className="w-5 h-5" style={{ color: stat.accent }} />
                   </div>
                   <div className="text-center">
-                    <p className="text-3xl leading-none text-[#f4f4f5] mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    <p className="text-3xl leading-none text-text-primary mb-1" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                       {stat.value}
                     </p>
-                    <p className="text-[10px] text-[#52525b] uppercase tracking-[0.12em]">{stat.label}</p>
+                    <p className="text-[11px] text-text-muted uppercase tracking-[0.12em]">{stat.label}</p>
                   </div>
                 </div>
               )
@@ -197,7 +197,7 @@ export default async function ProfilePage() {
         {/* ── Leagues ──────────────────────────────────── */}
         {allLeagues.length > 0 && (
           <div className="mb-10">
-            <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
+            <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
               <Users className="w-3.5 h-3.5" /> My Leagues
             </p>
             <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2">
@@ -214,14 +214,14 @@ export default async function ProfilePage() {
                     ) : league.isOwner ? (
                       <Crown className="w-3.5 h-3.5 text-[#e11d48]" />
                     ) : (
-                      <Users className="w-3.5 h-3.5 text-[#52525b]" />
+                      <Users className="w-3.5 h-3.5 text-text-muted" />
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-[#a1a1aa] group-hover:text-[#f4f4f5] transition-colors uppercase flex-1 truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
+                  <p className="text-sm font-semibold text-text-secondary group-hover:text-text-primary transition-colors uppercase flex-1 truncate" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}>
                     {league.name}
                   </p>
                   {league.isOwner && (
-                    <span className="text-[10px] text-[#e11d48] font-semibold shrink-0">Owner</span>
+                    <span className="text-[11px] text-[#e11d48] font-semibold shrink-0">Owner</span>
                   )}
                 </Link>
               ))}

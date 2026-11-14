@@ -20,12 +20,12 @@ export default function Error({
         <AlertTriangle className="w-6 h-6 text-[#e11d48]" />
       </div>
       <h2
-        className="text-[#f4f4f5] mb-2"
+        className="text-text-primary mb-2"
         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.5rem' }}
       >
         SOMETHING WENT WRONG
       </h2>
-      <p className="text-sm text-[#71717a] mb-6 max-w-sm">
+      <p className="text-sm text-text-secondary mb-6 max-w-sm">
         {error.message || 'An unexpected error occurred. Please try again.'}
       </p>
       <button
