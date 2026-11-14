@@ -49,7 +49,7 @@ export function OnboardingForm({ googleAvatarUrl, pendingInvite, pendingEvent }:
             />
           ) : (
             <div className="flex flex-col items-center justify-center w-full h-full gap-1">
-              <User className="w-7 h-7 text-[#52525b] group-hover:text-[#71717a] transition-colors" />
+              <User className="w-7 h-7 text-text-muted group-hover:text-text-secondary transition-colors" />
             </div>
           )}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -60,7 +60,7 @@ export function OnboardingForm({ googleAvatarUrl, pendingInvite, pendingEvent }:
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="text-xs text-[#71717a] hover:text-[#a1a1aa] transition-colors cursor-pointer"
+          className="text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
         >
           {hasCustomFile ? 'Change photo' : googleAvatarUrl ? 'Using Google photo · click to change' : 'Upload photo (optional)'}
         </button>
@@ -77,7 +77,7 @@ export function OnboardingForm({ googleAvatarUrl, pendingInvite, pendingEvent }:
 
       {/* Username */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="username" className="text-xs font-medium text-[#a1a1aa]">
+        <label htmlFor="username" className="text-sm font-medium text-text-secondary">
           Fighter Name
         </label>
         <input
@@ -90,9 +90,9 @@ export function OnboardingForm({ googleAvatarUrl, pendingInvite, pendingEvent }:
           minLength={3}
           maxLength={20}
           pattern="[a-zA-Z0-9_]+"
-          className="h-10 w-full rounded-md px-3 text-sm bg-[#0a0a0a] border border-[#27272a] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors"
+          className="h-11 w-full rounded-lg px-3 text-sm bg-[#0a0a0a] border border-[#27272a] text-text-primary placeholder:text-text-faint focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors"
         />
-        <p className="text-xs text-[#52525b]">
+        <p className="text-xs text-text-muted">
           3–20 characters. Letters, numbers, underscores only.
         </p>
       </div>

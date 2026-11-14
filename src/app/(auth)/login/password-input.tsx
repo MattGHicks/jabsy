@@ -8,7 +8,7 @@ export function PasswordInput() {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor="password" className="text-xs font-medium text-[#a1a1aa]">Password</label>
+      <label htmlFor="password" className="text-sm font-medium text-text-secondary">Password</label>
       <div className="relative">
         <input
           id="password"
@@ -17,12 +17,14 @@ export function PasswordInput() {
           required
           autoComplete="current-password"
           placeholder="••••••••"
-          className="h-10 w-full rounded-md px-3 pr-10 text-sm bg-[#0a0a0a] border border-[#27272a] text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors"
+          className="h-11 w-full rounded-lg px-3 pr-10 text-sm bg-[#0a0a0a] border border-[#27272a] text-text-primary placeholder:text-text-faint focus:outline-none focus:border-[#e11d48]/50 focus:ring-1 focus:ring-[#e11d48]/20 transition-colors"
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+          aria-label={show ? 'Hide password' : 'Show password'}
+          aria-pressed={show}
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center rounded-md text-text-muted hover:text-text-primary transition-colors cursor-pointer"
         >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>

@@ -107,7 +107,7 @@ export function ShareButton({
           'inline-flex items-center justify-center w-9 h-9 rounded-full shrink-0 transition-all cursor-pointer',
           copied
             ? 'bg-green-500/15 border border-green-500/30 text-green-400'
-            : 'bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
+            : 'bg-[#1a1a1a] border border-[#27272a] text-text-secondary hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
           className
         )}
       >
@@ -125,7 +125,7 @@ export function ShareButton({
           'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer shrink-0',
           copied
             ? 'bg-green-500/15 border border-green-500/30 text-green-400'
-            : 'bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
+            : 'bg-[#1a1a1a] border border-[#27272a] text-text-secondary hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
           className
         )}
       >
@@ -143,7 +143,7 @@ export function ShareButton({
         'inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0',
         copied
           ? 'bg-green-500/15 border border-green-500/30 text-green-400'
-          : 'bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
+          : 'bg-[#1a1a1a] border border-[#27272a] text-text-secondary hover:bg-[#e11d48]/10 hover:border-[#e11d48]/25 hover:text-[#e11d48]',
         className
       )}
     >

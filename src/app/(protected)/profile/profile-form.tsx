@@ -83,40 +83,40 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role, me
         >
           <div className="w-full h-full rounded-full bg-[#1e1e1e] border-2 border-[#27272a] overflow-hidden flex items-center justify-center">
             {avatarUploading ? (
-              <Loader2 className="w-6 h-6 text-[#52525b] animate-spin" />
+              <Loader2 className="w-6 h-6 text-text-muted animate-spin" />
             ) : avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarPreview} alt={username} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-3xl font-black text-[#52525b]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
+              <span className="text-3xl font-black text-text-muted" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
                 {getInitials(username || 'U')}
               </span>
             )}
           </div>
           {/* Persistent camera badge */}
           <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-[#1e1e1e] border border-[#27272a] flex items-center justify-center group-hover:bg-[#e11d48]/20 group-hover:border-[#e11d48]/30 transition-all">
-            <Camera className="w-3.5 h-3.5 text-[#52525b] group-hover:text-[#e11d48] transition-colors" />
+            <Camera className="w-3.5 h-3.5 text-text-muted group-hover:text-[#e11d48] transition-colors" />
           </div>
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
 
         <div className="flex-1 min-w-0">
           <h1
-            className="text-[#f4f4f5] uppercase leading-tight mb-1.5"
+            className="text-text-primary uppercase leading-tight mb-1.5"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 5vw, 3rem)' }}
           >
             {username}
           </h1>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20">
               {roleLabel}
             </span>
             {memberSince && (
-              <span className="text-[11px] text-[#52525b]">
+              <span className="text-[11px] text-text-muted">
                 Joined {memberSince}
               </span>
             )}
-            <span className="text-[11px] text-[#52525b]">
+            <span className="text-[11px] text-text-muted">
               · {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'}
             </span>
           </div>
@@ -125,12 +125,12 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role, me
 
       {/* ── Account settings card ── */}
       <div className="mb-10">
-        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-4">Account Settings</p>
+        <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em] mb-4">Account Settings</p>
         <div className="rounded-xl bg-[#111111] border border-[#1e1e1e] p-5 sm:p-6 max-w-lg">
           <div className="flex flex-col gap-5">
             {/* Username edit */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em]">Username</label>
+              <label className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em]">Username</label>
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -138,20 +138,20 @@ export function ProfileForm({ email, initialUsername, initialAvatarUrl, role, me
                 minLength={3}
                 maxLength={30}
                 pattern="[a-zA-Z0-9_\-]+"
-                className="h-10 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#f4f4f5] text-sm placeholder:text-[#52525b] focus:outline-none focus:border-[#e11d48] transition-colors"
+                className="h-10 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-[#e11d48] transition-colors"
               />
-              <p className="text-[11px] text-[#3f3f46]">Letters, numbers, underscores, and hyphens only.</p>
+              <p className="text-[11px] text-text-faint">Letters, numbers, underscores, and hyphens only.</p>
             </div>
 
             {/* Email + Role info rows */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between py-2.5 border-b border-[#1e1e1e]">
-                <span className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em]">Email</span>
-                <span className="text-sm text-[#71717a]">{email}</span>
+                <span className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em]">Email</span>
+                <span className="text-sm text-text-secondary">{email}</span>
               </div>
               <div className="flex items-center justify-between py-2.5 border-b border-[#1e1e1e]">
-                <span className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em]">Role</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20">
+                <span className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em]">Role</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20">
                   {roleLabel}
                 </span>
               </div>

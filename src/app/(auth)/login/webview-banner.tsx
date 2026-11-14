@@ -58,7 +58,7 @@ export function GoogleSignInSection({ href }: { href: string }) {
     <>
       <a
         href={href}
-        className="w-full h-10 flex items-center justify-center gap-3 rounded-md bg-[#1e1e1e] border border-[#27272a] text-sm font-medium text-[#f4f4f5] hover:bg-[#282828] hover:border-[#333] transition-colors"
+        className="w-full h-11 flex items-center justify-center gap-3 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-sm font-medium text-text-primary hover:bg-[#282828] hover:border-[#333] transition-colors"
       >
         <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -71,7 +71,7 @@ export function GoogleSignInSection({ href }: { href: string }) {
 
       <div className="flex items-center gap-3 my-5">
         <div className="flex-1 h-px bg-[#1e1e1e]" />
-        <span className="text-xs text-[#52525b]">or continue with email</span>
+        <span className="text-xs text-text-muted">or continue with email</span>
         <div className="flex-1 h-px bg-[#1e1e1e]" />
       </div>
     </>

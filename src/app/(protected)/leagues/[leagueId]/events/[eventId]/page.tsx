@@ -103,12 +103,12 @@ export default async function PicksPage({ params }: PageProps) {
         className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70"
       >
         <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
-          <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+          <ChevronLeft className="w-4 h-4 text-text-muted group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
+          <span className="text-[10px] font-semibold tracking-[0.15em] text-text-muted uppercase mb-1">Back to</span>
           <span
-            className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase"
+            className="text-sm text-text-secondary group-hover:text-text-primary transition-colors duration-200 uppercase"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}
           >
             {league.name}
@@ -118,11 +118,11 @@ export default async function PicksPage({ params }: PageProps) {
 
       {/* Header */}
       <div className="mb-10">
-        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-1.5">
+        <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em] mb-1.5">
           {formatDateTime(event.start_time)}{event.venue ? ` · ${event.venue}` : ''}
         </p>
         <h1
-          className="leading-[0.9] text-[#f4f4f5] uppercase"
+          className="leading-[0.9] text-text-primary uppercase"
           style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2.2rem, 5vw, 3rem)' }}
         >
           {event.name}
@@ -137,7 +137,7 @@ export default async function PicksPage({ params }: PageProps) {
         </div>
       )}
       {!isLocked && event.lock_time && (
-        <div className="mb-6 flex items-start gap-2 px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#27272a] text-sm text-[#71717a]">
+        <div className="mb-6 flex items-start gap-2 px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#27272a] text-sm text-text-secondary">
           <Lock className="w-4 h-4 shrink-0 mt-0.5" />
           <span>Picks lock at <LocalTime isoString={event.lock_time} /> (early prelims)</span>
         </div>

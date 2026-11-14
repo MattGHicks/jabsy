@@ -73,13 +73,13 @@ export function LockCountdown({
             }`}
           >
             <span
-              className={`text-xl leading-none ${urgent ? 'text-[#e11d48]' : 'text-[#f4f4f5]'}`}
+              className={`text-xl leading-none ${urgent ? 'text-[#e11d48]' : 'text-text-primary'}`}
               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}
               suppressHydrationWarning
             >
               {s.value}
             </span>
-            <span className="text-[8px] text-[#52525b] uppercase tracking-[0.15em] mt-0.5">{s.label}</span>
+            <span className="text-[10px] text-text-muted uppercase tracking-[0.15em] mt-0.5">{s.label}</span>
           </span>
         ))}
       </span>

@@ -159,7 +159,7 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                   />
                 </div>
                 {badge !== undefined && badge > 0 && !isActive && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#e11d48] text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#e11d48]/30">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#e11d48] text-white text-[11px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#e11d48]/30">
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
@@ -169,15 +169,15 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                   className={cn(
                     'leading-none mb-1 transition-colors duration-200',
                     typeof count === 'string' && count.length > 2 ? 'text-sm sm:text-base' : 'text-xl sm:text-2xl',
-                    isActive ? 'text-[#f4f4f5]' : 'text-[#71717a]'
+                    isActive ? 'text-text-primary' : 'text-text-secondary'
                   )}
                   style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
                 >
                   {count}
                 </p>
                 <p className={cn(
-                  'text-[9px] sm:text-[10px] uppercase tracking-wider transition-colors duration-200',
-                  isActive ? 'text-[#52525b]' : 'text-[#3f3f46]'
+                  'text-[10px] sm:text-[11px] uppercase tracking-wider transition-colors duration-200',
+                  isActive ? 'text-text-muted' : 'text-text-faint'
                 )}>
                   {label}
                 </p>
@@ -195,8 +195,8 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
         <div>
           {activeEvents.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
-              <Calendar className="w-8 h-8 text-[#52525b] mb-3" />
-              <p className="text-sm text-[#71717a] mb-2">No upcoming events in this league.</p>
+              <Calendar className="w-8 h-8 text-text-muted mb-3" />
+              <p className="text-sm text-text-secondary mb-2">No upcoming events in this league.</p>
               {isOwner && (
                 <Link
                   href={`/leagues/${leagueId}/settings`}
@@ -219,8 +219,8 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
         <div>
           {completedEvents.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
-              <Trophy className="w-8 h-8 text-[#52525b] mb-3" />
-              <p className="text-sm text-[#71717a]">No completed events yet.</p>
+              <Trophy className="w-8 h-8 text-text-muted mb-3" />
+              <p className="text-sm text-text-secondary">No completed events yet.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
@@ -241,7 +241,7 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] uppercase tracking-wider transition-all cursor-pointer',
                 showAccuracyInfo
                   ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                  : 'text-[#52525b] hover:text-[#71717a] border border-transparent hover:border-[#1e1e1e]'
+                  : 'text-text-muted hover:text-text-secondary border border-transparent hover:border-[#1e1e1e]'
               )}
               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
             >
@@ -253,26 +253,26 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
           {/* Accuracy explainer card */}
           {showAccuracyInfo && (
             <div className="p-5 rounded-xl bg-blue-500/[0.04] border border-blue-500/15 mb-1">
-              <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-[0.15em] mb-3">Weighted Accuracy</p>
-              <p className="text-[13px] text-[#a1a1aa] leading-relaxed mb-4">
-                Your accuracy reflects how well you predict fight outcomes — not just the winner, but the method and round too. It&apos;s calculated as <span className="text-[#f4f4f5] font-semibold">points earned ÷ max possible points</span>.
+              <p className="text-[11px] font-semibold text-blue-400 uppercase tracking-[0.15em] mb-3">Weighted Accuracy</p>
+              <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
+                Your accuracy reflects how well you predict fight outcomes — not just the winner, but the method and round too. It&apos;s calculated as <span className="text-text-primary font-semibold">points earned ÷ max possible points</span>.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
-                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>5</span>
-                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">winner</span></span>
+                  <span className="text-lg font-bold text-text-primary" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>5</span>
+                  <span className="text-[11px] text-text-secondary">pts for correct <span className="text-text-secondary">winner</span></span>
                 </div>
                 <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
-                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+3</span>
-                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">method</span></span>
+                  <span className="text-lg font-bold text-text-primary" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+3</span>
+                  <span className="text-[11px] text-text-secondary">pts for correct <span className="text-text-secondary">method</span></span>
                 </div>
                 <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e]">
-                  <span className="text-lg font-bold text-[#f4f4f5]" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+2</span>
-                  <span className="text-[11px] text-[#71717a]">pts for correct <span className="text-[#a1a1aa]">round</span></span>
+                  <span className="text-lg font-bold text-text-primary" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>+2</span>
+                  <span className="text-[11px] text-text-secondary">pts for correct <span className="text-text-secondary">round</span></span>
                 </div>
               </div>
-              <p className="text-[11px] text-[#52525b] mt-3 leading-relaxed">
-                Max per fight: <span className="text-[#71717a]">10 pts</span> (KO/Sub) or <span className="text-[#71717a]">8 pts</span> (Decision). Draws &amp; No Contests are excluded. Missing an event won&apos;t hurt your accuracy.
+              <p className="text-[11px] text-text-muted mt-3 leading-relaxed">
+                Max per fight: <span className="text-text-secondary">10 pts</span> (KO/Sub) or <span className="text-text-secondary">8 pts</span> (Decision). Draws &amp; No Contests are excluded. Missing an event won&apos;t hurt your accuracy.
               </p>
             </div>
           )}
@@ -280,9 +280,9 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
           {standings.length === 0 ? (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col items-center py-8 text-center rounded-xl border border-dashed border-[#1e1e1e]">
-                <BarChart2 className="w-7 h-7 text-[#52525b] mb-2.5" />
-                <p className="text-sm text-[#71717a]">No standings yet</p>
-                <p className="text-xs text-[#52525b] mt-0.5">Make picks to get on the board</p>
+                <BarChart2 className="w-7 h-7 text-text-muted mb-2.5" />
+                <p className="text-sm text-text-secondary">No standings yet</p>
+                <p className="text-xs text-text-muted mt-0.5">Make picks to get on the board</p>
               </div>
               {(() => {
                 const seen = new Set<string>()
@@ -297,7 +297,7 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                 if (all.length === 0) return null
                 return (
                   <div>
-                    <p className="text-[10px] font-semibold text-[#52525b] uppercase tracking-[0.15em] mb-2 mt-2">
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.15em] mb-2 mt-2">
                       Members · {all.length}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -320,28 +320,28 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                               {m.avatar_url
                                 // eslint-disable-next-line @next/next/no-img-element
                                 ? <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                                : <span className="text-xs font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(m.username ?? 'U')}</span>
+                                : <span className="text-xs font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(m.username ?? 'U')}</span>
                               }
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className={cn('text-sm font-semibold truncate', isMe ? 'text-[#f4f4f5]' : 'text-[#a1a1aa]')}>
+                                <p className={cn('text-sm font-semibold truncate', isMe ? 'text-text-primary' : 'text-text-secondary')}>
                                   {m.username ?? 'Unknown'}
                                 </p>
                                 {isMe && <span className="text-xs text-[#e11d48] shrink-0">you</span>}
                                 {isLeagueOwner && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
                                     <Crown className="w-2.5 h-2.5" />
                                   </span>
                                 )}
                               </div>
                               {joinedAt?.[m.id] && (
-                                <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
+                                <p className="text-[11px] text-text-faint group-hover:text-text-muted transition-colors mt-0.5">
                                   Joined {formatDate(joinedAt[m.id])}
                                 </p>
                               )}
                             </div>
-                            <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                            <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-text-muted transition-colors shrink-0" />
                           </Link>
                         )
                       })}
@@ -375,7 +375,7 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                     <div className={cn(
                       'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold border tabular-nums',
                       rankStyle ? rankStyle.bg : 'bg-[#0a0a0a] border-[#1e1e1e]',
-                      rankStyle ? rankStyle.color : 'text-[#52525b]'
+                      rankStyle ? rankStyle.color : 'text-text-muted'
                     )}>
                       {rank}
                     </div>
@@ -385,25 +385,25 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       {profile?.avatar_url
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img src={profile.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                        : <span className="text-sm font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
+                        : <span className="text-sm font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(profile?.username ?? 'U')}</span>
                       }
                     </div>
 
                     {/* Name */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <p className={cn('text-sm font-semibold truncate group-hover:text-[#f4f4f5] transition-colors', isMe ? 'text-[#f4f4f5]' : 'text-[#f4f4f5]')}>
+                        <p className={cn('text-sm font-semibold truncate group-hover:text-text-primary transition-colors', isMe ? 'text-text-primary' : 'text-text-primary')}>
                           {profile?.username ?? 'Unknown'}
                         </p>
                         {isMe && <span className="text-[11px] text-[#e11d48] shrink-0">you</span>}
                         {isLeagueOwner && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
                             <Crown className="w-2.5 h-2.5" />
                           </span>
                         )}
                       </div>
                       {joinedAt?.[s.userId] && (
-                        <p className="text-[10px] text-[#3f3f46] group-hover:text-[#52525b] transition-colors mt-0.5">
+                        <p className="text-[11px] text-text-faint group-hover:text-text-muted transition-colors mt-0.5">
                           Joined {formatDate(joinedAt[s.userId])}
                         </p>
                       )}
@@ -423,17 +423,17 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                     {/* Accuracy + Points */}
                     <div className="text-right shrink-0">
                       <p
-                        className={cn('text-lg sm:text-xl font-bold leading-none tabular-nums', rankStyle ? rankStyle.color : 'text-[#f4f4f5]')}
+                        className={cn('text-lg sm:text-xl font-bold leading-none tabular-nums', rankStyle ? rankStyle.color : 'text-text-primary')}
                         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
                       >
                         {s.accuracy !== null ? `${s.accuracy}%` : '—'}
                       </p>
-                      <p className="text-[10px] text-[#52525b] mt-0.5 uppercase tracking-wide tabular-nums">
+                      <p className="text-[11px] text-text-muted mt-0.5 uppercase tracking-wide tabular-nums">
                         {s.totalPoints > 0 ? `${s.totalPoints} pts` : 'accuracy'}
                       </p>
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-[#52525b] transition-colors shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-[#27272a] group-hover:text-text-muted transition-colors shrink-0" />
                   </Link>
                 )
               })}
@@ -452,8 +452,8 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
         <div>
           {!leagueStats.mostEventWins && !leagueStats.highestAccuracy && !leagueStats.mostPoints && !leagueStats.bestEventScore && !leagueStats.tightestFinish && !leagueStats.mostPerfectPicks ? (
             <div className="flex flex-col items-center py-20 text-center">
-              <TrendingUp className="w-8 h-8 text-[#52525b] mb-3" />
-              <p className="text-sm text-[#71717a]">No league stats yet. Complete some events to see stats here.</p>
+              <TrendingUp className="w-8 h-8 text-text-muted mb-3" />
+              <p className="text-sm text-text-secondary">No league stats yet. Complete some events to see stats here.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -468,18 +468,18 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       {leagueStats.mostEventWins.avatar_url
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img src={leagueStats.mostEventWins.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                        : <span className="text-2xl font-black text-[#52525b] flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{getInitials(leagueStats.mostEventWins.username ?? 'U')}</span>
+                        : <span className="text-2xl font-black text-text-muted flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>{getInitials(leagueStats.mostEventWins.username ?? 'U')}</span>
                       }
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <Trophy className="w-4 h-4 text-yellow-500" />
-                        <p className="text-[10px] font-semibold text-yellow-500/60 uppercase tracking-[0.15em]">Most Event Wins</p>
+                        <p className="text-[11px] font-semibold text-yellow-500/60 uppercase tracking-[0.15em]">Most Event Wins</p>
                       </div>
-                      <p className="text-sm font-semibold text-[#a1a1aa] truncate mb-1">{leagueStats.mostEventWins.username ?? 'Unknown'}</p>
-                      <p className="text-4xl sm:text-5xl text-[#f4f4f5] leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
+                      <p className="text-sm font-semibold text-text-secondary truncate mb-1">{leagueStats.mostEventWins.username ?? 'Unknown'}</p>
+                      <p className="text-4xl sm:text-5xl text-text-primary leading-none" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}>
                         {leagueStats.mostEventWins.count}
-                        <span className="text-base sm:text-lg text-[#3f3f46] font-semibold ml-2">{leagueStats.mostEventWins.count === 1 ? 'win' : 'wins'}</span>
+                        <span className="text-base sm:text-lg text-text-faint font-semibold ml-2">{leagueStats.mostEventWins.count === 1 ? 'win' : 'wins'}</span>
                       </p>
                     </div>
                   </div>
@@ -495,20 +495,20 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       <Target className="w-5 h-5 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Highest Accuracy</p>
+                      <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.12em] mb-0.5">Highest Accuracy</p>
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
                           {leagueStats.highestAccuracy.avatar_url
                             // eslint-disable-next-line @next/next/no-img-element
                             ? <img src={leagueStats.highestAccuracy.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.highestAccuracy.username ?? 'U')}</span>
+                            : <span className="text-[7px] font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(leagueStats.highestAccuracy.username ?? 'U')}</span>
                           }
                         </div>
-                        <p className="text-xs text-[#71717a] truncate">{leagueStats.highestAccuracy.username ?? 'Unknown'}</p>
+                        <p className="text-xs text-text-secondary truncate">{leagueStats.highestAccuracy.username ?? 'Unknown'}</p>
                       </div>
                     </div>
-                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {leagueStats.highestAccuracy.value}<span className="text-sm text-[#52525b]">%</span>
+                    <p className="text-2xl sm:text-3xl text-text-primary leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.highestAccuracy.value}<span className="text-sm text-text-muted">%</span>
                     </p>
                   </div>
                 )}
@@ -520,20 +520,20 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       <Zap className="w-5 h-5 text-[#e11d48]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Most Points</p>
+                      <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.12em] mb-0.5">Most Points</p>
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
                           {leagueStats.mostPoints.avatar_url
                             // eslint-disable-next-line @next/next/no-img-element
                             ? <img src={leagueStats.mostPoints.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.mostPoints.username ?? 'U')}</span>
+                            : <span className="text-[7px] font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(leagueStats.mostPoints.username ?? 'U')}</span>
                           }
                         </div>
-                        <p className="text-xs text-[#71717a] truncate">{leagueStats.mostPoints.username ?? 'Unknown'}</p>
+                        <p className="text-xs text-text-secondary truncate">{leagueStats.mostPoints.username ?? 'Unknown'}</p>
                       </div>
                     </div>
-                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {leagueStats.mostPoints.value}<span className="text-sm text-[#52525b] ml-1">pts</span>
+                    <p className="text-2xl sm:text-3xl text-text-primary leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.mostPoints.value}<span className="text-sm text-text-muted ml-1">pts</span>
                     </p>
                   </div>
                 )}
@@ -545,22 +545,22 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       <Award className="w-5 h-5 text-[#a78bfa]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Best Event Score</p>
+                      <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.12em] mb-0.5">Best Event Score</p>
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
                           {leagueStats.bestEventScore.avatar_url
                             // eslint-disable-next-line @next/next/no-img-element
                             ? <img src={leagueStats.bestEventScore.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                            : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(leagueStats.bestEventScore.username ?? 'U')}</span>
+                            : <span className="text-[7px] font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(leagueStats.bestEventScore.username ?? 'U')}</span>
                           }
                         </div>
-                        <p className="text-xs text-[#71717a] truncate">{leagueStats.bestEventScore.username ?? 'Unknown'}</p>
-                        <span className="text-[10px] text-[#3f3f46]">·</span>
-                        <p className="text-[10px] text-[#52525b] truncate">{leagueStats.bestEventScore.eventName}</p>
+                        <p className="text-xs text-text-secondary truncate">{leagueStats.bestEventScore.username ?? 'Unknown'}</p>
+                        <span className="text-[11px] text-text-faint">·</span>
+                        <p className="text-[11px] text-text-muted truncate">{leagueStats.bestEventScore.eventName}</p>
                       </div>
                     </div>
-                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {leagueStats.bestEventScore.value}<span className="text-sm text-[#52525b] ml-1">pts</span>
+                    <p className="text-2xl sm:text-3xl text-text-primary leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.bestEventScore.value}<span className="text-sm text-text-muted ml-1">pts</span>
                     </p>
                   </div>
                 )}
@@ -572,11 +572,11 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       <TrendingUp className="w-5 h-5 text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Tightest Finish</p>
-                      <p className="text-xs text-[#71717a] truncate">{leagueStats.tightestFinish.eventName}</p>
+                      <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.12em] mb-0.5">Tightest Finish</p>
+                      <p className="text-xs text-text-secondary truncate">{leagueStats.tightestFinish.eventName}</p>
                     </div>
-                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
-                      {leagueStats.tightestFinish.margin}<span className="text-sm text-[#52525b] ml-1">pt gap</span>
+                    <p className="text-2xl sm:text-3xl text-text-primary leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                      {leagueStats.tightestFinish.margin}<span className="text-sm text-text-muted ml-1">pt gap</span>
                     </p>
                   </div>
                 )}
@@ -588,24 +588,24 @@ export function LeagueTabs({ leagueId, leagueName, shareCode, events, isOwner, p
                       <Crosshair className="w-5 h-5 text-[#a78bfa]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.12em] mb-0.5">Most Perfect Picks</p>
+                      <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.12em] mb-0.5">Most Perfect Picks</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         {leagueStats.mostPerfectPicks.users.map((u, i) => (
                           <div key={i} className="flex items-center gap-1.5">
-                            {i > 0 && <span className="text-[10px] text-[#3f3f46]">·</span>}
+                            {i > 0 && <span className="text-[11px] text-text-faint">·</span>}
                             <div className="w-5 h-5 rounded-full bg-[#1e1e1e] border border-[#27272a] overflow-hidden shrink-0">
                               {u.avatar_url
                                 // eslint-disable-next-line @next/next/no-img-element
                                 ? <img src={u.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                                : <span className="text-[7px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(u.username ?? 'U')}</span>
+                                : <span className="text-[7px] font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(u.username ?? 'U')}</span>
                               }
                             </div>
-                            <p className="text-xs text-[#71717a] truncate">{u.username ?? 'Unknown'}</p>
+                            <p className="text-xs text-text-secondary truncate">{u.username ?? 'Unknown'}</p>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <p className="text-2xl sm:text-3xl text-[#f4f4f5] leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    <p className="text-2xl sm:text-3xl text-text-primary leading-none shrink-0" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                       {leagueStats.mostPerfectPicks.count}
                     </p>
                   </div>
@@ -646,10 +646,10 @@ function renderEventCard(
   let btnClass: string
   if (isLocked) {
     btnLabel = 'View Board'
-    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#27272a]'
+    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-text-secondary hover:text-text-primary hover:border-[#27272a]'
   } else if (!picksOpen && event.status === 'upcoming') {
     btnLabel = 'Not Yet Open'
-    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#52525b] cursor-not-allowed'
+    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-text-muted cursor-not-allowed'
   } else if (allPicked) {
     btnLabel = 'Edit Picks'
     btnClass = 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
@@ -658,7 +658,7 @@ function renderEventCard(
     btnClass = 'bg-[#e11d48]/10 border-[#e11d48]/30 text-[#e11d48] hover:bg-[#e11d48]/20'
   } else {
     btnLabel = 'Make Picks'
-    btnClass = 'bg-[#0a0a0a] border-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#27272a]'
+    btnClass = 'bg-brand border-brand text-white hover:bg-brand-dark hover:border-brand-dark'
   }
 
   const winners = eventWinners[event.id] ?? []
@@ -681,7 +681,7 @@ function renderEventCard(
             )}
             {style.label}
           </div>
-          <p className="text-xs text-[#52525b]">
+          <p className="text-xs text-text-muted">
             {fightCount} {fightCount === 1 ? 'fight' : 'fights'}
           </p>
         </div>
@@ -689,16 +689,16 @@ function renderEventCard(
         {/* Event name */}
         <div>
           <p
-            className="text-xl sm:text-2xl text-[#f4f4f5] uppercase leading-tight"
+            className="text-xl sm:text-2xl text-text-primary uppercase leading-tight"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}
           >
             {event.name}
           </p>
-          <p className="text-xs text-[#52525b] mt-1.5">
+          <p className="text-xs text-text-muted mt-1.5">
             {formatDateTime(event.start_time)}
             {event.venue && (
               <>
-                <span className="mx-1.5 text-[#3f3f46]">·</span>
+                <span className="mx-1.5 text-text-faint">·</span>
                 {event.venue}
               </>
             )}
@@ -711,7 +711,7 @@ function renderEventCard(
             {picksOpen ? (
               <LockCountdown lockTime={event.lock_time} />
             ) : (
-              <span className="text-[#52525b]">
+              <span className="text-text-muted">
                 Picks open day of event
               </span>
             )}
@@ -729,7 +729,7 @@ function renderEventCard(
                     {w.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={w.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                      : <span className="text-[8px] font-bold text-[#71717a] flex items-center justify-center w-full h-full">{getInitials(w.username ?? 'U')}</span>
+                      : <span className="text-[10px] font-bold text-text-secondary flex items-center justify-center w-full h-full">{getInitials(w.username ?? 'U')}</span>
                     }
                   </div>
                   <span className="text-xs font-semibold text-yellow-500/80">
@@ -738,7 +738,7 @@ function renderEventCard(
                   </span>
                 </div>
               ))}
-              <span className="text-xs text-[#52525b]">· {winners[0].points} pts</span>
+              <span className="text-xs text-text-muted">· {winners[0].points} pts</span>
             </div>
           </div>
         )}
@@ -750,7 +750,7 @@ function renderEventCard(
         {!isLocked && (
           <Link
             href={`/leagues/${leagueId}/events/${event.id}/board`}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border border-[#1e1e1e] bg-[#0a0a0a] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#27272a] transition-colors uppercase tracking-wide"
+            className="inline-flex items-center gap-1 h-10 px-3 sm:px-4 rounded-lg text-sm whitespace-nowrap border border-[#1e1e1e] bg-[#0a0a0a] text-text-secondary hover:text-text-primary hover:border-[#27272a] transition-colors uppercase tracking-wide"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
           >
             View Board
@@ -759,7 +759,7 @@ function renderEventCard(
         )}
         {(!picksOpen && event.status === 'upcoming') ? (
           <span
-            className={cn('inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border uppercase tracking-wide', btnClass)}
+            className={cn('inline-flex items-center gap-1 h-10 px-3 sm:px-4 rounded-lg text-sm whitespace-nowrap border uppercase tracking-wide', btnClass)}
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
           >
             <Lock className="w-3 h-3" />
@@ -771,7 +771,7 @@ function renderEventCard(
               ? `/leagues/${leagueId}/events/${event.id}/board`
               : `/leagues/${leagueId}/events/${event.id}`
             }
-            className={cn('inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs border transition-colors uppercase tracking-wide', btnClass)}
+            className={cn('inline-flex items-center gap-1 h-10 px-3 sm:px-4 rounded-lg text-sm whitespace-nowrap border transition-colors uppercase tracking-wide', btnClass)}
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 700 }}
           >
             {btnLabel}

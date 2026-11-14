@@ -69,8 +69,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/profile')
 
+  // The landing page clears stale auth state on load (StaleAuthCleaner), which
+  // would also sign out a visitor whose session is perfectly good. Send those
+  // visitors to their dashboard instead; anyone without a valid session still
+  // gets the landing page. No cookie means no Supabase call, so anonymous
+  // traffic keeps hitting the static page at no extra cost.
+  const isLanding = pathname === '/'
+
   // Only pay for session validation where the answer changes what we do.
-  if (!isAuthRoute && !isProtectedRoute) {
+  if (!isAuthRoute && !isProtectedRoute && !isLanding) {
     return NextResponse.next()
   }
 
@@ -85,7 +92,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (authenticated && isAuthRoute) {
+  if (authenticated && (isAuthRoute || isLanding)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

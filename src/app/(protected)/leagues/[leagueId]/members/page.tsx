@@ -73,12 +73,12 @@ export default async function MembersPage({ params }: PageProps) {
         className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70"
       >
         <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
-          <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+          <ChevronLeft className="w-4 h-4 text-text-muted group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
+          <span className="text-[10px] font-semibold tracking-[0.15em] text-text-muted uppercase mb-1">Back to</span>
           <span
-            className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase"
+            className="text-sm text-text-secondary group-hover:text-text-primary transition-colors duration-200 uppercase"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}
           >
             {league.name}
@@ -88,12 +88,12 @@ export default async function MembersPage({ params }: PageProps) {
 
       {/* Header */}
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-1.5 inline-flex items-center gap-1.5">
+        <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em] mb-1.5 inline-flex items-center gap-1.5">
           <Users className="w-3 h-3" />
           {league.name} · {rows.length} {rows.length === 1 ? 'member' : 'members'}
         </p>
         <h1
-          className="leading-[0.9] text-[#f4f4f5] uppercase"
+          className="leading-[0.9] text-text-primary uppercase"
           style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 2.75rem)' }}
         >
           Members
@@ -103,8 +103,8 @@ export default async function MembersPage({ params }: PageProps) {
       {/* Member rows */}
       {rows.length === 0 ? (
         <div className="flex flex-col items-center py-16 text-center rounded-xl border border-dashed border-[#1e1e1e]">
-          <Users className="w-7 h-7 text-[#52525b] mb-2.5" />
-          <p className="text-sm text-[#71717a]">No members yet</p>
+          <Users className="w-7 h-7 text-text-muted mb-2.5" />
+          <p className="text-sm text-text-secondary">No members yet</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -130,7 +130,7 @@ export default async function MembersPage({ params }: PageProps) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={m.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-sm font-bold text-[#71717a] flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
+                    <span className="text-sm font-bold text-text-secondary flex items-center justify-center w-full h-full" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800 }}>
                       {getInitials(m.username ?? 'U')}
                     </span>
                   )}
@@ -138,26 +138,26 @@ export default async function MembersPage({ params }: PageProps) {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className={cn('text-base font-semibold truncate', isMe ? 'text-[#f4f4f5]' : 'text-[#f4f4f5]')}>
+                    <p className={cn('text-base font-semibold truncate', isMe ? 'text-text-primary' : 'text-text-primary')}>
                       {m.username ?? 'Unknown'}
                     </p>
                     {isMe && <span className="text-[11px] text-[#e11d48] shrink-0">you</span>}
                     {isLeagueOwner && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#e11d48]/10 text-[#e11d48] border border-[#e11d48]/20 shrink-0">
                         <Crown className="w-2.5 h-2.5" />
                         Owner
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-[#52525b] mt-0.5">
+                  <p className="text-[11px] text-text-muted mt-0.5">
                     Joined {formatDate(m.joinedAt)}
                   </p>
                 </div>
 
-                <span className="text-[10px] text-[#52525b] uppercase tracking-wider hidden sm:inline group-hover:text-[#a1a1aa] transition-colors">
+                <span className="text-[11px] text-text-muted uppercase tracking-wider hidden sm:inline group-hover:text-text-secondary transition-colors">
                   View profile
                 </span>
-                <ChevronRight className="w-4 h-4 text-[#3f3f46] group-hover:text-[#a1a1aa] transition-colors shrink-0" />
+                <ChevronRight className="w-4 h-4 text-text-faint group-hover:text-text-secondary transition-colors shrink-0" />
               </Link>
             )
           })}

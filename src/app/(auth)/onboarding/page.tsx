@@ -31,22 +31,22 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
       <Link
         href="/"
-        className="text-2xl font-black text-[#e11d48] mb-10 tracking-wide"
+        className="text-3xl text-brand mb-8 tracking-[0.08em]"
         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
       >
         JABSY
       </Link>
 
       <div className="w-full max-w-sm">
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-lg p-8">
+        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6 sm:p-8">
           <div className="mb-7">
             <h1
-              className="text-2xl font-black text-[#f4f4f5] mb-1 leading-tight"
+              className="text-2xl font-black text-text-primary mb-1 leading-tight"
               style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
             >
               CHOOSE YOUR FIGHTER NAME
             </h1>
-            <p className="text-sm text-[#71717a]">Set up your profile to enter the octagon</p>
+            <p className="text-sm text-text-secondary">Set up your profile to enter the octagon</p>
           </div>
 
           {error && (

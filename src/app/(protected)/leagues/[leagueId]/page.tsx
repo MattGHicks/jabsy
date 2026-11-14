@@ -282,11 +282,11 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
       {/* Back */}
       <Link href="/dashboard" className="group flex items-center gap-3 min-h-[44px] py-1 pr-4 -ml-0.5 mb-6 transition-all active:opacity-70">
         <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#1e1e1e] flex items-center justify-center shrink-0 group-hover:bg-[#e11d48]/[0.08] group-hover:border-[#e11d48]/25 transition-all duration-200">
-          <ChevronLeft className="w-4 h-4 text-[#52525b] group-hover:text-[#e11d48] transition-colors duration-200" />
+          <ChevronLeft className="w-4 h-4 text-text-muted group-hover:text-[#e11d48] transition-colors duration-200" />
         </div>
         <div className="flex flex-col justify-center leading-none">
-          <span className="text-[9px] font-semibold tracking-[0.15em] text-[#52525b] uppercase mb-1">Back to</span>
-          <span className="text-sm text-[#71717a] group-hover:text-[#f4f4f5] transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
+          <span className="text-[10px] font-semibold tracking-[0.15em] text-text-muted uppercase mb-1">Back to</span>
+          <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors duration-200 uppercase" style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, letterSpacing: '0.04em' }}>Dashboard</span>
         </div>
       </Link>
 
@@ -309,7 +309,7 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
                 <img src={league.avatar_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               ) : (
                 <span
-                  className={`text-2xl sm:text-3xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-[#52525b]'}`}
+                  className={`text-2xl sm:text-3xl leading-none ${isOwner ? 'text-[#e11d48]' : 'text-text-muted'}`}
                   style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
                 >
                   {getInitials(league.name)}
@@ -319,31 +319,31 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
 
             <div className="flex-1 min-w-0 pb-0.5">
               <h1
-                className="text-[#f4f4f5] uppercase leading-[0.9] mb-2 drop-shadow-lg"
+                className="text-text-primary uppercase leading-[0.9] mb-2 drop-shadow-lg"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: 'clamp(1.8rem, 5vw, 3rem)' }}
               >
                 {league.name}
               </h1>
               {league.description && (
-                <p className="text-[13px] text-[#a1a1aa]/70 leading-snug line-clamp-2">{league.description}</p>
+                <p className="text-[13px] text-text-secondary/70 leading-snug line-clamp-2">{league.description}</p>
               )}
             </div>
           </div>
 
           {/* Bottom bar: meta + actions */}
           <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
-            <p className="text-[11px] text-[#71717a]">
+            <p className="text-[11px] text-text-secondary">
               {events.length} {events.length === 1 ? 'event' : 'events'}
             </p>
 
             <div className="flex items-center gap-2">
               <Link
                 href={`/leagues/${leagueId}/members`}
-                className="inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-xs font-semibold bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-white/[0.06] hover:text-[#f4f4f5] transition-all cursor-pointer shrink-0"
+                className="inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-xs font-semibold bg-[#1a1a1a] border border-[#27272a] text-text-secondary hover:bg-white/[0.06] hover:text-text-primary transition-all cursor-pointer shrink-0"
               >
                 <Users className="w-3.5 h-3.5" />
                 Members
-                <span className="text-[#52525b]">·</span>
+                <span className="text-text-muted">·</span>
                 <span className="tabular-nums">{uniqueMemberIds.length}</span>
               </Link>
               <ShareButton
@@ -356,7 +356,7 @@ export default async function LeaguePage({ params, searchParams }: PageProps) {
               {isOwner && (
                 <Link
                   href={`/leagues/${leagueId}/settings`}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#a1a1aa] hover:bg-white/[0.06] hover:text-[#f4f4f5] transition-all"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-text-secondary hover:bg-white/[0.06] hover:text-text-primary transition-all"
                   aria-label="League settings"
                 >
                   <Settings className="w-4 h-4" />

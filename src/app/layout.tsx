@@ -23,8 +23,7 @@ const barlowCondensed = Barlow_Condensed({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  themeColor: '#0a0a0a',
 }
 
 export const metadata: Metadata = {
@@ -70,7 +69,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}` }} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} antialiased bg-[#0a0a0a] text-[#f4f4f5]`}
+        className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} antialiased bg-[#0a0a0a] text-text-primary`}
       >
         {children}
         <Analytics />

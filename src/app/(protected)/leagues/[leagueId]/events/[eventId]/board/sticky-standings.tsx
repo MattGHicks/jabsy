@@ -86,7 +86,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                   <Crown className="w-4 h-4 text-yellow-400" />
                 ) : rank === 2 ? (
                   <span
-                    className="text-sm text-[#71717a]"
+                    className="text-sm text-text-secondary"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
                   >
                     2
@@ -100,7 +100,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                   </span>
                 ) : (
                   <span
-                    className="text-sm text-[#52525b]"
+                    className="text-sm text-text-muted"
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
                   >
                     {rank}
@@ -146,7 +146,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                   >
                     {profile?.username ?? 'Unknown'}
                   </span>
-                  <span className="text-[9px] text-[#52525b] group-hover:text-[#71717a] transition-colors shrink-0">
+                  <span className="text-[10px] text-text-muted group-hover:text-text-secondary transition-colors shrink-0">
                     View profile
                   </span>
                 </div>
@@ -174,15 +174,15 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                   <span
                     className={cn(
                       'tabular-nums leading-none',
-                      isFirst ? 'text-yellow-400' : isMe ? 'text-[#e11d48]' : 'text-[#f4f4f5]'
+                      isFirst ? 'text-yellow-400' : isMe ? 'text-[#e11d48]' : 'text-text-primary'
                     )}
                     style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.7rem', lineHeight: 1 }}
                   >
                     {totalPts}
                   </span>
-                  <span className="block text-[9px] text-[#52525b] mt-0.5 tracking-wider">PTS</span>
+                  <span className="block text-[10px] text-text-muted mt-0.5 tracking-wider">PTS</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#3f3f46] group-hover:text-[#52525b] transition-colors" />
+                <ChevronRight className="w-4 h-4 text-text-faint group-hover:text-text-muted transition-colors" />
               </div>
             </Link>
           )
@@ -226,7 +226,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                       </div>
                     ) : (
                       <span
-                        className="text-[#52525b] tracking-widest uppercase"
+                        className="text-text-muted tracking-widest uppercase"
                         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '0.65rem' }}
                       >
                         Final
@@ -257,7 +257,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                       <span
                         className={cn(
                           'tabular-nums w-4 text-center leading-none',
-                          isFirst ? 'text-yellow-500' : 'text-[#52525b]'
+                          isFirst ? 'text-yellow-500' : 'text-text-muted'
                         )}
                         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '0.75rem' }}
                       >
@@ -267,7 +267,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                       {/* Avatar */}
                       <div
                         className={cn(
-                          'w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold overflow-hidden shrink-0',
+                          'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0',
                           isMe
                             ? 'ring-1 ring-[#e11d48]'
                             : isFirst
@@ -296,7 +296,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                         <span
                           className={cn(
                             'leading-none mb-0.5 font-semibold',
-                            isMe ? 'text-[#e11d48]' : isFirst ? 'text-yellow-300' : 'text-[#a1a1aa]'
+                            isMe ? 'text-[#e11d48]' : isFirst ? 'text-yellow-300' : 'text-text-secondary'
                           )}
                           style={{ fontSize: '0.62rem' }}
                         >
@@ -311,7 +311,7 @@ export function StickyStandings({ leaderboard, currentUserId, maxPts, isLive, is
                         >
                           {totalPts}
                           <span
-                            className="text-[#52525b] ml-0.5"
+                            className="text-text-muted ml-0.5"
                             style={{ fontFamily: 'inherit', fontWeight: 700, fontSize: '0.55rem' }}
                           >
                             pts

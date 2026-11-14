@@ -12,7 +12,7 @@ export default async function CheckEmailPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
       <Link
         href="/"
-        className="text-2xl font-black text-[#e11d48] mb-10 tracking-wide"
+        className="text-3xl text-brand mb-8 tracking-[0.08em]"
         style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
       >
         JABSY
@@ -25,31 +25,31 @@ export default async function CheckEmailPage({ searchParams }: PageProps) {
           </div>
 
           <h1
-            className="text-[#f4f4f5] uppercase mb-2"
+            className="text-text-primary uppercase mb-2"
             style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900, fontSize: '1.5rem' }}
           >
             Check Your Email
           </h1>
 
-          <p className="text-sm text-[#71717a] mb-1">
+          <p className="text-sm text-text-secondary mb-1">
             We sent a confirmation link to
           </p>
           {email && (
-            <p className="text-sm font-semibold text-[#a1a1aa] mb-5 break-all">
+            <p className="text-sm font-semibold text-text-secondary mb-5 break-all">
               {email}
             </p>
           )}
 
-          <p className="text-xs text-[#52525b] mb-6 leading-relaxed">
+          <p className="text-xs text-text-muted mb-6 leading-relaxed">
             Click the link in the email to confirm your account.
             {pending_invite && ' After confirming, you\'ll be taken straight to the league invite.'}
           </p>
 
           <div className="border-t border-[#1e1e1e] pt-5">
-            <p className="text-xs text-[#52525b] mb-3">Already confirmed?</p>
+            <p className="text-xs text-text-muted mb-3">Already confirmed?</p>
             <Link
               href={pending_invite ? `/login?pending_invite=${pending_invite}` : '/login'}
-              className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-sm font-medium text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors"
+              className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-[#1e1e1e] border border-[#27272a] text-sm font-medium text-text-secondary hover:text-text-primary hover:border-[#333] transition-colors"
             >
               Sign In
             </Link>

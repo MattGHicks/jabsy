@@ -37,12 +37,12 @@ export function JoinWithCode() {
     <div className="flex items-center gap-4 p-5 rounded-xl bg-[#111111] border border-[#1e1e1e]">
       {/* Icon */}
       <div className="w-11 h-11 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] flex items-center justify-center shrink-0">
-        <Ticket className="w-5 h-5 text-[#52525b]" />
+        <Ticket className="w-5 h-5 text-text-muted" />
       </div>
 
       {/* Label + input */}
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-semibold text-[#3f3f46] uppercase tracking-[0.15em] mb-2">Join a League</p>
+        <p className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.15em] mb-2">Join a League</p>
         <div className="relative">
           <input
             ref={inputRef}
@@ -53,7 +53,7 @@ export function JoinWithCode() {
             placeholder="ENTER CODE"
             maxLength={8}
             disabled={isPending}
-            className="w-full h-9 pl-3 pr-10 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-[#f4f4f5] placeholder:text-[#3f3f46] focus:outline-none focus:border-[#27272a] font-mono tracking-[0.2em] uppercase disabled:opacity-50 transition-colors"
+            className="w-full h-9 pl-3 pr-10 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-text-primary placeholder:text-text-faint focus:outline-none focus:border-[#27272a] font-mono tracking-[0.2em] uppercase disabled:opacity-50 transition-colors"
           />
           {hasCode && (
             <button

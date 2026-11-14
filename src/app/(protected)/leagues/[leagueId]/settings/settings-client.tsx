@@ -37,7 +37,7 @@ export function SettingsClient({ inviteCode, inviteId, leagueId }: SettingsClien
     <div className="flex items-center gap-1">
       <button
         onClick={handleCopy}
-        className="h-7 w-7 rounded-md flex items-center justify-center text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#1e1e1e] transition-colors"
+        className="h-7 w-7 rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#1e1e1e] transition-colors"
         title="Copy invite link"
       >
         {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -45,7 +45,7 @@ export function SettingsClient({ inviteCode, inviteId, leagueId }: SettingsClien
       <form action={deleteInvite.bind(null, inviteId, leagueId)}>
         <button
           type="submit"
-          className="h-7 w-7 rounded-md flex items-center justify-center text-[#71717a] hover:text-[#e11d48] hover:bg-[#e11d48]/10 transition-colors"
+          className="h-7 w-7 rounded-md flex items-center justify-center text-text-secondary hover:text-[#e11d48] hover:bg-[#e11d48]/10 transition-colors"
           title="Delete invite"
         >
           <Trash2 className="w-3.5 h-3.5" />

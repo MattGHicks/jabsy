@@ -30,7 +30,7 @@ export function RemoveMemberButton({ leagueId, memberId, username }: RemoveMembe
       <button
         onClick={() => setShowModal(true)}
         title="Remove member"
-        className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[#52525b] hover:text-[#e11d48] hover:bg-[#e11d48]/5 border border-transparent hover:border-[#e11d48]/20 transition-colors cursor-pointer"
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md text-text-muted hover:text-[#e11d48] hover:bg-[#e11d48]/5 border border-transparent hover:border-[#e11d48]/20 transition-colors cursor-pointer"
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -48,7 +48,7 @@ export function RemoveMemberButton({ leagueId, memberId, username }: RemoveMembe
             {/* Close button */}
             <button
               onClick={() => !isRemoving && setShowModal(false)}
-              className="absolute top-4 right-4 text-[#52525b] hover:text-[#a1a1aa] transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -60,17 +60,17 @@ export function RemoveMemberButton({ leagueId, memberId, username }: RemoveMembe
               </div>
               <div>
                 <h2
-                  className="text-[#f4f4f5] uppercase leading-tight"
+                  className="text-text-primary uppercase leading-tight"
                   style={{ fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1.25rem' }}
                 >
                   Remove Member?
                 </h2>
-                <p className="text-xs text-[#71717a] mt-0.5">This cannot be undone</p>
+                <p className="text-xs text-text-secondary mt-0.5">This cannot be undone</p>
               </div>
             </div>
 
-            <p className="text-sm text-[#a1a1aa] mb-6">
-              <span className="text-[#f4f4f5] font-semibold">{username ?? 'This member'}</span> will be removed from the league and will lose access to all events and picks. They can rejoin via invite link.
+            <p className="text-sm text-text-secondary mb-6">
+              <span className="text-text-primary font-semibold">{username ?? 'This member'}</span> will be removed from the league and will lose access to all events and picks. They can rejoin via invite link.
             </p>
 
             {/* Actions */}
@@ -78,7 +78,7 @@ export function RemoveMemberButton({ leagueId, memberId, username }: RemoveMembe
               <button
                 onClick={() => !isRemoving && setShowModal(false)}
                 disabled={isRemoving}
-                className="flex-1 h-10 rounded-lg text-sm font-semibold border border-[#27272a] bg-[#1e1e1e] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 h-10 rounded-lg text-sm font-semibold border border-[#27272a] bg-[#1e1e1e] text-text-secondary hover:text-text-primary hover:border-[#333] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>

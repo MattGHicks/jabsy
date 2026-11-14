@@ -16,11 +16,11 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary:
     'bg-[#e11d48] text-white hover:bg-[#be123c] active:bg-[#9f1239] border border-[#e11d48] hover:border-[#be123c]',
   default:
-    'bg-[#282828] text-[#f4f4f5] hover:bg-[#333] border border-[#333] hover:border-[#444]',
+    'bg-[#282828] text-text-primary hover:bg-[#333] border border-[#333] hover:border-[#444]',
   ghost:
-    'bg-transparent text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#1e1e1e] border border-transparent',
+    'bg-transparent text-text-secondary hover:text-text-primary hover:bg-[#1e1e1e] border border-transparent',
   outline:
-    'bg-transparent text-[#f4f4f5] border border-[#3f3f46] hover:border-[#52525b] hover:bg-[#1e1e1e]',
+    'bg-transparent text-text-primary border border-[#3f3f46] hover:border-[#52525b] hover:bg-[#1e1e1e]',
   danger:
     'bg-transparent text-[#e11d48] border border-[#e11d48]/30 hover:bg-[#e11d48]/10 hover:border-[#e11d48]/60',
 }

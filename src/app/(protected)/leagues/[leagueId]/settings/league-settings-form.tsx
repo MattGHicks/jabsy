@@ -79,7 +79,7 @@ export function LeagueSettingsForm({
               <img src={avatarPreview} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             ) : (
               <span
-                className="text-2xl text-[#52525b]"
+                className="text-2xl text-text-muted"
                 style={{ fontFamily: 'var(--font-barlow)', fontWeight: 900 }}
               >
                 {getInitials(name || 'L')}
@@ -92,32 +92,32 @@ export function LeagueSettingsForm({
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-[#a1a1aa] uppercase tracking-wider mb-1">League Logo</p>
-          <p className="text-[11px] text-[#52525b]">Click to upload. Square images work best.</p>
+          <p className="text-xs font-medium text-text-secondary uppercase tracking-wider mb-1">League Logo</p>
+          <p className="text-[11px] text-text-muted">Click to upload. Square images work best.</p>
         </div>
       </div>
 
       {/* Name */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-[#a1a1aa] uppercase tracking-wider">League Name</label>
+        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">League Name</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="h-10 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#f4f4f5] text-sm placeholder:text-[#52525b] focus:outline-none focus:border-[#e11d48] transition-colors"
+          className="h-10 px-3 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-[#e11d48] transition-colors"
         />
       </div>
 
       {/* Description */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-[#a1a1aa] uppercase tracking-wider">
-          Description <span className="text-[#52525b] normal-case">(optional)</span>
+        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+          Description <span className="text-text-muted normal-case">(optional)</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-[#f4f4f5] text-sm placeholder:text-[#52525b] focus:outline-none focus:border-[#e11d48] transition-colors resize-none"
+          className="px-3 py-2.5 rounded-lg bg-[#1a1a1a] border border-[#27272a] text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-[#e11d48] transition-colors resize-none"
           placeholder="What's this league about?"
         />
       </div>
@@ -126,10 +126,10 @@ export function LeagueSettingsForm({
       <div className="flex flex-col gap-1.5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-[#a1a1aa] uppercase tracking-wider mb-1">
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider mb-1">
               Hide picks until lock
             </p>
-            <p className="text-[11px] text-[#52525b] leading-snug">
+            <p className="text-[11px] text-text-muted leading-snug">
               Members can&rsquo;t see other players&rsquo; picks until the event lock time. They always see their own.
             </p>
           </div>
